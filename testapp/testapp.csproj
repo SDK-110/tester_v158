@@ -1,0 +1,328 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{65DF2BF1-EBD6-4569-9A10-FA9EEA4C2890}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>testapp</RootNamespace>
+    <AssemblyName>testapp</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>0</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>bitbug_favicon %281%29.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="INIFileParser, Version=2.5.2.0, Culture=neutral, PublicKeyToken=79af7b307b65cf3c, processorArchitecture=MSIL">
+      <HintPath>..\packages\ini-parser.2.5.2\lib\net20\INIFileParser.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="RsCmwBluetoothMeas, Version=3.7.90.130, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\RsCmw_Csharp_drivers_3.7.xx4\RsCmwBluetoothMeas_3.7.90.0130\Release_x86\RsCmwBluetoothMeas.dll</HintPath>
+    </Reference>
+    <Reference Include="RsCmwBluetoothSig, Version=3.7.90.327, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\RsCmw_Csharp_drivers_3.7.xx4\RsCmwBluetoothSig_3.7.90.0327\Release_x86\RsCmwBluetoothSig.dll</HintPath>
+    </Reference>
+    <Reference Include="RsCmwGprfGen, Version=3.7.50.47, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\cmw100calibrationexe\RsCmw_Csharp_drivers_3.7.xx4\RsCmwGprfGen_3.7.50.0047\Release_x86\RsCmwGprfGen.dll</HintPath>
+    </Reference>
+    <Reference Include="RsCmwGprfMeas, Version=3.7.30.47, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\cmw100calibrationexe\RsCmw_Csharp_drivers_3.7.xx4\RsCmwGprfMeas_3.7.30.0047\Release_x86\RsCmwGprfMeas.dll</HintPath>
+    </Reference>
+    <Reference Include="RsCmwWlanMeas, Version=3.7.70.238, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\RsCmw_Csharp_drivers_3.7.xx4\RsCmwWlanMeas_3.7.70.0238\Release_x86\RsCmwWlanMeas.dll</HintPath>
+    </Reference>
+    <Reference Include="RsCmwWlanSig, Version=3.7.70.295, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\RsCmw_Csharp_drivers_3.7.xx4\RsCmwWlanSig_3.7.70.0295\Release_x86\RsCmwWlanSig.dll</HintPath>
+    </Reference>
+    <Reference Include="RsInstrument, Version=1.3.0.34, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\cmw100calibrationexe\RsCmw_Csharp_drivers_3.7.xx4\RsInstrument_1.3.0.34\x86_Release\RsInstrument.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form2.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form2.Designer.cs">
+      <DependentUpon>Form2.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form3.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form3.Designer.cs">
+      <DependentUpon>Form3.cs</DependentUpon>
+    </Compile>
+    <Compile Include="mylib\CANTester.cs" />
+    <Compile Include="mylib\ch341_USBIOXdll.cs" />
+    <Compile Include="mylib\chroma19701.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\chuanxincan.cs" />
+    <Compile Include="mylib\cmw100gps.cs" />
+    <Compile Include="mylib\cmw100_bluetooth.cs" />
+    <Compile Include="mylib\cmw100_SpectrumAnalyzersNonSCPI.cs" />
+    <Compile Include="mylib\cmw100_SpectrumAnalyzers.cs" />
+    <Compile Include="mylib\comlineNRTS.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\comlineforingo_ledsys.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\crc.cs" />
+    <Compile Include="mylib\DSA800E.cs" />
+    <Compile Include="mylib\ch341_spi_iic.cs" />
+    <Compile Include="mylib\tcpiptest.cs" />
+    <Compile Include="mylib\Voltage_acquisition .cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\smartFreqSpec.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\HMS3000_Instruments.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\ComProc.cs" />
+    <Compile Include="mylib\DM3058.cs" />
+    <Compile Include="mylib\ECAN.cs" />
+    <Compile Include="mylib\festoolRFID.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\GPD_x303.cs" />
+    <Compile Include="mylib\led_assy.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\led_color_self.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\NHR1300.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\piprun.cs" />
+    <Compile Include="mylib\PortOperator.cs" />
+    <Compile Include="mylib\PortUlitity.cs" />
+    <Compile Include="mylib\Relay_my.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\rfreader.cs" />
+    <Compile Include="mylib\sevy_relay.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\GPD3033.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\TDM1501_50.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\comline.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\USB2_IIC_SPI.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\vc8145cmeter.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\TDM9001_2A.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\testcase.cs" />
+    <Compile Include="mylib\TMD1501_50.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\TRM1201.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="mylib\VISA32.cs" />
+    <Compile Include="parameterset.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="parameterset.Designer.cs">
+      <DependentUpon>parameterset.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Form1.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form2.resx">
+      <DependentUpon>Form2.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form3.resx">
+      <DependentUpon>Form3.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="parameterset.resx">
+      <DependentUpon>parameterset.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="AxReportProj1">
+      <Guid>{E8C63B19-3CCB-4587-B87D-EEB965B1E994}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>aximp</WrapperTool>
+      <Isolated>False</Isolated>
+    </COMReference>
+    <COMReference Include="ReportProj1">
+      <Guid>{E8C63B19-3CCB-4587-B87D-EEB965B1E994}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="stdole">
+      <Guid>{00020430-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>2</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\171333_7sVw_1866808.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Image1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\red.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\green.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gif.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\243502d0550542f1a11df9765699376f.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\2.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gg.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1508382587648_934_1508382611328.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\qq.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\e.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="bitbug_favicon %281%29.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 和 x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

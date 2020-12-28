@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29509.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RsInstrument_Hello_World_Example", "RsInstrument_Hello_World_Example\RsInstrument_Hello_World_Example.csproj", "{3A64B48E-844B-4B61-8552-DC58DB9DFA37}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RsInstrument_RTB2000_Example", "RsInstrument_RTB2000_Example\RsInstrument_RTB2000_Example.csproj", "{E83A59F1-A660-4B04-85A9-CB72D63722E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RsInstrument_RTO2000_Example", "RsInstrument_RTO2000_Example\RsInstrument_RTO2000_Example.csproj", "{8B37AE62-D186-48D0-9085-2DB50FCDAB10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RsInstrument_RTO2000_Synchronization_Example", "RsInstrument_RTO2000_Synchronization_Example\RsInstrument_RTO2000_Synchronization_Example.csproj", "{0EC9D9B5-D0E4-4FA5-81D3-DA435053EA4B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RsInstrument_RTO2000_SrqEvent_Example", "RsInstrument_RTO2000_SrqEvent_Example\RsInstrument_RTO2000_SrqEvent_Example.csproj", "{93F0F7BA-9401-40F7-BA87-C20616767BD3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RsInstrument_FSW_Example", "RsInstrument_FSW_Example\RsInstrument_FSW_Example.csproj", "{5157BB0A-14CD-4E51-9F5E-F2390CADA5F3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3A64B48E-844B-4B61-8552-DC58DB9DFA37}.Debug|x64.ActiveCfg = Debug|x64
+		{3A64B48E-844B-4B61-8552-DC58DB9DFA37}.Debug|x64.Build.0 = Debug|x64
+		{3A64B48E-844B-4B61-8552-DC58DB9DFA37}.Release|x64.ActiveCfg = Release|x64
+		{3A64B48E-844B-4B61-8552-DC58DB9DFA37}.Release|x64.Build.0 = Release|x64
+		{E83A59F1-A660-4B04-85A9-CB72D63722E7}.Debug|x64.ActiveCfg = Debug|x64
+		{E83A59F1-A660-4B04-85A9-CB72D63722E7}.Debug|x64.Build.0 = Debug|x64
+		{E83A59F1-A660-4B04-85A9-CB72D63722E7}.Release|x64.ActiveCfg = Release|x64
+		{E83A59F1-A660-4B04-85A9-CB72D63722E7}.Release|x64.Build.0 = Release|x64
+		{8B37AE62-D186-48D0-9085-2DB50FCDAB10}.Debug|x64.ActiveCfg = Debug|x64
+		{8B37AE62-D186-48D0-9085-2DB50FCDAB10}.Debug|x64.Build.0 = Debug|x64
+		{8B37AE62-D186-48D0-9085-2DB50FCDAB10}.Release|x64.ActiveCfg = Release|x64
+		{8B37AE62-D186-48D0-9085-2DB50FCDAB10}.Release|x64.Build.0 = Release|x64
+		{0EC9D9B5-D0E4-4FA5-81D3-DA435053EA4B}.Debug|x64.ActiveCfg = Debug|x64
+		{0EC9D9B5-D0E4-4FA5-81D3-DA435053EA4B}.Debug|x64.Build.0 = Debug|x64
+		{0EC9D9B5-D0E4-4FA5-81D3-DA435053EA4B}.Release|x64.ActiveCfg = Release|x64
+		{0EC9D9B5-D0E4-4FA5-81D3-DA435053EA4B}.Release|x64.Build.0 = Release|x64
+		{93F0F7BA-9401-40F7-BA87-C20616767BD3}.Debug|x64.ActiveCfg = Debug|x64
+		{93F0F7BA-9401-40F7-BA87-C20616767BD3}.Debug|x64.Build.0 = Debug|x64
+		{93F0F7BA-9401-40F7-BA87-C20616767BD3}.Release|x64.ActiveCfg = Release|x64
+		{93F0F7BA-9401-40F7-BA87-C20616767BD3}.Release|x64.Build.0 = Release|x64
+		{5157BB0A-14CD-4E51-9F5E-F2390CADA5F3}.Debug|x64.ActiveCfg = Debug|x64
+		{5157BB0A-14CD-4E51-9F5E-F2390CADA5F3}.Debug|x64.Build.0 = Debug|x64
+		{5157BB0A-14CD-4E51-9F5E-F2390CADA5F3}.Release|x64.ActiveCfg = Release|x64
+		{5157BB0A-14CD-4E51-9F5E-F2390CADA5F3}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6A19581E-30BC-44D7-8A94-0407EC742C1B}
+	EndGlobalSection
+EndGlobal
