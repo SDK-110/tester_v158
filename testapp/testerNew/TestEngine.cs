@@ -74,6 +74,7 @@ namespace test_antdui
             _currentIndex = -1;
             _debugMode = DebugMode.Normal;
             _targetRow = -1;
+            _pauseTcs = null;
             foreach (var item in _testItems)
             {
                 item.Reset();
@@ -142,7 +143,7 @@ namespace test_antdui
                             if (_debugMode == DebugMode.RunToMode)
                                 _debugMode = DebugMode.StepMode;
 
-                            _pauseTcs = new TaskCompletionSource<bool>();
+                            _pauseTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                             OnDebugPaused(i, item);
                             OnLogMessage($"[调试] 已暂停在 [{item.Id}] {item.Name}");
                             await _pauseTcs.Task;
@@ -193,6 +194,7 @@ namespace test_antdui
                 // 调试模式复位
                 _debugMode = DebugMode.Normal;
                 _targetRow = -1;
+                _pauseTcs = null;
                 _cts?.Dispose();
                 _cts = null;
             }
@@ -287,6 +289,7 @@ namespace test_antdui
         public void Cancel()
         {
             _cts?.Cancel();
+            _pauseTcs?.TrySetResult(false);
         }
 
         public async Task<bool> RunInitAsync()
