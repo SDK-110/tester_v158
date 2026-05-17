@@ -127,6 +127,28 @@ namespace test_antdui
                     
                     OnLogMessage($"[{item.Id}] {item.Name} = {displayValue} (实测:{item.MeasuredValue}, 限值:{item.LowLimit}~{item.HighLimit}, {item.Duration}ms)");
                     TestItemCompleted?.Invoke(this, new TestEngineEventArgs(item, i, _testItems.Count));
+                    // 调试暂停检查
+                    if (!_cts.Token.IsCancellationRequested && _debugMode != DebugMode.Normal)
+                    {
+                        bool shouldPause = false;
+                        if (_debugMode == DebugMode.StepMode)
+                            shouldPause = true;
+                        else if (_debugMode == DebugMode.RunToMode && i >= _targetRow)
+                            shouldPause = true;
+
+                        if (shouldPause)
+                        {
+                            // RunTo 到达目标后自动切换为 StepMode
+                            if (_debugMode == DebugMode.RunToMode)
+                                _debugMode = DebugMode.StepMode;
+
+                            _pauseTcs = new TaskCompletionSource<bool>();
+                            OnDebugPaused(i, item);
+                            OnLogMessage($"[调试] 已暂停在 [{item.Id}] {item.Name}");
+                            await _pauseTcs.Task;
+                            OnLogMessage($"[调试] 继续执行...");
+                        }
+                    }
                     if (!itemPass && i != int.Parse(item.Jumper_Num) && jump_cout-->0) {
                         
                         i = int.Parse(item.Jumper_Num)-2; continue; 
@@ -168,6 +190,9 @@ namespace test_antdui
             finally
             {
                 _isRunning = false;
+                // 调试模式复位
+                _debugMode = DebugMode.Normal;
+                _targetRow = -1;
                 _cts?.Dispose();
                 _cts = null;
             }
