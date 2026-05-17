@@ -2,6 +2,9 @@ using AntdUI;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using Label = System.Windows.Forms.Label;
+using Panel = System.Windows.Forms.Panel;
+using Message = System.Windows.Forms.Message;
 
 namespace test_antdui
 {
@@ -78,8 +81,8 @@ namespace test_antdui
             UpdateUIState();
 
             // 跟随主题
-            AntdUI.Config.IsDarkChanged += OnIsDarkChanged;
-            ApplyTheme();
+            if (AntdUI.Config.IsDark)
+                BackColor = Color.FromArgb(24, 24, 24);
         }
 
         private TestEngine GetEngineFromMainForm()
@@ -95,35 +98,14 @@ namespace test_antdui
                 Dock = DockStyle.Left,
                 Width = 52,
                 Collapsed = true,
-                CollapseWidth = 52,
-                CollapsedWidth = 160,
                 BackColor = Color.FromArgb(0, 21, 41),
                 AutoSize = false
             };
 
-            _menu.Items = new AntdUI.MenuItemCollection
-            {
-                new AntdUI.MenuItem
-                {
-                    Text = "单步执行",
-                    IconSvg = "StepForwardOutlined"
-                },
-                new AntdUI.MenuItem
-                {
-                    Text = "运行到指定行",
-                    IconSvg = "CaretRightOutlined"
-                },
-                new AntdUI.MenuItem
-                {
-                    Text = "继续运行",
-                    IconSvg = "PlayCircleOutlined"
-                },
-                new AntdUI.MenuItem
-                {
-                    Text = "停止",
-                    IconSvg = "CloseCircleOutlined"
-                }
-            };
+            _menu.Items.Add(new AntdUI.MenuItem { Text = "单步执行", IconSvg = "StepForwardOutlined" });
+            _menu.Items.Add(new AntdUI.MenuItem { Text = "运行到指定行", IconSvg = "CaretRightOutlined" });
+            _menu.Items.Add(new AntdUI.MenuItem { Text = "继续运行", IconSvg = "PlayCircleOutlined" });
+            _menu.Items.Add(new AntdUI.MenuItem { Text = "停止", IconSvg = "CloseCircleOutlined" });
 
             _menu.SelectChanged += Menu_SelectChanged;
             _menu.MouseEnter += (s, e) => { _menu.Collapsed = false; _menu.Width = 160; };
@@ -202,8 +184,6 @@ namespace test_antdui
                 Location = new Point(32, lblProgress.Bottom + 8),
                 Width = _contentPanel.Width - 80,
                 Value = 0,
-                Shape = AntdUI.TShape.Round,
-                ShowText = true,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right
             };
             _contentPanel.Controls.Add(_progress);
@@ -422,13 +402,6 @@ namespace test_antdui
         private void OnMainFormLocationChanged(object sender, EventArgs e) => AdjustPosition();
         private void OnMainFormSizeChanged(object sender, EventArgs e) => AdjustPosition();
 
-        private void OnIsDarkChanged(object sender, EventArgs e) => ApplyTheme();
-
-        private void ApplyTheme()
-        {
-            BackColor = AntdUI.Config.IsDark ? Color.FromArgb(24, 24, 24) : Color.FromArgb(240, 240, 240);
-        }
-
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             if (_engine != null)
@@ -438,7 +411,6 @@ namespace test_antdui
                 _mainForm.LocationChanged -= OnMainFormLocationChanged;
                 _mainForm.SizeChanged -= OnMainFormSizeChanged;
             }
-            AntdUI.Config.IsDarkChanged -= OnIsDarkChanged;
             _instance = null;
             base.OnFormClosed(e);
         }

@@ -460,7 +460,7 @@ namespace test_antdui
         {
             if (_project == null) return;
 
-            int rowHeight = _table.RowHeight > 0 ? _table.RowHeight : 36;
+            int rowHeight = (_table.RowHeight ?? 0) > 0 ? _table.RowHeight.Value : 36;
             int headerHeight = 32;
             int clickedY = e.Y - headerHeight;
             if (clickedY < 0) return;
