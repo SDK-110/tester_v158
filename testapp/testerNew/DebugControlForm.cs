@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace test_antdui
 {
-    public partial class DebugControlForm : AntdUI.Window
+    public class DebugControlForm : AntdUI.Window
     {
         private MainForm _mainForm;
         private TestEngine _engine;
@@ -35,11 +35,25 @@ namespace test_antdui
         private static DebugControlForm _instance;
         public static DebugControlForm Instance => _instance;
 
+        public static DebugControlForm GetInstance(MainForm mainForm)
+        {
+            if (_instance == null || _instance.IsDisposed)
+                _instance = new DebugControlForm(mainForm);
+            else
+                _instance.BringToFront();
+            return _instance;
+        }
+
         public DebugControlForm(MainForm mainForm)
         {
+            if (_instance != null && !_instance.IsDisposed)
+            {
+                _instance.Close();
+            }
+            _instance = this;
+
             _mainForm = mainForm;
             _engine = GetEngineFromMainForm();
-            _instance = this;
 
             // 窗体设置
             Text = "调试控制";
@@ -55,8 +69,8 @@ namespace test_antdui
                     _mainForm.Right + 10,
                     _mainForm.Top + 50
                 );
-                _mainForm.LocationChanged += (s, e) => AdjustPosition();
-                _mainForm.SizeChanged += (s, e) => AdjustPosition();
+                _mainForm.LocationChanged += OnMainFormLocationChanged;
+                _mainForm.SizeChanged += OnMainFormSizeChanged;
             }
 
             InitializeControls();
@@ -64,9 +78,8 @@ namespace test_antdui
             UpdateUIState();
 
             // 跟随主题
-            AntdUI.Config.IsDarkChanged += (s, e) => { BackColor = Color.FromArgb(24, 24, 24); };
-            if (AntdUI.Config.IsDark)
-                BackColor = Color.FromArgb(24, 24, 24);
+            AntdUI.Config.IsDarkChanged += OnIsDarkChanged;
+            ApplyTheme();
         }
 
         private TestEngine GetEngineFromMainForm()
@@ -142,7 +155,8 @@ namespace test_antdui
             var divider1 = new AntdUI.Divider
             {
                 Location = new Point(16, _lblMode.Bottom + 8),
-                Width = _contentPanel.Width - 48
+                Width = _contentPanel.Width - 48,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right
             };
             _contentPanel.Controls.Add(divider1);
 
@@ -189,7 +203,8 @@ namespace test_antdui
                 Width = _contentPanel.Width - 80,
                 Value = 0,
                 Shape = AntdUI.TShape.Round,
-                ShowText = true
+                ShowText = true,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right
             };
             _contentPanel.Controls.Add(_progress);
 
@@ -197,7 +212,8 @@ namespace test_antdui
             var divider2 = new AntdUI.Divider
             {
                 Location = new Point(16, _progress.Bottom + 12),
-                Width = _contentPanel.Width - 48
+                Width = _contentPanel.Width - 48,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right
             };
             _contentPanel.Controls.Add(divider2);
 
@@ -353,7 +369,7 @@ namespace test_antdui
         public void UpdateUIState()
         {
             bool isRunning = _engine?.IsRunning ?? false;
-            bool isPaused = _engine?.CurrentDebugMode != DebugMode.Normal;
+            bool isPaused = _engine != null && _engine.CurrentDebugMode != DebugMode.Normal;
             bool canStep = isRunning && isPaused;
             bool canStop = isRunning;
 
@@ -403,8 +419,26 @@ namespace test_antdui
             }
         }
 
+        private void OnMainFormLocationChanged(object sender, EventArgs e) => AdjustPosition();
+        private void OnMainFormSizeChanged(object sender, EventArgs e) => AdjustPosition();
+
+        private void OnIsDarkChanged(object sender, EventArgs e) => ApplyTheme();
+
+        private void ApplyTheme()
+        {
+            BackColor = AntdUI.Config.IsDark ? Color.FromArgb(24, 24, 24) : Color.FromArgb(240, 240, 240);
+        }
+
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
+            if (_engine != null)
+                _engine.DebugPaused -= OnEngineDebugPaused;
+            if (_mainForm != null && !_mainForm.IsDisposed)
+            {
+                _mainForm.LocationChanged -= OnMainFormLocationChanged;
+                _mainForm.SizeChanged -= OnMainFormSizeChanged;
+            }
+            AntdUI.Config.IsDarkChanged -= OnIsDarkChanged;
             _instance = null;
             base.OnFormClosed(e);
         }
