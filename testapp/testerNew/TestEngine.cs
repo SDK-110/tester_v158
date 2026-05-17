@@ -20,8 +20,8 @@ namespace test_antdui
         private CancellationTokenSource _cts;
         private bool _isRunning;
         private int _currentIndex = -1;
-        private DebugMode _debugMode = DebugMode.Normal;
-        private int _targetRow = -1;
+        private volatile DebugMode _debugMode = DebugMode.Normal;
+        private volatile int _targetRow = -1;
         private TaskCompletionSource<bool> _pauseTcs;
 
         public event EventHandler<TestEngineEventArgs> TestStarted;
@@ -297,8 +297,8 @@ namespace test_antdui
         /// </summary>
         public void StepNext()
         {
-            _pauseTcs?.TrySetResult(true);
             _debugMode = DebugMode.StepMode;
+            _pauseTcs?.TrySetResult(true);
         }
 
         /// <summary>
