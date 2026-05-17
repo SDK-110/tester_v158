@@ -292,6 +292,41 @@ namespace test_antdui
             _pauseTcs?.TrySetResult(false);
         }
 
+        /// <summary>
+        /// 放行一步，引擎继续保持在 StepMode
+        /// </summary>
+        public void StepNext()
+        {
+            _pauseTcs?.TrySetResult(true);
+            _debugMode = DebugMode.StepMode;
+        }
+
+        /// <summary>
+        /// 设置目标行并放行，引擎会一直运行到目标行后暂停
+        /// 如果目标行已过当前位置，拒绝设置
+        /// </summary>
+        public void RunTo(int targetRow)
+        {
+            if (targetRow <= _currentIndex)
+            {
+                OnLogMessage($"[调试] 目标行 #{targetRow + 1} 已过当前位置 (#{_currentIndex + 1})，无法跳回");
+                return;
+            }
+            _targetRow = targetRow;
+            _debugMode = DebugMode.RunToMode;
+            _pauseTcs?.TrySetResult(true);
+        }
+
+        /// <summary>
+        /// 恢复连续执行模式（Normal），引擎不再暂停
+        /// </summary>
+        public void Continue()
+        {
+            _debugMode = DebugMode.Normal;
+            _targetRow = -1;
+            _pauseTcs?.TrySetResult(true);
+        }
+
         public async Task<bool> RunInitAsync()
         {
             OnLogMessage("执行初始化函数...");
