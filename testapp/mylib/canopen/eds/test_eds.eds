@@ -1,0 +1,147 @@
+; test_eds.eds — Reference DS-401 I/O device for parser testing
+[FileInfo]
+FileName=test_eds.eds
+FileVersion=1
+Description=Reference CANopen I/O Device for testing
+CreationTime=12:00
+[DeviceInfo]
+VendorID=0x00000123
+ProductCode=0x00000045
+RevisionNumber=0x00000001
+BaudRate_500=1
+[MandatoryObjects]
+SupportedObjects=4
+[OptionalObjects]
+SupportedObjects=10
+[ManufacturerObjects]
+SupportedObjects=0
+[Index1000]
+ParameterName=Device Type
+ObjectType=0x07
+DataType=0x07
+AccessType=ro
+[Index1000Sub0]
+ParameterName=Number of entries
+DataType=0x05
+DefaultValue=1
+[Index1000Sub1]
+ParameterName=Device Type
+DataType=0x07
+AccessType=ro
+DefaultValue=0x00000191
+[Index1018]
+ParameterName=Identity Object
+ObjectType=0x07
+DataType=0x00
+[Index1018Sub0]
+ParameterName=Number of entries
+DataType=0x05
+DefaultValue=4
+[Index1018Sub1]
+ParameterName=Vendor ID
+DataType=0x07
+AccessType=ro
+DefaultValue=0x00000123
+[Index60FD]
+ParameterName=Digital Inputs
+ObjectType=0x07
+DataType=0x05
+AccessType=ro
+[Index60FDSub0]
+ParameterName=Number of entries
+DataType=0x05
+DefaultValue=2
+[Index60FDSub1]
+ParameterName=Digital Input 1-8
+DataType=0x05
+AccessType=ro
+[Index60FDSub2]
+ParameterName=Digital Input 9-16
+DataType=0x05
+AccessType=ro
+[Index6200]
+ParameterName=Digital Outputs
+ObjectType=0x07
+DataType=0x05
+AccessType=rw
+[Index6200Sub0]
+ParameterName=Number of entries
+DataType=0x05
+DefaultValue=2
+[Index6200Sub1]
+ParameterName=Digital Output 1-8
+DataType=0x05
+AccessType=rw
+[Index6401]
+ParameterName=Analog Inputs
+ObjectType=0x08
+DataType=0x00
+[Index6401Sub0]
+ParameterName=Number of entries
+DataType=0x05
+DefaultValue=4
+[Index6401Sub1]
+ParameterName=AI 0
+DataType=0x06
+AccessType=ro
+[Index6401Sub2]
+ParameterName=AI 1
+DataType=0x06
+AccessType=ro
+[Index6401Sub3]
+ParameterName=AI 2
+DataType=0x06
+AccessType=ro
+[Index6401Sub4]
+ParameterName=AI 3
+DataType=0x06
+AccessType=ro
+[Index1A00]
+ParameterName=TPDO1 Mapping
+ObjectType=0x08
+[Index1A00Sub0]
+ParameterName=Number of entries
+DataType=0x05
+DefaultValue=1
+[Index1A00Sub1]
+ParameterName=Mapped object 1
+DataType=0x07
+DefaultValue=0x60FD0108
+[Index1A01]
+ParameterName=TPDO2 Mapping
+ObjectType=0x08
+[Index1A01Sub0]
+ParameterName=Number of entries
+DataType=0x05
+DefaultValue=4
+[Index1A01Sub1]
+ParameterName=Mapped object 1
+DataType=0x07
+DefaultValue=0x64010110
+[Index1A01Sub2]
+ParameterName=Mapped object 2
+DataType=0x07
+DefaultValue=0x64010210
+[Index1A01Sub3]
+ParameterName=Mapped object 3
+DataType=0x07
+DefaultValue=0x64010310
+[Index1A01Sub4]
+ParameterName=Mapped object 4
+DataType=0x07
+DefaultValue=0x64010410
+[Index1400]
+ParameterName=TPDO1 Comm Param
+ObjectType=0x08
+[Index1400Sub0]
+ParameterName=Number of entries
+DataType=0x05
+DefaultValue=2
+[Index1400Sub1]
+ParameterName=COB-ID
+DataType=0x07
+DefaultValue=0x00000181
+[Index1400Sub2]
+ParameterName=Transmission Type
+DataType=0x05
+DefaultValue=255
