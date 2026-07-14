@@ -38,7 +38,7 @@ namespace testapp.mylib.canopen
             byte[] data = new byte[8];
             int len = Math.Min(payload?.Length ?? 0, 4);
             byte n = (byte)(4 - len);
-            data[0] = (byte)(0x20 | (n << 2) | 0x01);
+            data[0] = (byte)(0x20 | (n << 2) | 0x03); // CCS=2, n, e=1 (expedited), s=1 (data set)
             data[1] = (byte)(index & 0xFF);
             data[2] = (byte)((index >> 8) & 0xFF);
             data[3] = subIndex;
@@ -48,7 +48,7 @@ namespace testapp.mylib.canopen
         }
 
         public static CanFrame SYNC() =>
-            new CanFrame(CANopenID.SYNC, new byte[] { 0x00 });
+            new CanFrame(CANopenID.SYNC, new byte[0]); // CiA 301: SYNC has no data payload
 
         public override string ToString() =>
             $"COB-ID=0x{CobId:X3} DLC={Dlc} Data={BitConverter.ToString(Data)}";
