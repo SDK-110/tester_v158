@@ -37,7 +37,7 @@ namespace testapp.mylib.canopen
         {
             byte[] data = new byte[8];
             int len = Math.Min(payload?.Length ?? 0, 4);
-            byte n = (byte)(3 - len);
+            byte n = (byte)(4 - len);
             data[0] = (byte)(0x20 | (n << 2) | 0x01);
             data[1] = (byte)(index & 0xFF);
             data[2] = (byte)((index >> 8) & 0xFF);
