@@ -1,11 +1,9 @@
 // mylib/canopen/CanOpenTypes.cs
-using System;
-
 namespace testapp.mylib.canopen
 {
     public enum NMTState : byte
     {
-        Unknown = 0,
+        Unknown = 0xFF,
         Initialising = 0x00,
         Stopped = 0x04,
         Operational = 0x05,
@@ -37,7 +35,7 @@ namespace testapp.mylib.canopen
     {
         NMT       = 0x00,
         SYNC      = 0x01,
-        EMCY      = 0x01,
+        EMCY      = 0x01, /// SYNC=0x01 and EMCY=0x01 share function code; differentiated by node-ID in COB-ID
         TPDO1     = 0x03,
         RPDO1     = 0x04,
         TPDO2     = 0x05,
@@ -65,11 +63,13 @@ namespace testapp.mylib.canopen
         public static uint RPDO3(byte nodeId)    => (uint)(0x400 + nodeId);
         public static uint TPDO4(byte nodeId)    => (uint)(0x480 + nodeId);
         public static uint RPDO4(byte nodeId)    => (uint)(0x500 + nodeId);
-        public static uint SDO_TX(byte nodeId)   => (uint)(0x580 + nodeId);
-        public static uint SDO_RX(byte nodeId)   => (uint)(0x600 + nodeId);
+        public static uint SDOTx(byte nodeId)   => (uint)(0x580 + nodeId);
+        public static uint SDORx(byte nodeId)   => (uint)(0x600 + nodeId);
         public static uint Heartbeat(byte nodeId) => (uint)(0x700 + nodeId);
 
+        /// <summary>Extract the node-ID from a CANopen COB-ID (bits 0-6).</summary>
         public static byte NodeIdFromCOBID(uint cobId) => (byte)(cobId & 0x7F);
+        /// <summary>Extract the function code from a CANopen COB-ID (bits 7-10).</summary>
         public static byte FunctionFromCOBID(uint cobId) => (byte)((cobId >> 7) & 0x0F);
     }
 }
