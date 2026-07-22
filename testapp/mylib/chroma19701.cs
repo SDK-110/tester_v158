@@ -74,6 +74,10 @@ namespace testapp
 
         }
 
+        public byte[] int2bytes(int data) {
+
+            return BitConverter.GetBytes(data);
+        }
         public  byte[] checksum_send(byte[] m)
         {
 

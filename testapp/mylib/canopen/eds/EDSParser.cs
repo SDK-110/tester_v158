@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using IniParser;
 using IniParser.Model;
 
@@ -34,7 +35,8 @@ namespace testapp.mylib.canopen.eds
         public static ObjectDictionary LoadFromString(string edsContent)
         {
             var parser = new FileIniDataParser();
-            using (var reader = new StringReader(edsContent))
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(edsContent)))
+            using (var reader = new StreamReader(stream))
             {
                 var ini = parser.ReadData(reader);
                 return Parse(ini);
@@ -73,12 +75,12 @@ namespace testapp.mylib.canopen.eds
                         od.AddEntry(entry);
                     }
                     var subEntry = entry.GetOrCreateSubEntry(sub);
-                    subEntry.Name = section["ParameterName"];
-                    subEntry.DataType = (byte)ParseHex(section["DataType"]);
-                    subEntry.AccessType = section["AccessType"];
-                    subEntry.DefaultValue = section["DefaultValue"];
-                    subEntry.LowLimit = section["LowLimit"];
-                    subEntry.HighLimit = section["HighLimit"];
+                    subEntry.Name = section.Keys["ParameterName"];
+                    subEntry.DataType = (byte)ParseHex(section.Keys["DataType"]);
+                    subEntry.AccessType = section.Keys["AccessType"];
+                    subEntry.DefaultValue = section.Keys["DefaultValue"];
+                    subEntry.LowLimit = section.Keys["LowLimit"];
+                    subEntry.HighLimit = section.Keys["HighLimit"];
                 }
                 else
                 {
@@ -89,12 +91,12 @@ namespace testapp.mylib.canopen.eds
                         entry = new ODEntry { Index = idx };
                         od.AddEntry(entry);
                     }
-                    entry.Name = section["ParameterName"];
-                    entry.ObjectType = (byte)ParseHex(section["ObjectType"]);
-                    entry.DataType = (byte)ParseHex(section["DataType"]);
-                    entry.AccessType = section["AccessType"];
-                    entry.DefaultValue = section["DefaultValue"];
-                    string pdoMap = section["PDOMapping"];
+                    entry.Name = section.Keys["ParameterName"];
+                    entry.ObjectType = (byte)ParseHex(section.Keys["ObjectType"]);
+                    entry.DataType = (byte)ParseHex(section.Keys["DataType"]);
+                    entry.AccessType = section.Keys["AccessType"];
+                    entry.DefaultValue = section.Keys["DefaultValue"];
+                    string pdoMap = section.Keys["PDOMapping"];
                     entry.IsPDOMappable = pdoMap == "1";
                 }
             }

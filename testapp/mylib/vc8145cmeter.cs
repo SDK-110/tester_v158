@@ -21,9 +21,9 @@ namespace testapp
             base.DataBits = 8;
             base.Handshake = Handshake.None;
             base.RtsEnable = true;
-            base.ReadTimeout = 300;
             // base.DataReceived += Relay_aputus_DataReceived;
-
+            base.ReadTimeout = 2000;
+            base.WriteTimeout = 2000;
             base.Open();
             //try
             //{

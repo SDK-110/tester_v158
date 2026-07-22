@@ -13,6 +13,8 @@ namespace test_antdui
         private MainForm _mainForm;
         private TestEngine _engine;
 
+        // 标题栏
+        private AntdUI.PageHeader _windowBar;
         // 左侧菜单
         private AntdUI.Menu _menu;
         // 右侧面板
@@ -22,17 +24,17 @@ namespace test_antdui
         private Label _lblMode;
         private Label _lblStatus;
         private Label _lblCurrentItem;
-        private Label _lblTargetItem;
         private AntdUI.Progress _progress;
+
+        // 目标行输入
+        private Label _lblTargetLabel;
+        private NumericUpDown _numTargetRow;
+        private int _targetRow = -1;
 
         // 按钮
         private AntdUI.Button _btnStepNext;
         private AntdUI.Button _btnContinue;
         private AntdUI.Button _btnStop;
-
-        // 目标行
-        private int _targetRow = -1;
-        private string _targetName = "";
 
         // 单例
         private static DebugControlForm _instance;
@@ -62,19 +64,10 @@ namespace test_antdui
             Text = "调试控制";
             Size = new Size(480, 560);
             MinimumSize = new Size(420, 400);
-            StartPosition = FormStartPosition.Manual;
-            TopMost = false;
+            StartPosition = FormStartPosition.CenterScreen;
+            TopMost = true;
 
-            // 默认停靠在主窗体右侧
-            if (_mainForm != null)
-            {
-                Location = new Point(
-                    _mainForm.Right + 10,
-                    _mainForm.Top + 50
-                );
-                _mainForm.LocationChanged += OnMainFormLocationChanged;
-                _mainForm.SizeChanged += OnMainFormSizeChanged;
-            }
+            // 默认显示在屏幕中央，不跟随主窗体
 
             InitializeControls();
             SubscribeEngineEvents();
@@ -92,6 +85,16 @@ namespace test_antdui
 
         private void InitializeControls()
         {
+            // ═══ 标题栏 ═══════════════════════════════════
+            _windowBar = new AntdUI.PageHeader
+            {
+                Dock = DockStyle.Top,
+                Text = "调试控制",
+                ShowButton = true,
+                Height = 32
+            };
+            Controls.Add(_windowBar);
+
             // ═══ 左侧菜单 ════════════════════════════════
             _menu = new AntdUI.Menu
             {
@@ -166,17 +169,39 @@ namespace test_antdui
             };
             _contentPanel.Controls.Add(_lblCurrentItem);
 
-            _lblTargetItem = new Label
+            // 目标行输入（NumericUpDown 直接输入行号）
+            _lblTargetLabel = new Label
             {
-                Text = "目标行：---",
-                Location = new Point(32, _lblCurrentItem.Bottom + 6),
+                Text = "目标行：",
+                Location = new Point(32, _lblCurrentItem.Bottom + 8),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(200, 200, 200)
             };
-            _contentPanel.Controls.Add(_lblTargetItem);
+            _contentPanel.Controls.Add(_lblTargetLabel);
+
+            _numTargetRow = new NumericUpDown
+            {
+                Location = new Point(92, _lblCurrentItem.Bottom + 5),
+                Width = 70,
+                Minimum = 1,
+                Maximum = 9999,
+                Value = 1,
+                TextAlign = HorizontalAlignment.Center
+            };
+            _contentPanel.Controls.Add(_numTargetRow);
+
+            var lblTargetHint = new Label
+            {
+                Text = "(输入行号后点菜单\"运行到指定行\")",
+                Location = new Point(168, _lblCurrentItem.Bottom + 8),
+                AutoSize = true,
+                ForeColor = Color.FromArgb(140, 140, 140),
+                Font = new Font("Microsoft YaHei UI", 9)
+            };
+            _contentPanel.Controls.Add(lblTargetHint);
 
             // 进度条
-            var lblProgress = new Label { Text = "进度", Font = new Font("Microsoft YaHei UI", 10, FontStyle.Bold), Location = new Point(16, _lblTargetItem.Bottom + 16), AutoSize = true };
+            var lblProgress = new Label { Text = "进度", Font = new Font("Microsoft YaHei UI", 10, FontStyle.Bold), Location = new Point(16, _lblTargetLabel.Bottom + 16), AutoSize = true };
             _contentPanel.Controls.Add(lblProgress);
 
             _progress = new AntdUI.Progress
@@ -264,9 +289,9 @@ namespace test_antdui
             switch (cmd)
             {
                 case "单步执行":
-                    if (_engine == null || !_engine.IsRunning)
+                    if (_engine == null)
                     {
-                        AntdUI.Message.info(this, "请先在主窗体开始测试");
+                        AntdUI.Message.info(this, "引擎未初始化");
                         return;
                     }
                     _engine.StepNext();
@@ -274,14 +299,21 @@ namespace test_antdui
                     break;
 
                 case "运行到指定行":
-                    if (_engine == null || !_engine.IsRunning)
+                    if (_engine == null)
                     {
-                        AntdUI.Message.info(this, "请先在主窗体开始测试");
+                        AntdUI.Message.info(this, "引擎未初始化");
                         return;
                     }
+                    // 从输入框获取目标行
+                    ApplyTargetRow();
                     if (_targetRow < 0)
                     {
-                        AntdUI.Message.warn(this, "请先在主表格中双击选择目标行");
+                        AntdUI.Message.warn(this, "请在输入框中输入有效的目标行号");
+                        return;
+                    }
+                    if (_engine.IsRunning && _targetRow <= _engine.CurrentIndex)
+                    {
+                        AntdUI.Message.warn(this, $"目标行 #{_targetRow + 1} 已过当前位置 (#{_engine.CurrentIndex + 1})");
                         return;
                     }
                     _engine.RunTo(_targetRow);
@@ -320,9 +352,6 @@ namespace test_antdui
             _lblStatus.Text = $"状态：已暂停 — {e.CurrentItem?.Name}";
             _lblCurrentItem.Text = $"当前项：#{e.CurrentIndex + 1} - {e.CurrentItem?.Name}";
 
-            if (_targetRow >= 0)
-                _lblTargetItem.Text = $"目标行：#{_targetRow + 1} - {_targetName}";
-
             if (_mainForm != null)
             {
                 int total = _engine?.TotalItems ?? 1;
@@ -336,8 +365,12 @@ namespace test_antdui
         public void SetTargetRow(int rowIndex, TestItem item)
         {
             _targetRow = rowIndex;
-            _targetName = item?.Name ?? "";
-            _lblTargetItem.Text = $"目标行：#{rowIndex + 1} - {_targetName}";
+            _numTargetRow.Value = Math.Max(1, rowIndex + 1);
+        }
+
+        private void ApplyTargetRow()
+        {
+            _targetRow = (int)_numTargetRow.Value - 1;
         }
 
         public void UpdateTestProgress(int current, int total)
@@ -365,8 +398,7 @@ namespace test_antdui
             _lblCurrentItem.Text = "当前项：---";
             _progress.Value = 0;
             _targetRow = -1;
-            _targetName = "";
-            _lblTargetItem.Text = "目标行：---";
+            _numTargetRow.Value = 1;
             UpdateUIState();
         }
 
@@ -388,29 +420,10 @@ namespace test_antdui
             UpdateUIState();
         }
 
-        private void AdjustPosition()
-        {
-            if (_mainForm != null && !_mainForm.IsDisposed)
-            {
-                Location = new Point(
-                    _mainForm.Right + 10,
-                    Math.Max(0, _mainForm.Top + 50)
-                );
-            }
-        }
-
-        private void OnMainFormLocationChanged(object sender, EventArgs e) => AdjustPosition();
-        private void OnMainFormSizeChanged(object sender, EventArgs e) => AdjustPosition();
-
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             if (_engine != null)
                 _engine.DebugPaused -= OnEngineDebugPaused;
-            if (_mainForm != null && !_mainForm.IsDisposed)
-            {
-                _mainForm.LocationChanged -= OnMainFormLocationChanged;
-                _mainForm.SizeChanged -= OnMainFormSizeChanged;
-            }
             _instance = null;
             base.OnFormClosed(e);
         }
@@ -434,5 +447,6 @@ namespace test_antdui
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
     }
 }

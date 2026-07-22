@@ -1,1533 +1,341 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{65DF2BF1-EBD6-4569-9A10-FA9EEA4C2890}</ProjectGuid>
     <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>testapp</RootNamespace>
     <AssemblyName>testapp</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <TargetFrameworkProfile />
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>
-    </DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>0</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>
-    </DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationIcon>bitbug_favicon %281%29.ico</ApplicationIcon>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <WarningLevel>0</WarningLevel>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject>testapp.Program</StartupObject>
-  </PropertyGroup>
-  <PropertyGroup />
-  <PropertyGroup>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ApplicationIcon>bitbug_favicon (1).ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <StartupObject>testapp.Program</StartupObject>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+    <NoWarn>CS0168;CS0219;CS0414;CS0649;CS0162;CS8601;CS8602;CS8603;CS8625;CA1416;CA1418</NoWarn>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
+
+  <!-- Exclude old/duplicate directories from compilation -->
   <ItemGroup>
-    <Reference Include="AForge, Version=2.2.5.0, Culture=neutral, PublicKeyToken=c1db6ff4eaa06aeb, processorArchitecture=MSIL">
+    <Compile Remove="lib\**" />
+    <Compile Remove="blue_test\**" />
+    <Compile Remove="_compare_files.py" />
+    <!-- Exclude files not in original csproj that cause duplicate definitions -->
+    <Compile Remove="mylib\SRND-CM-12DI_INPUT.cs" />
+    <Compile Remove="mylib\id_pgn.cs" />
+    <Compile Remove="mylib\USB2185DAQ\USB2185_64.cs" />
+    <Compile Remove="mylib\Relay_aputus.cs" />
+    <Compile Remove="mylib\ac_power_aps5000.cs" />
+    <Compile Remove="mylib\circularlist.cs" />
+    <Compile Remove="mylib\hp_2016_TensionMeter.cs" />
+    <Compile Remove="mylib\RH7850B2_cable.cs" />
+    <Compile Remove="mylib\sqlrdevice4bluetest.cs" />
+    <!-- Exclude files that use WinRT XAML (not available in WinForms) -->
+    <!-- Note: debug_form files were not in original csproj but are referenced by other Multi_Form files -->
+    <!-- Exclude winio (uses native WinIO driver, may not be needed) -->
+    <Compile Remove="winio\Gpio.cs" />
+    <Compile Remove="winio\OpenLibSys.cs" />
+    <Compile Remove="winio\Utils.cs" />
+    <!-- Exclude old Properties files not in original csproj -->
+    <Compile Remove="Properties\viewloader.cs" />
+    <Compile Remove="Properties\viewloader_setting.cs" />
+    <!-- Exclude other files not in original csproj -->
+    <Compile Remove="useful\access.cs" />
+  </ItemGroup>
+
+  <!-- ============ NuGet Package References ============ -->
+  <ItemGroup>
+    <!-- UI Libraries -->
+    <PackageReference Include="AntdUI" Version="2.4.3" />
+    <PackageReference Include="AntdUI.EmojiFluentFlat" Version="2025.1.31" />
+    <PackageReference Include="ReaLTaiizor" Version="3.8.2.1" />
+    <PackageReference Include="DockPanelSuite" Version="3.1.0" />
+    <PackageReference Include="DockPanelSuite.ThemeVS2015" Version="3.1.0" />
+    <PackageReference Include="unvell.ReoGrid.dll" Version="3.3.1" />
+
+    <!-- Communication Libraries -->
+    <PackageReference Include="HslCommunication" Version="12.9.1" />
+    <PackageReference Include="IoTClient" Version="1.0.40" />
+    <PackageReference Include="NModbus" Version="3.0.83" />
+    <PackageReference Include="NModbus.Serial" Version="3.0.83" />
+
+    <!-- Database -->
+    <PackageReference Include="EntityFramework" Version="6.5.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
+    <PackageReference Include="MySql.Data" Version="8.4.0" />
+
+    <!-- Excel -->
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+    <PackageReference Include="MiniExcel" Version="1.34.2" />
+
+    <!-- Audio -->
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio.Asio" Version="2.2.1" />
+    <PackageReference Include="NAudio.Core" Version="2.2.1" />
+    <PackageReference Include="NAudio.Midi" Version="2.2.1" />
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+    <PackageReference Include="NAudio.WinForms" Version="2.2.1" />
+    <PackageReference Include="NAudio.WinMM" Version="2.2.1" />
+
+    <!-- Serialization -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
+    <!-- Logging -->
+    <PackageReference Include="log4net" Version="3.0.3" />
+    <PackageReference Include="Serilog" Version="4.0.2" />
+
+    <!-- Imaging -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
+    <PackageReference Include="SixLabors.Fonts" Version="2.0.3" />
+
+    <!-- Math -->
+    <PackageReference Include="MathNet.Numerics.Signed" Version="5.0.0" />
+
+    <!-- Security -->
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+
+    <!-- Networking -->
+    <PackageReference Include="RestSharp" Version="112.1.0" />
+    <PackageReference Include="SSH.NET" Version="2025.1.0" />
+
+    <!-- Compression -->
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+    <PackageReference Include="DotNetZip" Version="1.16.0" />
+
+    <!-- Configuration -->
+    <PackageReference Include="ini-parser" Version="2.5.2" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.1" />
+
+    <!-- System IO & Management -->
+    <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="System.CodeDom" Version="8.0.0" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <PackageReference Include="System.Data.OleDb" Version="8.0.0" />
+    <PackageReference Include="HIC.System.Windows.Forms.DataVisualization" Version="1.0.1" />
+
+    <!-- Other Utilities -->
+    <PackageReference Include="Enums.NET" Version="4.0.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.28.0" />
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
+    <PackageReference Include="FftSharp" Version="2.2.0" />
+    <PackageReference Include="DbcParserLib" Version="1.7.0" />
+    <PackageReference Include="ZipStorer" Version="3.8.0" />
+
+    <!-- Festool SDK -->
+    <PackageReference Include="Festool.Sdk.ApplicationLayer.FmpProtobuf" Version="2.0.2" />
+    <PackageReference Include="Festool.Sdk.LinkLayer.Fmp" Version="2.0.0" />
+    <PackageReference Include="Festool.Sdk.PhysicalLayer.Rs232" Version="2.0.1" />
+    <PackageReference Include="Festool.Sdk.Shared" Version="2.0.1" />
+  </ItemGroup>
+
+  <!-- ============ DLL References: R&S Drivers (netstandard2.1, compatible with .NET 8) ============ -->
+  <ItemGroup>
+    <Reference Include="RsCmwBase">
+      <HintPath>..\packages\RsCmwBase.3.7.90.138\lib\netstandard2.1\RsCmwBase.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwBluetoothMeas">
+      <HintPath>..\packages\RsCmwBluetoothMeas.3.8.20.160\lib\netstandard2.1\RsCmwBluetoothMeas.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwBluetoothSig">
+      <HintPath>..\packages\RsCmwBluetoothSig.3.8.20.349\lib\netstandard2.1\RsCmwBluetoothSig.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwGprfGen">
+      <HintPath>..\packages\RsCmwGprfGen.3.7.50.115\lib\netstandard2.1\RsCmwGprfGen.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwGprfMeas">
+      <HintPath>..\packages\RsCmwGprfMeas.3.7.30.69\lib\netstandard2.1\RsCmwGprfMeas.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwLteMeas">
+      <HintPath>..\packages\RsCmwLteMeas.3.7.62.181\lib\netstandard2.1\RsCmwLteMeas.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwLteSig">
+      <HintPath>..\packages\RsCmwLteSig.3.7.62.60\lib\netstandard2.1\RsCmwLteSig.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwWlanMeas">
+      <HintPath>..\packages\RsCmwWlanMeas.3.8.20.279\lib\netstandard2.1\RsCmwWlanMeas.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwWlanSig">
+      <HintPath>..\packages\RsCmwWlanSig.3.8.20.335\lib\netstandard2.1\RsCmwWlanSig.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsCmwEvdoSig">
+      <HintPath>..\RsCmw_Csharp_drivers_3.7.xx4\RsCmwEvdoSig_3.8.10.0012\Release_x86\RsCmwEvdoSig.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="RsInstrument">
+      <HintPath>..\RsCmw_Csharp_drivers_3.7.xx4\RsInstrument_1.3.0.34\x86_Release\RsInstrument.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============ DLL References: AForge (temporarily kept as DLL ref, .NET Framework only) ============ -->
+  <ItemGroup>
+    <Reference Include="AForge">
       <HintPath>..\packages\AForge.2.2.5\lib\AForge.dll</HintPath>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="AForge.Controls, Version=2.2.5.0, Culture=neutral, PublicKeyToken=a8ac264d1dc6b9d9, processorArchitecture=MSIL">
+    <Reference Include="AForge.Controls">
       <HintPath>..\packages\AForge.Controls.2.2.5\lib\AForge.Controls.dll</HintPath>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="AForge.Imaging, Version=2.2.5.0, Culture=neutral, PublicKeyToken=ba8ddea9676ca48b, processorArchitecture=MSIL">
+    <Reference Include="AForge.Imaging">
       <HintPath>..\packages\AForge.Imaging.2.2.5\lib\AForge.Imaging.dll</HintPath>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="AForge.Math, Version=2.2.5.0, Culture=neutral, PublicKeyToken=abba2e25397ee8c9, processorArchitecture=MSIL">
+    <Reference Include="AForge.Math">
       <HintPath>..\packages\AForge.Math.2.2.5\lib\AForge.Math.dll</HintPath>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="AForge.Video, Version=2.2.5.0, Culture=neutral, PublicKeyToken=cbfb6e07d173c401, processorArchitecture=MSIL">
+    <Reference Include="AForge.Video">
       <HintPath>..\packages\AForge.Video.2.2.5\lib\AForge.Video.dll</HintPath>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="AForge.Video.DirectShow, Version=2.2.5.0, Culture=neutral, PublicKeyToken=61ea4348d43881b7, processorArchitecture=MSIL">
+    <Reference Include="AForge.Video.DirectShow">
       <HintPath>..\packages\AForge.Video.DirectShow.2.2.5\lib\AForge.Video.DirectShow.dll</HintPath>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="AntdUI, Version=2.3.14.0, Culture=neutral, PublicKeyToken=0e24e5118ea3d6af, processorArchitecture=MSIL">
-      <HintPath>..\packages\AntdUI.2.3.14\lib\net48\AntdUI.dll</HintPath>
+  </ItemGroup>
+
+  <!-- ============ DLL References: MetroModernUI (temporarily kept as DLL ref) ============ -->
+  <ItemGroup>
+    <Reference Include="MetroFramework">
+      <HintPath>..\packages\MetroModernUI.1.4.0.0\lib\net\MetroFramework.dll</HintPath>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="AntdUI.EmojiFluentFlat, Version=2025.1.31.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\AntdUI.EmojiFluentFlat.2025.1.31\lib\net48\AntdUI.EmojiFluentFlat.dll</HintPath>
+    <Reference Include="MetroFramework.Design">
+      <HintPath>..\packages\MetroModernUI.1.4.0.0\lib\net\MetroFramework.Design.dll</HintPath>
+      <Private>true</Private>
     </Reference>
-    <Reference Include="BouncyCastle.Cryptography, Version=2.0.0.0, Culture=neutral, PublicKeyToken=072edcf4a5328938, processorArchitecture=MSIL">
-      <HintPath>..\packages\BouncyCastle.Cryptography.2.2.1\lib\net461\BouncyCastle.Cryptography.dll</HintPath>
+    <Reference Include="MetroFramework.Fonts">
+      <HintPath>..\packages\MetroModernUI.1.4.0.0\lib\net\MetroFramework.Fonts.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============ DLL References: EPPlusFree (temporarily kept, will be replaced by ClosedXML) ============ -->
+  <ItemGroup>
+    <Reference Include="EPPlusFree">
+      <HintPath>..\packages\EPPlusFree.4.5.3.8\lib\net40\EPPlusFree.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============ DLL References: SharpExModule (temporarily kept, will be replaced by NModbus) ============ -->
+  <ItemGroup>
+    <Reference Include="SharpExModule">
+      <HintPath>..\packages\SharpExModule.1.0.1\lib\net40\SharpExModule.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============ DLL References: FTD2XX (temporarily kept) ============ -->
+  <ItemGroup>
+    <Reference Include="FTDI2XX">
+      <HintPath>..\packages\FTD2XX.Net.1.2.1\lib\net45\FTDI2XX.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============ DLL References: SeeSharpTools.JY.GUI (temporarily kept) ============ -->
+  <ItemGroup>
+    <Reference Include="SeeSharpTools.JY.GUI">
+      <HintPath>..\packages\SeeSharpTools.JY.GUI.1.4.4.533\lib\net40\SeeSharpTools.JY.GUI.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============ DLL References: NModbus4 (temporarily kept during Modbus consolidation) ============ -->
+  <ItemGroup>
+    <Reference Include="NModbus4">
+      <HintPath>..\packages\NModbus4.2.1.0\lib\net40\NModbus4.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============ DLL References: xktComm (temporarily kept, will be removed) ============ -->
+  <ItemGroup>
+    <Reference Include="xktComm">
+      <HintPath>..\packages\xktComm.7.0.0\lib\net46\xktComm.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============ DLL References: Third-party non-NuGet DLLs ============ -->
+  <ItemGroup>
+    <Reference Include="PCHMI">
+      <HintPath>..\PCHMI.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Vila.Core">
+      <HintPath>..\Vila.Core.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="NativeUsbLib">
+      <HintPath>..\NativeUsbLib.dll</HintPath>
     </Reference>
     <Reference Include="Code4Bugs.Utils">
       <HintPath>..\Code4Bugs.Utils.dll</HintPath>
     </Reference>
-    <Reference Include="DbcParserLib, Version=1.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\DbcParserLib.1.7.0\lib\net462\DbcParserLib.dll</HintPath>
+    <Reference Include="SharpModbus">
+      <HintPath>..\SharpModbus.dll</HintPath>
     </Reference>
-    <Reference Include="DotNetZip, Version=1.16.0.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
-      <HintPath>..\packages\DotNetZip.1.16.0\lib\net40\DotNetZip.dll</HintPath>
-    </Reference>
-    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
-    </Reference>
-    <Reference Include="Enums.NET, Version=4.0.0.0, Culture=neutral, PublicKeyToken=7ea1c1650d506225, processorArchitecture=MSIL">
-      <HintPath>..\packages\Enums.NET.4.0.1\lib\net45\Enums.NET.dll</HintPath>
-    </Reference>
-    <Reference Include="EPPlusFree, Version=4.5.3.8, Culture=neutral, PublicKeyToken=85bfa0499e2db48a, processorArchitecture=MSIL">
-      <HintPath>..\packages\EPPlusFree.4.5.3.8\lib\net40\EPPlusFree.dll</HintPath>
-    </Reference>
-    <Reference Include="Festool.Sdk.ApplicationLayer.FmpProtobuf, Version=2.0.6.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\Debug\Festool.Sdk.ApplicationLayer.FmpProtobuf.dll</HintPath>
-    </Reference>
-    <Reference Include="Festool.Sdk.LinkLayer.Fmp, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Festool.Sdk.LinkLayer.Fmp.2.0.0\lib\netstandard2.0\Festool.Sdk.LinkLayer.Fmp.dll</HintPath>
-    </Reference>
-    <Reference Include="Festool.Sdk.PhysicalLayer.Rs232, Version=2.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Festool.Sdk.PhysicalLayer.Rs232.2.0.1\lib\netstandard2.0\Festool.Sdk.PhysicalLayer.Rs232.dll</HintPath>
-    </Reference>
-    <Reference Include="Festool.Sdk.Shared, Version=2.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Festool.Sdk.Shared.2.0.1\lib\netstandard2.0\Festool.Sdk.Shared.dll</HintPath>
-    </Reference>
-    <Reference Include="FftSharp">
-      <HintPath>useful\FftSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="FTDI2XX, Version=1.2.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FTD2XX.Net.1.2.1\lib\net45\FTDI2XX.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.Protobuf, Version=3.25.1.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Protobuf.3.25.1\lib\net45\Google.Protobuf.dll</HintPath>
-    </Reference>
-    <Reference Include="HCulture, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SimpleMysql.1.1.1\lib\HCulture.dll</HintPath>
-    </Reference>
-    <Reference Include="HslCommunication">
-      <HintPath>..\HslCommunication.dll</HintPath>
-    </Reference>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=1.4.2.13, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpZipLib.1.4.2\lib\netstandard2.0\ICSharpCode.SharpZipLib.dll</HintPath>
-    </Reference>
-    <Reference Include="INIFileParser, Version=2.5.2.0, Culture=neutral, PublicKeyToken=79af7b307b65cf3c, processorArchitecture=MSIL">
-      <HintPath>..\packages\ini-parser.2.5.2\lib\net20\INIFileParser.dll</HintPath>
-    </Reference>
-    <Reference Include="IoTClient, Version=1.0.40.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\IoTClient.1.0.40\lib\netstandard2.0\IoTClient.dll</HintPath>
-    </Reference>
-    <Reference Include="Ivi.Visa, Version=5.6.0.0, Culture=neutral, PublicKeyToken=a128c98f1d7717c1, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Ivi.Visa">
       <HintPath>dll_lib\Ivi.Visa.dll</HintPath>
     </Reference>
     <Reference Include="Ldx.Ni.Visa">
       <HintPath>dll_lib\Ldx.Ni.Visa.dll</HintPath>
     </Reference>
-    <Reference Include="log4net, Version=3.0.1.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.3.0.1\lib\net462\log4net.dll</HintPath>
-    </Reference>
-    <Reference Include="MathNet.Numerics, Version=4.15.0.0, Culture=neutral, PublicKeyToken=cd8b63ad3d691a37, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Numerics.Signed.4.15.0\lib\net461\MathNet.Numerics.dll</HintPath>
-    </Reference>
-    <Reference Include="MetroFramework, Version=1.4.0.0, Culture=neutral, PublicKeyToken=5f91a84759bf584a, processorArchitecture=MSIL">
-      <HintPath>..\packages\MetroModernUI.1.4.0.0\lib\net\MetroFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="MetroFramework.Design, Version=1.4.0.0, Culture=neutral, PublicKeyToken=5f91a84759bf584a, processorArchitecture=MSIL">
-      <HintPath>..\packages\MetroModernUI.1.4.0.0\lib\net\MetroFramework.Design.dll</HintPath>
-    </Reference>
-    <Reference Include="MetroFramework.Fonts, Version=1.4.0.0, Culture=neutral, PublicKeyToken=5f91a84759bf584a, processorArchitecture=MSIL">
-      <HintPath>..\packages\MetroModernUI.1.4.0.0\lib\net\MetroFramework.Fonts.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.9.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IO.RecyclableMemoryStream, Version=2.3.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IO.RecyclableMemoryStream.2.3.2\lib\net462\Microsoft.IO.RecyclableMemoryStream.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualBasic" />
-    <Reference Include="Microsoft.Win32.Registry, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Win32.Registry.4.7.0\lib\net461\Microsoft.Win32.Registry.dll</HintPath>
-    </Reference>
-    <Reference Include="MiniExcel, Version=1.31.2.0, Culture=neutral, PublicKeyToken=e7310002a53eac39, processorArchitecture=MSIL">
-      <HintPath>..\packages\MiniExcel.1.31.2\lib\net45\MiniExcel.dll</HintPath>
-    </Reference>
-    <Reference Include="MySql.Data, Version=6.9.8.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
-      <HintPath>..\packages\SimpleMysql.1.1.1\lib\MySql.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="NationalInstruments.Common, Version=15.0.40.49154, Culture=neutral, PublicKeyToken=dc6ad606294fc298, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="NationalInstruments.Common">
       <HintPath>dll_lib\NationalInstruments.Common.dll</HintPath>
     </Reference>
-    <Reference Include="NationalInstruments.Visa, Version=15.0.0.49152, Culture=neutral, PublicKeyToken=2eaa5af0834e221d, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="NationalInstruments.Visa">
       <HintPath>dll_lib\NationalInstruments.Visa.dll</HintPath>
     </Reference>
-    <Reference Include="NativeUsbLib">
-      <HintPath>..\NativeUsbLib.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.2.2.1\lib\net472\NAudio.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio.Asio, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.Asio.2.2.1\lib\netstandard2.0\NAudio.Asio.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio.Core, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.Core.2.2.1\lib\netstandard2.0\NAudio.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio.Midi, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.Midi.2.2.1\lib\netstandard2.0\NAudio.Midi.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio.Wasapi, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.Wasapi.2.2.1\lib\netstandard2.0\NAudio.Wasapi.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio.WinForms, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.WinForms.2.2.1\lib\net472\NAudio.WinForms.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio.WinMM, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.WinMM.2.2.1\lib\netstandard2.0\NAudio.WinMM.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="NModbus4, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NModbus4.2.1.0\lib\net40\NModbus4.dll</HintPath>
-    </Reference>
-    <Reference Include="PCHMI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\PCHMI.dll</HintPath>
-    </Reference>
-    <Reference Include="PresentationCore" />
     <Reference Include="PrimS.Telnet.NetStandard">
       <HintPath>dll_lib\PrimS.Telnet.NetStandard.dll</HintPath>
-    </Reference>
-    <Reference Include="ReaLTaiizor, Version=3.7.7.6, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>G:\tester_v10\testapp\bin\Debug\ReaLTaiizor.dll</HintPath>
-    </Reference>
-    <Reference Include="Renci.SshNet">
-      <HintPath>..\Renci.SshNet.dll</HintPath>
-    </Reference>
-    <Reference Include="RestSharp, Version=111.4.0.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
-      <HintPath>..\packages\RestSharp.111.4.0\lib\netstandard2.0\RestSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="RFExplorerCommunicator, Version=2.6.2106.3, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\Debug\RFExplorerCommunicator.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwBase, Version=3.7.90.138, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwBase.3.7.90.138\lib\net48\RsCmwBase.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwBluetoothMeas, Version=3.8.20.160, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwBluetoothMeas.3.8.20.160\lib\net48\RsCmwBluetoothMeas.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwBluetoothSig, Version=3.8.20.349, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwBluetoothSig.3.8.20.349\lib\net48\RsCmwBluetoothSig.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwEvdoSig">
-      <HintPath>..\RsCmw_Csharp_drivers_3.7.xx4\RsCmwEvdoSig_3.8.10.0012\Release_x86\RsCmwEvdoSig.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwGprfGen, Version=3.7.50.115, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwGprfGen.3.7.50.115\lib\net48\RsCmwGprfGen.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwGprfMeas, Version=3.7.30.69, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwGprfMeas.3.7.30.69\lib\net48\RsCmwGprfMeas.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwLteMeas, Version=3.7.62.181, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwLteMeas.3.7.62.181\lib\net48\RsCmwLteMeas.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwLteSig, Version=3.7.62.60, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwLteSig.3.7.62.60\lib\net48\RsCmwLteSig.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwWlanMeas, Version=3.8.20.279, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwWlanMeas.3.8.20.279\lib\net48\RsCmwWlanMeas.dll</HintPath>
-    </Reference>
-    <Reference Include="RsCmwWlanSig, Version=3.8.20.335, Culture=neutral, PublicKeyToken=21acc6a002277cd7, processorArchitecture=MSIL">
-      <HintPath>..\packages\RsCmwWlanSig.3.8.20.335\lib\net48\RsCmwWlanSig.dll</HintPath>
-    </Reference>
-    <Reference Include="RsInstrument, Version=1.3.0.34, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\cmw100calibrationexe\RsCmw_Csharp_drivers_3.7.xx4\RsInstrument_1.3.0.34\x86_Release\RsInstrument.dll</HintPath>
-    </Reference>
-    <Reference Include="SeeSharpTools.JY.GUI, Version=1.4.4.533, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SeeSharpTools.JY.GUI.1.4.4.533\lib\net40\SeeSharpTools.JY.GUI.dll</HintPath>
     </Reference>
     <Reference Include="SeeSharpTools.JY.TCP">
       <HintPath>dll_lib\SeeSharpTools.JY.TCP.dll</HintPath>
     </Reference>
-    <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
-      <HintPath>..\packages\Serilog.2.9.0\lib\net46\Serilog.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpExModule, Version=1.0.1.40481, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpExModule.1.0.1\lib\net40\SharpExModule.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpModbus, Version=1.0.13.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\SharpModbus.dll</HintPath>
-    </Reference>
-    <Reference Include="SimpleMysql, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SimpleMysql.1.1.1\lib\SimpleMysql.dll</HintPath>
-    </Reference>
-    <Reference Include="SixLabors.Fonts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d998eea7b14cab13, processorArchitecture=MSIL">
-      <HintPath>..\packages\SixLabors.Fonts.1.0.0\lib\netstandard2.0\SixLabors.Fonts.dll</HintPath>
-    </Reference>
-    <Reference Include="SixLabors.ImageSharp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=d998eea7b14cab13, processorArchitecture=MSIL">
-      <HintPath>..\packages\SixLabors.ImageSharp.2.1.4\lib\netstandard2.0\SixLabors.ImageSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
-    </Reference>
-    <Reference Include="System.CodeDom, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.CodeDom.8.0.0\lib\net462\System.CodeDom.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Configuration.ConfigurationManager, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Configuration.ConfigurationManager.6.0.0\lib\net461\System.Configuration.ConfigurationManager.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data.OracleClient" />
-    <Reference Include="System.Data.SQLite, Version=1.0.118.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\lib\net46\System.Data.SQLite.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Data.SQLite.EF6, Version=1.0.118.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Data.SQLite.EF6.1.0.118.0\lib\net46\System.Data.SQLite.EF6.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Data.SQLite.Linq, Version=1.0.118.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Data.SQLite.Linq.1.0.118.0\lib\net46\System.Data.SQLite.Linq.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Design" />
-    <Reference Include="System.IO.Compression, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
-    <Reference Include="System.IO.Pipelines, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.IO.Pipelines.9.0.0\lib\net462\System.IO.Pipelines.dll</HintPath>
-    </Reference>
-    <Reference Include="System.IO.Ports, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.IO.Ports.8.0.0\lib\net462\System.IO.Ports.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Management" />
-    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Net" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Security" />
-    <Reference Include="System.Security.AccessControl, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.AccessControl.6.0.0\lib\net461\System.Security.AccessControl.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.Xml, Version=6.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.Xml.6.0.1\lib\net461\System.Security.Cryptography.Xml.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Permissions, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Permissions.6.0.0\lib\net461\System.Security.Permissions.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Principal.Windows, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Principal.Windows.5.0.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ServiceProcess" />
-    <Reference Include="System.Speech" />
-    <Reference Include="System.Text.Encoding.CodePages, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Encoding.CodePages.6.0.0\lib\net461\System.Text.Encoding.CodePages.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Text.Encodings.Web, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Encodings.Web.9.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Text.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Json.9.0.0\lib\net462\System.Text.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Threading.Channels, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Threading.Channels.8.0.0\lib\net462\System.Threading.Channels.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Threading.Tasks, Version=4.0.11.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Transactions" />
-    <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Forms.DataVisualization" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
-    <Reference Include="unvell.ReoGrid, Version=3.3.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\unvell.ReoGrid.dll.3.3.1\lib\net48\unvell.ReoGrid.dll</HintPath>
-    </Reference>
-    <Reference Include="Vila.Core">
-      <HintPath>..\Vila.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="WeifenLuo.WinFormsUI.Docking, Version=1.0.0.0, Culture=neutral, PublicKeyToken=5cded1a1a0a7b481, processorArchitecture=MSIL">
-      <HintPath>..\packages\DockPanelSuite.3.1.0\lib\net40\WeifenLuo.WinFormsUI.Docking.dll</HintPath>
-    </Reference>
-    <Reference Include="WeifenLuo.WinFormsUI.Docking.ThemeVS2015, Version=1.0.0.0, Culture=neutral, PublicKeyToken=5cded1a1a0a7b481, processorArchitecture=MSIL">
-      <HintPath>..\packages\DockPanelSuite.ThemeVS2015.3.1.0\lib\net40\WeifenLuo.WinFormsUI.Docking.ThemeVS2015.dll</HintPath>
-    </Reference>
-    <Reference Include="Windows">
-      <HintPath>dll_lib\Windows.winmd</HintPath>
-    </Reference>
-    <Reference Include="WindowsBase" />
-    <Reference Include="xktComm, Version=7.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\xktComm.7.0.0\lib\net46\xktComm.dll</HintPath>
-    </Reference>
-    <Reference Include="ZipStorer">
-      <HintPath>..\packages\ZipStorer.3.8.0\lib\net452\ZipStorer.dll</HintPath>
+    <Reference Include="RFExplorerCommunicator">
+      <HintPath>bin\Debug\RFExplorerCommunicator.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <!-- ============ Copy native DLLs to output directory ============ -->
   <ItemGroup>
-    <Compile Include="bluetooth_my\ble_test.cs" />
-    <Compile Include="bluetooth_my\ble_usefull.cs" />
-    <Compile Include="bluetooth_my\blue_display_unit.cs" />
-    <Compile Include="camera.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="camera.Designer.cs">
-      <DependentUpon>camera.cs</DependentUpon>
-    </Compile>
-    <Compile Include="coil_project_4_unit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="coil_project_4_unit.Designer.cs">
-      <DependentUpon>coil_project_4_unit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="console\pycom_decorator.cs" />
-    <Compile Include="database_xiangguan\database_static_info.cs" />
-    <Compile Include="ErrorPreventionForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ErrorPreventionForm.Designer.cs">
-      <DependentUpon>ErrorPreventionForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="glob_set\glob_ini_instance.cs" />
-    <Compile Include="glob_set\glob_parameter_load_save.cs" />
-    <Compile Include="glob_set_windonws.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="glob_set_windonws.Designer.cs">
-      <DependentUpon>glob_set_windonws.cs</DependentUpon>
-    </Compile>
-    <Compile Include="input_form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="input_form.Designer.cs">
-      <DependentUpon>input_form.cs</DependentUpon>
-    </Compile>
-    <Compile Include="IOT\RUST_HELPER.cs" />
-    <Compile Include="mes_uploader.cs" />
-    <Compile Include="Multi_Form\input_form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Multi_Form\input_form.designer.cs">
-      <DependentUpon>input_form.cs</DependentUpon>
-    </Compile>
-    <Compile Include="mycontroler\mybutton2.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mycontroler\my_jindutiao.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mycontroler\AnimateBase.cs" />
-    <Compile Include="mycontroler\dataview_testt.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="mycontroler\dataview_testt.designer.cs">
-      <DependentUpon>dataview_testt.cs</DependentUpon>
-    </Compile>
-    <Compile Include="mycontroler\DemoControls.cs" />
-    <Compile Include="mycontroler\LEventArgs.cs" />
-    <Compile Include="mycontroler\LScrollBar.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mycontroler\LSwitchButton.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mycontroler\LTrackBar.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mycontroler\my_control.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mycontroler\my_meter_control.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mycontroler\my_testbox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mycontroler\UserControl1.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="mycontroler\UserControl1.designer.cs">
-      <DependentUpon>UserControl1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Mydatagridview.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Mydatagridview.designer.cs">
-      <DependentUpon>Mydatagridview.cs</DependentUpon>
-    </Compile>
-    <Compile Include="mylib\ac_load_tuodapu.cs" />
-    <Compile Include="mylib\ac_source_tuodapu.cs" />
-    <Compile Include="mylib\asmpt_03271042_U10_Write.cs" />
-    <Compile Include="mylib\CAN_SLCAN.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\circular_data_serial.cs" />
-    <Compile Include="mylib\havis_CfgGenerator.cs" />
-    <Compile Include="mylib\DPS3005.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\GPD3033_PowerSupply.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\Interfaces.cs" />
-    <Compile Include="mylib\NetworkUtils.cs" />
-    <Compile Include="mylib\SRND-CM-12DI.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\DigitalInputMonitor.cs" />
-    <Compile Include="mylib\test_dbc.cs" />
-    <Compile Include="mylib\usb_state_check.cs" />
-    <Compile Include="sproject_loader.cs" />
-    <Compile Include="testerNew\AppStrings.cs" />
-    <Compile Include="testerNew\ConfigForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="testerNew\ConfigForm.Designer.cs">
-      <DependentUpon>ConfigForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="testerNew\ExcelTestLoader.cs" />
-    <Compile Include="testerNew\LoginForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="testerNew\LoginForm.Designer.cs">
-      <DependentUpon>LoginForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="testerNew\MainControl.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="testerNew\MainControl.Designer.cs">
-      <DependentUpon>MainControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="testerNew\ProductionTracker.cs" />
-    <Compile Include="testerNew\Program.cs" />
-    <Compile Include="testerNew\ScannerService.cs" />
-    <Compile Include="testerNew\TestConfig.cs" />
-    <Compile Include="testerNew\TestEngine.cs" />
-    <Compile Include="testerNew\TestItem.cs" />
-    <Compile Include="testerNew\TestLoggerForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="testerNew\TestLoggerForm.Designer.cs">
-      <DependentUpon>TestLoggerForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="testerNew\TestReportSaver.cs" />
-    <Compile Include="testerNew\DebugControlForm.cs" />
-    <Compile Include="test_cases\USB_LIN_Analyzer.cs" />
-    <Compile Include="test_cases\havis_14382_pj.cs" />
-    <Compile Include="test_cases\asmpt_03271042_pj.cs" />
-    <Compile Include="test_cases\mydriver_test.cs" />
-    <Compile Include="mylib\TDP8500Load.cs" />
-    <Compile Include="mylib\vantage_new_serial_port.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\vantage_new_can_serial.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\SWG_DN_Project.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\SWG_DN_display_Serial.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\mes_json_upload_2.cs" />
-    <Compile Include="mylib\cmw100_tool.cs" />
-    <Compile Include="mylib\MPIO_SERIAL.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\pangu_post.cs" />
-    <Compile Include="mylib\innove_relay.cs" />
-    <Compile Include="mylib\sqlite_handle.cs" />
-    <Compile Include="parallel_form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="parallel_form.designer.cs">
-      <DependentUpon>parallel_form.cs</DependentUpon>
-    </Compile>
-    <Compile Include="mic_test.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="mic_test.Designer.cs">
-      <DependentUpon>mic_test.cs</DependentUpon>
-    </Compile>
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\AcquirePoint.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\AcquirePointConversion.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\AcquirePointEnum.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\AcquirePointUnitType.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\AcquireRawValue.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\AcquireValue.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\ConfigItem.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\ConfigItemCatalogo.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\ControllerBaseImpl.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\ControllerType.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\CraftworkItemInfo.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\CraftworkMaterialNoEnum.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\EnumForMixSystem.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\IControllerAction.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\IControllerBase.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\IOServerStatus.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\WeightingInfoArgs.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\WeightingStepEnum.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\WorkRegionEnum.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\common\WorkRegionStateItem.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\CellDataTypes.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxAddress.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxAddressLayoutInfo.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxAddressManager.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxCommandArgs.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxCommandHelper.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxCommandResponse.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxCommController.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxConvert.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxDefine.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxRingBuffer.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\FxSerialDeamon.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\FX\Fx_Test.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\MCPackage\MCComponentGroup.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\MCPackage\MCDefine.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\MCPackage\ResponseMessage.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\IMitsubishiPlc.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\McCommand.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\McCommandExtersions.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\McProtocolApp.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\McProtocolBinary.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\McProtocolTcp.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\McProtocolUdp.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\McSwapExtersions.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\McTest.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\Mitsubishi\PlcDeviceTypeExtersions.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\ResultCodeConst.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\SerialDevice\SerialParam.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\SerialDevice\SerialPortManager.cs" />
-    <Compile Include="PLC\MitsubishiPlcProtocolMaster\plc\SerialDevice\SerialPortSync.cs" />
-    <Compile Include="PLC\modbus_sets.cs" />
-    <Compile Include="relay_form\innover_relay.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="relay_form\innover_relay.designer.cs">
-      <DependentUpon>innover_relay.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_cases\dometic_relay_cotrol_board.cs" />
-    <Compile Include="test_cases\vantage_Braking_boardd_test.cs" />
-    <Compile Include="test_case_helper.cs" />
-    <Compile Include="test_form\test_antdui.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="test_form\test_antdui.Designer.cs">
-      <DependentUpon>test_antdui.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_form\test_temp.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="test_form\test_temp.designer.cs">
-      <DependentUpon>test_temp.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_form\test_plc_other.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="test_form\test_plc_other.Designer.cs">
-      <DependentUpon>test_plc_other.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_form\test_pchmi_instance.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="test_form\test_pchmi_instance.Designer.cs">
-      <DependentUpon>test_pchmi_instance.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_form\test_driver_on.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="test_form\test_driver_on.Designer.cs">
-      <DependentUpon>test_driver_on.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_form\tff_ziti.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="test_form\tff_ziti.Designer.cs">
-      <DependentUpon>tff_ziti.cs</DependentUpon>
-    </Compile>
-    <Compile Include="thread\thread_test.cs" />
-    <Compile Include="useful\thread\thread_queue.cs" />
-    <Compile Include="useful\thread\thread_pool.cs" />
-    <Compile Include="useful\thread\thread_priorityqueue_test.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="useful\thread\thread_priorityqueue_test.Designer.cs">
-      <DependentUpon>thread_priorityqueue_test.cs</DependentUpon>
-    </Compile>
-    <Compile Include="useful\thread\thread_ThreadSafePriorityQueue.cs" />
-    <Compile Include="Whirlpool\Whirlpool2.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Whirlpool\Whirlpool2.Designer.cs">
-      <DependentUpon>Whirlpool2.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Whirlpool\Whirlpool 1.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Whirlpool\Whirlpool 1.Designer.cs">
-      <DependentUpon>Whirlpool 1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Multi_Form\char_form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Multi_Form\char_form.Designer.cs">
-      <DependentUpon>char_form.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Multi_Form\debug_form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Multi_Form\debug_form.Designer.cs">
-      <DependentUpon>debug_form.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Multi_Form\Frm_Welcome.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Multi_Form\Frm_Welcome.designer.cs">
-      <DependentUpon>Frm_Welcome.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Multi_Form\main_m.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Multi_Form\main_m.Designer.cs">
-      <DependentUpon>main_m.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Multi_Form\sheet_edit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Multi_Form\sheet_edit.Designer.cs">
-      <DependentUpon>sheet_edit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Multi_Form\test1_from.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Multi_Form\test1_from.Designer.cs">
-      <DependentUpon>test1_from.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Multi_Form\test2_from.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Multi_Form\test2_from.Designer.cs">
-      <DependentUpon>test2_from.cs</DependentUpon>
-    </Compile>
-    <Compile Include="relay_form\sk_relay_f.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="relay_form\sk_relay_f.designer.cs">
-      <DependentUpon>sk_relay_f.cs</DependentUpon>
-    </Compile>
-    <Compile Include="From_yangshi\yangshimoban.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="From_yangshi\yangshimoban.Designer.cs">
-      <DependentUpon>yangshimoban.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Hayco.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Hayco.Designer.cs">
-      <DependentUpon>Hayco.cs</DependentUpon>
-    </Compile>
-    <Compile Include="HBI_SN_CREATE.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="HBI_SN_CREATE.Designer.cs">
-      <DependentUpon>HBI_SN_CREATE.cs</DependentUpon>
-    </Compile>
-    <Compile Include="hbi_log_save.cs" />
-    <Compile Include="Main_f.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Main_f.Designer.cs">
-      <DependentUpon>Main_f.cs</DependentUpon>
-    </Compile>
-    <Compile Include="mylib\analog_acquisition_PK9015A-DU-16.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\excel_crash.cs" />
-    <Compile Include="mylib\industrial_scanner.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\LuoYiJi.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="useful\thread\mul_thread_works.cs" />
-    <Compile Include="mylib\SRND-CM-40DI.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\SRND-COM-VE30.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\desaysv_serial.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\dingshizhadan.cs" />
-    <Compile Include="mylib\IV3003T_DC_power.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\legrand_proj_serial.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\Rogol_shiboqi.cs" />
-    <Compile Include="mylib\sk_relay.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\AutoSRND-CM-12DI.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\DAM-3158A_DAQ.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\telnet_jlink_rtt.cs" />
-    <Compile Include="mylib\vantage_can_test_porject .cs" />
-    <Compile Include="mylib\weite_ttl_can.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\weite_ttl_can4_1123.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="MyVisa\FrmMain.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MyVisa\FrmMain.Designer.cs">
-      <DependentUpon>FrmMain.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MyVisa\Visa_Configuration\VisaInformation.cs" />
-    <Compile Include="MyVisa\Visa_Ports\GpibPortOperator.cs" />
-    <Compile Include="MyVisa\Visa_Ports\IPortOperator.cs" />
-    <Compile Include="MyVisa\Visa_Ports\IPortType.cs" />
-    <Compile Include="MyVisa\Visa_Ports\LanPortOperator.cs" />
-    <Compile Include="MyVisa\Visa_Ports\PortEventArgs.cs" />
-    <Compile Include="MyVisa\Visa_Ports\PortOperatorBase.cs" />
-    <Compile Include="MyVisa\Visa_Ports\SerialDataReceivedEventArgs.cs" />
-    <Compile Include="MyVisa\Visa_Ports\UsbPortOperator.cs" />
-    <Compile Include="MyVisa\Visa_Ports\VISAInstrument.Port.cs" />
-    <Compile Include="MyVisa\Visa_Utility\Extension\ByteEx.cs" />
-    <Compile Include="MyVisa\Visa_Utility\Extension\RegexEx.cs" />
-    <Compile Include="MyVisa\Visa_Utility\Extension\StringEx.cs" />
-    <Compile Include="MyVisa\Visa_Utility\Extension\UI\ComboBoxEx.cs" />
-    <Compile Include="MyVisa\Visa_Utility\Extension\UI\Pair.cs" />
-    <Compile Include="MyVisa\Visa_Utility\Extension\UI\Pair2.cs" />
-    <Compile Include="MyVisa\Visa_Utility\Extension\UI\PairCollection.cs" />
-    <Compile Include="MyVisa\Visa_Utility\Extension\UI\TextBoxEx.cs" />
-    <Compile Include="MyVisa\Visa_Utility\my_visa_test.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>my_visa_test.resx</DependentUpon>
-    </Compile>
-    <Compile Include="MyVisa\Visa_Utility\PortHelper.cs" />
-    <Compile Include="MyVisa\Visa_Utility\PortType.cs" />
-    <Compile Include="MyVisa\Visa_Utility\UninstallInfo.cs" />
-    <Compile Include="MyVisa\Visa_Utility\UninstallInfoHelper.cs" />
-    <Compile Include="MyVisa\Visa_Utility\UninstallInfoOption.cs" />
-    <Compile Include="PLC\data_4shuangxiang.cs" />
-    <Compile Include="PLC\plc_option.cs" />
-    <Compile Include="SGW_PROGRAM.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SGW_PROGRAM.Designer.cs">
-      <DependentUpon>SGW_PROGRAM.cs</DependentUpon>
-    </Compile>
-    <Compile Include="testcase_edit4.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="testcase_edit4.designer.cs">
-      <DependentUpon>testcase_edit4.cs</DependentUpon>
-    </Compile>
-    <Compile Include="testcase_loader_my\p_reogridviewloader.cs" />
-    <Compile Include="test_case_edit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="test_case_edit.Designer.cs">
-      <DependentUpon>test_case_edit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="relay_form\realy_3unit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="relay_form\realy_3unit.Designer.cs">
-      <DependentUpon>realy_3unit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="relay_form\myrelaysetter.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="relay_form\myrelaysetter.Designer.cs">
-      <DependentUpon>myrelaysetter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_form\test_control.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="test_form\test_control.Designer.cs">
-      <DependentUpon>test_control.cs</DependentUpon>
-    </Compile>
-    <Compile Include="mylib\AC_POWER_SUPPLY_TYPE1.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\Rek_rk2511n.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\plc_xx_com.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\BIOFI_PROD.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\blue_read_write_uuid.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\chroma_dc_elecronic_63200.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\dielectric_strength_tester_ut5310.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\znbsq_s_transmitter.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\UTE9901_Power_meter.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\mdbhelper.cs" />
-    <Compile Include="mylib\pycom_1.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\SMACQ_DQA1\PS1024_MUX_SW.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\SMACQ_DQA1\usb-1000_LIB.cs" />
-    <Compile Include="mylib\SMACQ_DQA1\USB_12521_DAQ.cs" />
-    <Compile Include="mylib\Tek_USB_2012.cs" />
-    <Compile Include="mylib\USB2185DAQ\USB2185.cs" />
-    <Compile Include="mylib\USB2185DAQ\USB2185RSV.cs" />
-    <Compile Include="mylib\USB2185DAQ\USB2185_DAQ1.cs" />
-    <Compile Include="mylib\victor_4090C.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\pip_run_jiaohu.cs" />
-    <Compile Include="mylib\Tek_TPS2040_Oscilloscopes.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Pictureshow.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Pictureshow.Designer.cs">
-      <DependentUpon>Pictureshow.cs</DependentUpon>
-    </Compile>
-    <Compile Include="message.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="message.Designer.cs">
-      <DependentUpon>message.cs</DependentUpon>
-    </Compile>
-    <Compile Include="mylib\esp32_sign_gen_module.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\sqlr_ltemodule_com.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\babyhappy_com.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\cmw100_bluetooth_alone.cs" />
-    <Compile Include="mylib\cmw100_lte_function_module.cs" />
-    <Compile Include="mylib\e_control_tcp_modbus.cs" />
-    <Compile Include="mylib\CANTester.cs" />
-    <Compile Include="mylib\ch341_USBIOXdll.cs" />
-    <Compile Include="mylib\chroma19701.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\chuangxincan.cs" />
-    <Compile Include="mylib\cmw100gps.cs" />
-    <Compile Include="mylib\cmw100_bluetooth.cs" />
-    <Compile Include="mylib\cmw100_SpectrumAnalyzersNonSCPI.cs" />
-    <Compile Include="mylib\cmw100_SpectrumAnalyzers.cs" />
-    <Compile Include="mylib\comlineforx100.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\comlineNRTS.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\comlineforingo_ledsys.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\crc.cs" />
-    <Compile Include="mylib\APMDBMS.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\AC_SOURCE_IVYTECH.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\e_control_can.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\j1399_PGN_ID.cs" />
-    <Compile Include="mylib\sqlr_blue_command_4repeat.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\sqlr_blue_command_4wpel.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\sqlr_blue_command_4button.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\sqlr_jlink_tcpip_static_socket.cs" />
-    <Compile Include="mylib\sqlr_jlink_tcpip.cs" />
-    <Compile Include="mylib\sqlr_piprunMultipleCommands.cs" />
-    <Compile Include="mylib\RevAir_com.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\RF_EXP.cs" />
-    <Compile Include="mylib\Rigol_DM3058.cs" />
-    <Compile Include="mylib\hipot_tonghui9310.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\DSA800E.cs" />
-    <Compile Include="mylib\ch341_spi_iic.cs" />
-    <Compile Include="mylib\FestoolCom.cs" />
-    <Compile Include="mylib\ANS_JP5030Power.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\IVYTECH_3610.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\my_pyb.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\HP_2016_ThrustMeter.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\ssh_debug.cs" />
-    <Compile Include="mylib\tcpiptest4jlink.cs" />
-    <Compile Include="mylib\tcpiptest.cs" />
-    <Compile Include="mylib\tttt.cs" />
-    <Compile Include="mylib\usb_getname.cs" />
-    <Compile Include="mylib\utility_func.cs" />
-    <Compile Include="mylib\Voltage_acquisition .cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\smartFreqSpec.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\HMS3000_Instruments.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\ComProc.cs" />
-    <Compile Include="mylib\Rigol_DG1000_SingnG.cs" />
-    <Compile Include="mylib\ECAN.cs" />
-    <Compile Include="mylib\festoolRFID.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\GPD3033_4visa.cs" />
-    <Compile Include="mylib\led_assy.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\led_color_self.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\NHR1300.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\piprun.cs" />
-    <Compile Include="mylib\PortOperator.cs" />
-    <Compile Include="mylib\PortUlitity.cs" />
-    <Compile Include="mylib\Relay_my.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\rfreader.cs" />
-    <Compile Include="mylib\sevy_relay.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\TH6300_PowerSupply.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\TDM1501_50.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\comline.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\USB2_IIC_SPI.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\vc8145cmeter.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\TDM9001_2A.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\testcase.cs" />
-    <Compile Include="mylib\TMD1501_50.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\TRM1201.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="mylib\VISA32.cs" />
-    <Compile Include="parameterset.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="parameterset.Designer.cs">
-      <DependentUpon>parameterset.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="pycom_prj\mylistview.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="pycom_prj\pycom_prj.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="pycom_prj\pycom_prj.designer.cs">
-      <DependentUpon>pycom_prj.cs</DependentUpon>
-    </Compile>
-    <Compile Include="pycom_prj\pycom_prj1.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="pycom_prj\pycom_prj1.Designer.cs">
-      <DependentUpon>pycom_prj1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="relay_form\relayset_4.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="relay_form\relayset_4.designer.cs">
-      <DependentUpon>relayset_4.cs</DependentUpon>
-    </Compile>
-    <Compile Include="relay_form\relay_set.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="relay_form\relay_set.Designer.cs">
-      <DependentUpon>relay_set.cs</DependentUpon>
-    </Compile>
-    <Compile Include="sgw_customer_test.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="sgw_customer_test.Designer.cs">
-      <DependentUpon>sgw_customer_test.cs</DependentUpon>
-    </Compile>
-    <Compile Include="testcase_loader_my\excel2tester_standard.cs" />
-    <Compile Include="testcase_loader_my\json2tester_standard.cs" />
-    <Compile Include="testcase_loader_my\project_set.cs" />
-    <Compile Include="testcase_loader_my\testcase_loader.cs" />
-    <Compile Include="testcase_loader_my\tester_standard_style.cs" />
-    <Compile Include="testcase_loader_my\reogridviewloader.cs" />
-    <Compile Include="testcase_loader_my\datagrid_viewloader.cs" />
-    <Compile Include="testcase_loader_my\xml2tester_standard.cs" />
-    <Compile Include="testcase_table_edit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="testcase_table_edit.Designer.cs">
-      <DependentUpon>testcase_table_edit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MyVisa\test_visa.cs" />
-    <Compile Include="useful\Circular_Array.cs" />
-    <Compile Include="useful\csharpfft.cs" />
-    <Compile Include="useful\HTTPServer.cs" />
-    <Compile Include="useful\序列化_helper.cs" />
-    <Compile Include="useful\memory_sharing.cs" />
-    <Compile Include="useful\ttfload.cs" />
-    <Compile Include="UserControl1.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="UserControl1.Designer.cs">
-      <DependentUpon>UserControl1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_case_control.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="test_case_control.Designer.cs">
-      <DependentUpon>test_case_control.cs</DependentUpon>
-    </Compile>
-    <Compile Include="test_unit_count.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="test_unit_count.Designer.cs">
-      <DependentUpon>test_unit_count.cs</DependentUpon>
-    </Compile>
-    <Compile Include="variable_space.cs" />
-    <Compile Include="windows_find\sendmessage.cs" />
-    <Compile Include="windows_find\windowns_find.cs" />
-    <EmbeddedResource Include="camera.resx">
-      <DependentUpon>camera.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="coil_project_4_unit.resx">
-      <DependentUpon>coil_project_4_unit.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ErrorPreventionForm.resx">
-      <DependentUpon>ErrorPreventionForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="glob_set_windonws.resx">
-      <DependentUpon>glob_set_windonws.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="input_form.resx">
-      <DependentUpon>input_form.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Multi_Form\input_form.resx">
-      <DependentUpon>input_form.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="mycontroler\dataview_testt.resx">
-      <DependentUpon>dataview_testt.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="mycontroler\UserControl1.resx">
-      <DependentUpon>UserControl1.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Mydatagridview.resx">
-      <DependentUpon>Mydatagridview.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="parallel_form.resx">
-      <DependentUpon>parallel_form.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="mic_test.resx">
-      <DependentUpon>mic_test.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="relay_form\innover_relay.resx">
-      <DependentUpon>innover_relay.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="testerNew\ConfigForm.resx">
-      <DependentUpon>ConfigForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="testerNew\LoginForm.resx">
-      <DependentUpon>LoginForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="testerNew\MainControl.resx">
-      <DependentUpon>MainControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="testerNew\TestLoggerForm.resx">
-      <DependentUpon>TestLoggerForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_form\test_antdui.resx">
-      <DependentUpon>test_antdui.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_form\test_temp.resx">
-      <DependentUpon>test_temp.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_form\test_plc_other.resx">
-      <DependentUpon>test_plc_other.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_form\test_pchmi_instance.resx">
-      <DependentUpon>test_pchmi_instance.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_form\test_driver_on.resx">
-      <DependentUpon>test_driver_on.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_form\tff_ziti.resx">
-      <DependentUpon>tff_ziti.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="useful\thread\thread_priorityqueue_test.resx">
-      <DependentUpon>thread_priorityqueue_test.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Whirlpool\Whirlpool2.resx">
-      <DependentUpon>Whirlpool2.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Whirlpool\Whirlpool 1.resx">
-      <DependentUpon>Whirlpool 1.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Multi_Form\char_form.resx">
-      <DependentUpon>char_form.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Multi_Form\debug_form.resx">
-      <DependentUpon>debug_form.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Multi_Form\Frm_Welcome.resx">
-      <DependentUpon>Frm_Welcome.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Multi_Form\main_m.resx">
-      <DependentUpon>main_m.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Multi_Form\sheet_edit.resx">
-      <DependentUpon>sheet_edit.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Multi_Form\test1_from.resx">
-      <DependentUpon>test1_from.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Multi_Form\test2_from.resx">
-      <DependentUpon>test2_from.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="relay_form\sk_relay_f.resx">
-      <DependentUpon>sk_relay_f.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="From_yangshi\yangshimoban.resx">
-      <DependentUpon>yangshimoban.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Hayco.resx">
-      <DependentUpon>Hayco.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="HBI_SN_CREATE.resx">
-      <DependentUpon>HBI_SN_CREATE.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Main_f.resx">
-      <DependentUpon>Main_f.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MyVisa\FrmMain.resx">
-      <DependentUpon>FrmMain.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MyVisa\Visa_Utility\my_visa_test.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>my_visa_test.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SGW_PROGRAM.resx">
-      <DependentUpon>SGW_PROGRAM.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="testcase_edit4.resx">
-      <DependentUpon>testcase_edit4.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_case_edit.resx">
-      <DependentUpon>test_case_edit.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="relay_form\realy_3unit.resx">
-      <DependentUpon>realy_3unit.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="relay_form\myrelaysetter.resx">
-      <DependentUpon>myrelaysetter.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_form\test_control.resx">
-      <DependentUpon>test_control.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="message.resx">
-      <DependentUpon>message.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="parameterset.resx">
-      <DependentUpon>parameterset.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pictureshow.resx">
-      <DependentUpon>Pictureshow.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <EmbeddedResource Include="pycom_prj\pycom_prj.resx">
-      <DependentUpon>pycom_prj.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="pycom_prj\pycom_prj1.resx">
-      <DependentUpon>pycom_prj1.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="relay_form\relayset_4.resx">
-      <DependentUpon>relayset_4.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="relay_form\relay_set.resx">
-      <DependentUpon>relay_set.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="sgw_customer_test.resx">
-      <DependentUpon>sgw_customer_test.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="testcase_table_edit.resx">
-      <DependentUpon>testcase_table_edit.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="UserControl1.resx">
-      <DependentUpon>UserControl1.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_case_control.resx">
-      <DependentUpon>test_case_control.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="test_unit_count.resx">
-      <DependentUpon>test_unit_count.cs</DependentUpon>
-    </EmbeddedResource>
-    <None Include="app.manifest" />
-    <None Include="ClassDiagram1.cd" />
-    <None Include="ClassDiagram2.cd" />
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
+    <None Update="..\ControlCAN.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    <None Update="..\ECanVci.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
+    <None Update="..\JLinkARM.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="..\OUR_MIFARE.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="..\Modbus.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="..\CustomControl.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="stdole">
-      <Guid>{00020430-0000-0000-C000-000000000046}</Guid>
-      <VersionMajor>2</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>primary</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\171333_7sVw_1866808.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Image1.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\red.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\green.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\gif.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\243502d0550542f1a11df9765699376f.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\2.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\gg.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\1508382587648_934_1508382611328.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\qq.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\e.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="bin\Debug\default.ico" />
-    <None Include="bin\Debug\output_wnd.ico" />
-    <None Include="bin\Debug\tool-pro.ico" />
-    <None Include="bin\Debug\zhinengshejiis07.ico" />
-    <Content Include="bitbug_favicon %281%29.ico" />
-    <None Include="Resources\20220530210617.png" />
-    <Content Include="FTDI2XX.xml" />
-    <Content Include="Resources\IndustryAquaGauge2\Reflection.jpg" />
-    <Content Include="Resources\IndustrySwitch\垂直关.png" />
-    <Content Include="Resources\IndustrySwitch\垂直关1.png" />
-    <Content Include="Resources\IndustrySwitch\垂直开.png" />
-    <Content Include="Resources\IndustrySwitch\垂直开2.png" />
-    <Content Include="Resources\IndustrySwitch\按钮关.png" />
-    <Content Include="Resources\IndustrySwitch\按钮开.png" />
-    <Content Include="Resources\IndustrySwitch\水平关.png" />
-    <Content Include="Resources\IndustrySwitch\水平开.png" />
-    <None Include="Resources\未标题-1 拷贝.png" />
-    <None Include="Resources\sgw_wpel.bmp" />
-    <Content Include="Resources\Tank\JYTank.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 和 x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="mycontrol\" />
-    <Folder Include="MyVisa\Visa_Properties\" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.4.4\build\EntityFramework.props'))" />
-    <Error Condition="!Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.4.4\build\EntityFramework.targets'))" />
-    <Error Condition="!Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets'))" />
-    <Error Condition="!Exists('..\packages\Festool.Sdk.PhysicalLayer.Rs232.2.0.1\build\Festool.Sdk.PhysicalLayer.Rs232.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Festool.Sdk.PhysicalLayer.Rs232.2.0.1\build\Festool.Sdk.PhysicalLayer.Rs232.targets'))" />
-  </Target>
-  <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.targets" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.targets')" />
-  <Import Project="..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets" Condition="Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" />
-  <Import Project="..\packages\Festool.Sdk.PhysicalLayer.Rs232.2.0.1\build\Festool.Sdk.PhysicalLayer.Rs232.targets" Condition="Exists('..\packages\Festool.Sdk.PhysicalLayer.Rs232.2.0.1\build\Festool.Sdk.PhysicalLayer.Rs232.targets')" />
-  <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
-  </PropertyGroup>
+
 </Project>

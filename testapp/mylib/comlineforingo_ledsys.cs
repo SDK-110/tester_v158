@@ -55,9 +55,12 @@ namespace testapp
 
         #endregion
         /*--------------message loop dll upload-------------*/
-
+        public static IntPtr ptrWnd;
         volatile int isokctsreadled = 1; //ctsport LED读取空闲状态
         volatile int changecount = 0;
+        volatile int changecount_cts = 0;
+        volatile int changecount_dsr = 0;
+        const int led_ext = 1;              //外部控制LED 检测
         volatile int autoreadledvalue = 0;
 
         public int autoledflog
@@ -72,6 +75,17 @@ namespace testapp
             set { changecount = value; }
         
         }
+        public int setchangecout_cts {
+
+            set { changecount_cts = value; }
+        }
+
+        public int setchangecout_dsr
+        {
+
+            set { changecount_dsr = value; }
+        }
+
         public comlineforingo_led(string port, int baudrate) : base(port)
         {
 
@@ -81,7 +95,9 @@ namespace testapp
             base.StopBits = StopBits.One;
             base.DataBits = 8;
             base.Handshake = Handshake.None;
-            base.RtsEnable = true;
+            base.RtsEnable = false;
+            base.DtrEnable = false;
+           
             base.ReadTimeout = 15000;
             // base.DataReceived += Relay_aputus_DataReceived;
             if (base.IsOpen == false)
@@ -105,7 +121,26 @@ namespace testapp
 
             return changecount /2 ;
         }
-     int[] ctsreadled() {
+
+    public int readchangedcount_cts_fromctsport(int delay)
+        {
+
+
+            System.Threading.Thread.Sleep(delay);
+
+            return changecount_cts / 2;
+        }
+ public int readchangedcount_dsr_fromdsrport(int delay)
+        {
+
+
+            System.Threading.Thread.Sleep(delay);
+
+            return changecount_dsr / 2;
+        }
+
+
+        int[] ctsreadled() {
             int count = 0;
             isokctsreadled = 0;
             while (isokctsreadled == 0) {
@@ -138,8 +173,8 @@ namespace testapp
                 for (int i = 0; i < trytimes; i++)
                 {
 
-                    this.WriteLine("capture");
-                    System.Threading.Thread.Sleep(450);
+                    this.WriteLine("capture1");
+                    System.Threading.Thread.Sleep(50);
 
                     this.WriteLine("getrgbi" + $"{port:D2}");
                     System.Threading.Thread.Sleep(50);
@@ -167,8 +202,12 @@ namespace testapp
 
 
         }
-
-        public bool getpinstatus(int pin /*1為DCD PIN1 ,2為DSR PIN6 ,3為 CTS PIN 7  */)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pin"></param>
+        /// <returns>1為DCD PIN1 ,2為DSR PIN4 ,3為 CTS PIN 7</returns>
+        public bool getpinstatus(int pin /*1為DCD PIN1 ,2為DSR PIN6 ,3為 CTS PIN 8  */)
         {
             if (pin == 1)
             {
@@ -221,7 +260,8 @@ namespace testapp
             }
 
             if (e.EventType == SerialPinChange.CtsChanged) {
-
+                #region led_ext /*外部控制LED 读取*/
+                if (led_ext != 1) {  
                 if (autoledflog == 0) return;
                 SerialPort st = (SerialPort)sender;
                 isokctsreadled = 0;
@@ -262,21 +302,25 @@ namespace testapp
                     count++;
                 } while (true);
                 isokctsreadled = 1;
+                }
+                #endregion /*结束LED 外部自动检测*/
+
+                changecount_cts++;
             }
 
-            if (e.EventType == SerialPinChange.DsrChanged) { 
-            
+            if (e.EventType == SerialPinChange.DsrChanged) {
 
+                changecount_dsr++;
 
             }
 
 
             if (e.EventType == SerialPinChange.Ring) {
-                if (this.forsendwinmessag != null) { 
+              //  if (this.forsendwinmessag != null) { 
 
-                this.forsendwinmessag();
+           //     this.forsendwinmessag();
 
-                }
+            //    }
             }
         }
 
@@ -595,7 +639,12 @@ namespace testapp
         }
 
 
+        public void callbackdebuginfo(string m)
+        {
 
+            SendMessage(ptrWnd, WM_SENDB, IntPtr.Zero, m);
+
+        }
 
 
         ~comlineforingo_led()

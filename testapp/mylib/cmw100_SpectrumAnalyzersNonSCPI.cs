@@ -14,7 +14,7 @@ namespace testapp.mylib
     {
 
         private double offset;
-
+        private double set_span;
         public double OFFSET {
 
             set
@@ -31,7 +31,7 @@ namespace testapp.mylib
 
         }
        private RsCmwGprfMeas driver  = null;
-        public cmw100_SpectrumAnalyzersNonSCPI(String resource  = "TCPIP0::192.168.8.89::inst0::INSTR")
+        public cmw100_SpectrumAnalyzersNonSCPI(String resource  = "TCPIP0::IT-PC-531::inst1::INSTR")
         {
 
             try // Separate try-catch for initialization prevents accessing uninitialized object
@@ -68,11 +68,13 @@ namespace testapp.mylib
             {
 
                 driver.Utilities.VisaTimeout = 100000;
-                
+               // driver.Route.Value.RfConnector = RfConnectorEnum.RF1;
+                //driver.Route.Value.RfConverter = RohdeSchwarz.RsCmwGprfMeas.RxConverterEnum.RX1; 
                 driver.Configure.RfSettings.Eattenuation = offset;
                 driver.Configure.Display = MeasTabEnum.SPECtrum;
                 driver.Configure.RfSettings.Frequency = centerFreq;
                 driver.Configure.Spectrum.Frequency.Span.Value = span;
+                set_span = span;
                 driver.Configure.Spectrum.FreqSweep.Vbw.Value = VBW;
                 driver.Configure.Spectrum.FreqSweep.Rbw.Value = RBW;
                // driver.Configure.Spectrum.FreqSweep.Swt.Auto=true;
@@ -231,6 +233,150 @@ namespace testapp.mylib
 
             return true;
         }
+
+        public bool getmark_feq_level_bandwidth(out double level, out double bandwidth, out double offset, int sample = 0, int wait = 2000)
+        {
+
+            level = -1000;
+            offset = driver.Configure.Spectrum.Frequency.Span.Value;
+           
+
+            try
+            {
+
+
+
+
+
+                int count = sample;
+                double[] freqanalysis = new double[501];
+
+                for (int i = 0; i < 501; i++)
+                {
+
+                    freqanalysis[i] = -200;
+                }
+
+                double comp = -1000;
+                double centerlevel = -1000;
+                do
+                {
+
+                    driver.Spectrum.Initiate();
+                    System.Threading.Thread.Sleep(wait);
+                    driver.Utilities.QueryOpc();
+                    //  List<double> restlt =  driver.Spectrum.Sample.Maximum.Read();
+                    List<double> restlt = driver.Spectrum.Maximum.Maximum.Fetch();
+                    // driver.Utilities.QueryOpc();
+                    //  driver.Spectrum.Initiate();
+
+
+                    if (false)
+                    {  //debug read value//
+                        string ggg = "";
+                        for (int i = 0; i < restlt.Count; i++)
+                        {
+
+                            ggg = ggg + "," + restlt[i];
+                        }
+                        ggg = ggg + "\n";
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\HP\Desktop\12.csv", true))
+                        {
+                            file.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:ffff") + "," + ggg);
+
+
+                        }
+                    }
+
+
+
+
+                    // centerlevel = restlt[(restlt.Count-1)/2];
+                    //  int t = restlt.Count();
+                    if (comp < restlt.Max())
+                    {
+                        for (int i = 0; i < 501; i++)
+                        {
+                            if (freqanalysis[i] < (restlt[(restlt.Count - 1) / 2 - 250 + i]))
+                            {
+                                freqanalysis[i] = restlt[(restlt.Count - 1) / 2 - 250 + i];
+                            }
+
+                        }
+                        comp = restlt.Max();
+                    }
+
+
+
+                } while (--count >= 0);
+
+                
+
+
+                //   double bdlevl = (freqanalysis[250] - (Math.Abs(freqanalysis[250] * 0.3)));
+
+                //  string p = "";
+                double mx = freqanalysis.Max();
+                double maxpower = -200;
+                int left_z = 0;
+                for (int i = 0; i < 501; i++)
+                {
+                    if (Math.Abs(freqanalysis[i] - mx) < Math.Abs(mx) * 0.05) {
+                        left_z = i;
+                        break; }
+                    // p = p + ";[" + i + "]--->" +  freqanalysis[i] + ";";
+                    
+                }
+
+                int right_z = 0;
+                for (int i = 0; i < 501; i++)
+                {
+                    if (Math.Abs(freqanalysis[500-i] - mx) < Math.Abs(mx) * 0.05) {
+                        right_z = 500-i;
+                        break; }
+                    // p = p + ";[" + i + "]--->" +  freqanalysis[i] + ";";
+                   
+                }
+
+                 bandwidth = (right_z - left_z) * (driver.Configure.Spectrum.Frequency.Span.Value / 1000);
+                 maxpower = mx;
+               
+
+                offset = (right_z + left_z - 500) * (driver.Configure.Spectrum.Frequency.Span.Value / 1000); ;
+               
+
+
+
+
+
+                level = maxpower;
+
+
+            }
+            catch (Exception e)
+            {
+
+                //  System.Windows.Forms.MessageBox.Show(e.ToString());
+                level = -10000;
+                offset = 10000000000000;
+                bandwidth = driver.Configure.Spectrum.Frequency.Span.Value;
+                return false;
+
+            }
+
+
+
+
+
+            return true;
+        }
+
+
+
+
+
+
+
 
         void delay(int ms) {
 

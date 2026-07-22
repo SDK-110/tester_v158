@@ -14,8 +14,8 @@ namespace testapp.mylib.canopen
         public string Name { get; }
         /// <summary>EDS-loaded object dictionary. Null if no EDS was provided.</summary>
         public ObjectDictionary ObjectDict { get; private set; }
-        public NMTState KnownState => _nmt?.KnownState ?? NMTState.Unknown;
-        public bool IsAlive => _heartbeat?.IsAlive ?? false;
+        public NMTState KnownState => NMT?.KnownState ?? NMTState.Unknown;
+        public bool IsAlive => Heartbeat?.IsAlive ?? false;
 
         internal SDOClient SDO { get; private set; }
         internal NmtMaster NMT { get; private set; }

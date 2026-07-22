@@ -541,7 +541,7 @@ namespace test_antdui
             _engine.RegisterInitFunction(InitHandler);
             _engine.RegisterCleanupFunction(CleanupHandler);
         }
-
+        #region TEST_CASE_DEMO
         private string VoltageTest(string high, string low, out string rst, string parameter)
         {
             TestLoggerForm.Instance.AddLog(AppStrings.Get("test_voltage", low, high));
@@ -643,6 +643,7 @@ namespace test_antdui
             return pass ? $"PASS" : $"FAIL";
         }
 
+        #endregion
         private string InitHandler(string high, string low, out string rst, string parameter)
         {
             TestLoggerForm.Instance.AddLog("初始化: 开始...");
@@ -759,6 +760,21 @@ namespace test_antdui
                 return;
             }
 
+            foreach (var dev in testcase_lib.dev_moren) {
+
+                try
+                {
+                    if (dev.Value != null) dev.Value.set_default_set();
+                }
+                catch { }
+
+            }
+            try
+            {
+
+                testcase_lib.funcs["testsysini"]?.Invoke("","",out _ ,"");
+            }
+            catch { }
             int passCount = 0, failCount = 0;
             foreach (var item in _project.Items)
             {
@@ -800,6 +816,7 @@ namespace test_antdui
             UpdateAllStats();
             InitChartData();
             SaveReportIfNeeded(allPass);
+            if (!log_append.Checked) TestLoggerForm.Instance.SaveLog("FF");
             _barcodeInput.Focus();
             if (_debugForm != null && !_debugForm.IsDisposed)
                 _debugForm.ResetState();
@@ -889,6 +906,7 @@ namespace test_antdui
                 dialog.Title = AppStrings.Get("dlg_load_title");
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
+                    label3.Text = Path.GetFileNameWithoutExtension(dialog.FileName);
                     LoadFromExcel(dialog.FileName);
                 }
             }
@@ -952,7 +970,7 @@ namespace test_antdui
             var config = TestConfigManager.Instance;
             _orderNo = config.LastOrderNo;
             _operatorNo = config.LastOperatorNo;
-
+            this.label3.Text = Path.GetFileNameWithoutExtension(config.ProjectName);
             chkSaveExcel.Checked = (config.SaveMethod & 1) == 1;
             chkSaveAppend.Checked = (config.SaveMethod & 2) == 2;
             chkStopOnFail.Checked = config.StopOnFail == 1;
@@ -1081,7 +1099,7 @@ namespace test_antdui
                 string port = inidata["setport"]?["SRND_CM_12DI_port"];
                 if (string.IsNullOrEmpty(port)) return;
 
-                _diMonitor = new DigitalInputMonitor(pollIntervalMs: 250);
+                _diMonitor =  DigitalInputMonitor.Instance; 
                 _diMonitor.InputRising += OnDiRising;
                 _diMonitor.InputFalling += OnDiFalling;
                 _diMonitor.ScanError += OnDiError;

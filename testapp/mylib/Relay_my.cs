@@ -11,7 +11,17 @@ namespace testapp
     class myrelay : SerialPort
     {
         string recebuf;
-        public myrelay(string port, int baudrate=9600) : base(port)
+        private UInt32 relay_rec= Convert.ToUInt32("111111111111111111111111111", 2);
+
+        public UInt32 get_relay_rec
+        {
+            get {
+
+                return relay_rec;
+            }
+        
+        }
+        public myrelay(string port, int baudrate=115200) : base(port)
         {
            
        
@@ -44,8 +54,9 @@ namespace testapp
  
         public void set_rly(String setrly)
         {
+            relay_rec = Convert.ToUInt32(setrly.Replace("@", ""), 2);
             this.DiscardOutBuffer();
-            if (setrly.Length == 34)
+            if (setrly.Length >= 27)
             {
                 String tm = setrly.Trim();
                 this.WriteLine(tm);

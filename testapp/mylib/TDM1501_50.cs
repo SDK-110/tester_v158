@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO.Ports;
 using System.IO;
-namespace ClassLibrary1
+namespace DeviceLibrary
 {
     class TDM1501_50 : SerialPort
     {
@@ -57,9 +57,11 @@ namespace ClassLibrary1
             if (m[0] == 170)
             {
 
-                float z = (float)((UInt16)((m[5] * 256 + m[4])) / 100.00);
+                float z = (float)((UInt16)((m[5] * 256 + m[4])));
+                if (z > 32768) z = z - 65536;
+                z = (float)(z / 100.000);
                 if (z > 60) z = 60;
-                return z;  
+                return z;
 
 
             }

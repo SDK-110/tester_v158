@@ -13,6 +13,7 @@ namespace testapp.mylib
    
     class cmw100gps
     {
+      
         RsCmwGprfGen driver;
         public cmw100gps(string drv = "TCPIP::localhost::INSTR")
         {
@@ -20,7 +21,7 @@ namespace testapp.mylib
             driver = new RsCmwGprfGen(drv, true, true);
 
         }
-
+      
         public void gps_ModeSet(BasebandModeEnum bbmode= BasebandModeEnum.DTONe) {
 
             

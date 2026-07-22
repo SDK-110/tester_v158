@@ -109,7 +109,31 @@ namespace test_antdui
                     var item = _testItems[i];
                     _currentIndex = i;
                     item.Reset();
-                    
+
+                    // 调试暂停检查（在测试项执行前）
+                    if (!_cts.Token.IsCancellationRequested && _debugMode != DebugMode.Normal)
+                    {
+                        // RunToMode: 到达目标行时暂停，然后切换为 StepMode
+                        if (_debugMode == DebugMode.RunToMode && i >= _targetRow)
+                        {
+                            _debugMode = DebugMode.StepMode;
+                            _pauseTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                            OnDebugPaused(i, item);
+                            OnLogMessage($"[调试] 已到达目标行 #{_targetRow + 1}，暂停在 [{item.Id}] {item.Name}");
+                            await _pauseTcs.Task;
+                            OnLogMessage($"[调试] 继续执行...");
+                        }
+                        // StepMode: 在每项执行前暂停
+                        else if (_debugMode == DebugMode.StepMode)
+                        {
+                            _pauseTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                            OnDebugPaused(i, item);
+                            OnLogMessage($"[调试] 单步暂停在 [{item.Id}] {item.Name}");
+                            await _pauseTcs.Task;
+                            OnLogMessage($"[调试] 继续执行...");
+                        }
+                    }
+
                     OnLogMessage($"[{item.Id}] {item.Name} - 开始");
 
                     var sw = Stopwatch.StartNew();
@@ -128,28 +152,6 @@ namespace test_antdui
                     
                     OnLogMessage($"[{item.Id}] {item.Name} = {displayValue} (实测:{item.MeasuredValue}, 限值:{item.LowLimit}~{item.HighLimit}, {item.Duration}ms)");
                     TestItemCompleted?.Invoke(this, new TestEngineEventArgs(item, i, _testItems.Count));
-                    // 调试暂停检查
-                    if (!_cts.Token.IsCancellationRequested && _debugMode != DebugMode.Normal)
-                    {
-                        bool shouldPause = false;
-                        if (_debugMode == DebugMode.StepMode)
-                            shouldPause = true;
-                        else if (_debugMode == DebugMode.RunToMode && i >= _targetRow)
-                            shouldPause = true;
-
-                        if (shouldPause)
-                        {
-                            // RunTo 到达目标后自动切换为 StepMode
-                            if (_debugMode == DebugMode.RunToMode)
-                                _debugMode = DebugMode.StepMode;
-
-                            _pauseTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                            OnDebugPaused(i, item);
-                            OnLogMessage($"[调试] 已暂停在 [{item.Id}] {item.Name}");
-                            await _pauseTcs.Task;
-                            OnLogMessage($"[调试] 继续执行...");
-                        }
-                    }
                     if (!itemPass && i != int.Parse(item.Jumper_Num) && jump_cout-->0) {
                         
                         i = int.Parse(item.Jumper_Num)-2; continue; 
@@ -307,6 +309,7 @@ namespace test_antdui
         /// </summary>
         public void RunTo(int targetRow)
         {
+            OnLogMessage($"[调试] RunTo({targetRow + 1}) 被调用, 当前索引={_currentIndex}, 引擎运行={_isRunning}");
             if (targetRow <= _currentIndex)
             {
                 OnLogMessage($"[调试] 目标行 #{targetRow + 1} 已过当前位置 (#{_currentIndex + 1})，无法跳回");
@@ -314,6 +317,7 @@ namespace test_antdui
             }
             _targetRow = targetRow;
             _debugMode = DebugMode.RunToMode;
+            OnLogMessage($"[调试] 已设置目标行 #{targetRow + 1}, 模式=RunToMode");
             _pauseTcs?.TrySetResult(true);
         }
 

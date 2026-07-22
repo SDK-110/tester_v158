@@ -129,7 +129,7 @@ namespace testapp
 
         public PortOperatorBase(string address) => Address = address;
 
-        public int Timeout { set; get; } = 2000;
+        public int Timeout { set; get; } = 3000;
 
        public  event EventHandler<PortEventArgs> PortOpenning;
 
@@ -161,6 +161,7 @@ namespace testapp
                 result = VISA32.viOpenDefaultRM(out sesn);
                 result = VISA32.viOpen(sesn, Address, 0, Timeout, out vi);
                 VI = vi;
+                VISA32.viSetAttribute(vi, VISA32.VI_ATTR_TMO_VALUE,100000);
                 PortUltility.ThrowIfResultExcepiton(result);
                 this.IsPortOpen = true;
             }
@@ -185,6 +186,13 @@ namespace testapp
             PortUltility.ThrowIfResultExcepiton(result);
         }
 
+        public virtual void Write(byte[] datas)
+        {
+          
+            result = VISA32.viWrite(vi, datas, datas.Length, out int retCount);
+            PortUltility.ThrowIfResultExcepiton(result);
+        }
+
         public virtual void WriteLine(string command)
         {
             Write($"{command}\n");
@@ -199,6 +207,32 @@ namespace testapp
             PortUltility.ThrowIfResultExcepiton(result);
             return retCount != 0 ? Encoding.ASCII.GetString(resultBytes.Take(retCount).ToArray()):null;
         }
+
+
+        public virtual byte[] Read(bool is_byte)
+        {
+
+            int leng = 1200;
+            byte[] resultBytes = new byte[leng];
+            result = VISA32.viRead(vi, resultBytes, leng, out int retCount);
+            if (result == 0x3fff0006) result = 0;
+            PortUltility.ThrowIfResultExcepiton(result);
+            return retCount != 0 ? resultBytes.Take(retCount).ToArray() : null;
+        }
+
+
+        public virtual byte[] __Read(bool is_byte)
+        {
+            
+            
+   
+            byte[] resultBytes = new byte[READ_BUFFER_COUNT];
+            result = VISA32.viRead(vi, resultBytes, READ_BUFFER_COUNT, out int retCount);
+            // PortUltility.ThrowIfResultExcepiton(result);
+            return retCount != 0 ? resultBytes.Take(retCount).ToArray() : null;
+        }
+
+
 
         public virtual string ReadLine()
         {

@@ -19,7 +19,7 @@ namespace testapp
 
         private void button1_Click(object sender, EventArgs e)
         {
-            testcase_dll z = Form1.m;
+            testcase_dll z = Main_f.testcase_lib;
             chroma19701.setred_step pp = new chroma19701.setred_step();
             pp.head = 0xab;
             pp.target_add = 0x01;

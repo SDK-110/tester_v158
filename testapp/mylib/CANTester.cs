@@ -76,6 +76,11 @@ namespace testapp
                     init_config.Timing0 = 0x09;
                     init_config.Timing1 = 0x1c;
                     break;
+                case 126984://126984
+
+                    init_config.Timing0 = 0x02;
+                    init_config.Timing1 = 0xcf;
+                    break;
 
             }
             init_config.Mode = 0;
