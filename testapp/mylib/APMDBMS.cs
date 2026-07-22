@@ -386,22 +386,7 @@ namespace testapp
 
         private  Byte[] tan_modbus(Byte[] data,bool iftr)
         {
-
-
-            Byte[] z = new Byte[(data.Length + 2)];
-
-            for (int i = 0; i < data.Length; i++)
-            {
-
-
-                z[i] = data[i];
-            }
-
-            UInt16 temp = crc16(data);
-            z[(data.Length)] = (Byte)(((Byte)temp << 8) >> 8);
-            z[(data.Length + 1)] = (Byte)(temp >> 8);
-
-            return z;
+            return ModbusCrc16.AppendCrc(data);
         }
 
 

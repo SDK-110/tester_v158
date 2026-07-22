@@ -91,8 +91,8 @@ namespace InControls.PLC.FX
 			_Timer.Dispose();
 			_Timer = null;
 
-			_Thead.Abort();
-			_Thead.Join();
+			// _Thead.Abort(); // Not supported in .NET 8, use CancellationToken in production
+			_Thead.Join(1000); // Wait up to 1 second for thread to exit
 			_Thead = null;
 		}
 

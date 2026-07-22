@@ -112,7 +112,7 @@ namespace testapp
             public static string EncryptAES(string text)
             {
                 var sourceBytes = System.Text.Encoding.UTF8.GetBytes(text);
-                var aes = new System.Security.Cryptography.RijndaelManaged();
+                var aes = System.Security.Cryptography.Aes.Create();
                 aes.Mode = System.Security.Cryptography.CipherMode.CBC;
                 aes.Padding = System.Security.Cryptography.PaddingMode.PKCS7;
                 aes.Key = System.Text.Encoding.UTF8.GetBytes(test1);
@@ -124,7 +124,7 @@ namespace testapp
             public static string DecryptAES(string text)
             {
                 var encryptBytes = System.Convert.FromBase64String(text);
-                var aes = new System.Security.Cryptography.RijndaelManaged();
+                var aes = System.Security.Cryptography.Aes.Create();
                 aes.Mode = System.Security.Cryptography.CipherMode.CBC;
                 aes.Padding = System.Security.Cryptography.PaddingMode.PKCS7;
                 aes.Key = System.Text.Encoding.UTF8.GetBytes(test1);
