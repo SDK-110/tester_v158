@@ -19,15 +19,16 @@ namespace testapp
         static void Main(string[] args)
         {
             // .NET 8 迁移：重定向 .NET Framework DLL 对旧版程序集的引用
-            // PCHMI.dll / SeeSharpTools.JY.GUI.dll 引用 System.Windows.Forms.DataVisualization v4.0.0.0 (MS原版)
-            // HIC 社区移植版程序集版本为 v1.0.0.0，版本不匹配导致运行时 FileNotFoundException
+            // PCHMI.dll / SeeSharpTools.JY.GUI.dll 引用 System.Windows.Forms.DataVisualization v4.0.0.0 (MS原版, PKT=31bf3856ad364e35)
+            // HIC 社区移植版程序集版本为 v1.0.0.0，无微软强签名。
+            // 使用 Assembly.Load(byte[]) 绕过强签名验证 (FileLoadException 0x80131044)
             AppDomain.CurrentDomain.AssemblyResolve += (sender, e) =>
             {
                 if (e.Name.StartsWith("System.Windows.Forms.DataVisualization", StringComparison.OrdinalIgnoreCase))
                 {
                     string dllPath = System.IO.Path.Combine(AppContext.BaseDirectory, "System.Windows.Forms.DataVisualization.dll");
                     if (System.IO.File.Exists(dllPath))
-                        return System.Reflection.Assembly.LoadFrom(dllPath);
+                        return System.Reflection.Assembly.Load(System.IO.File.ReadAllBytes(dllPath));
                 }
                 return null;
             };
