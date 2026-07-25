@@ -93,7 +93,7 @@ namespace test_antdui
             ["col_duration"] = Make("时长", "Time"),
 
             // ── Dialogs ──
-            ["dlg_load_filter"] = Make("Excel文件|*.xlsx;*.xls", "Excel Files|*.xlsx;*.xls"),
+            ["dlg_load_filter"] = Make("测试文件|*.sproj;*.xlsx;*.xls", "Test Files|*.sproj;*.xlsx;*.xls"),
             ["dlg_load_title"] = Make("选择测试模板", "Select Test Template"),
             ["dlg_save_filter"] = Make("Excel文件|*.xlsx", "Excel Files|*.xlsx"),
             ["dlg_save_title"] = Make("保存测试结果", "Save Test Results"),

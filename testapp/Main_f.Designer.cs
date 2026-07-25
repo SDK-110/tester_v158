@@ -1,794 +1,771 @@
-﻿using System;
-using System.Windows.Forms;
-using ScottPlot.WinForms;
-
-namespace testapp
-{
-    partial class Main_f
-    {
-        /// <summary>
-        /// 必需的设计器变量。
-        /// </summary>
-        private System.ComponentModel.IContainer components = null;
-
-        /// <summary>
-        /// 清理所有正在使用的资源。
-        /// </summary>
-        /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-        private void rep1ini() {
-
-
-        }
-
-        #region Windows 窗体设计器生成的代码
-
-        /// <summary>
-        /// 设计器支持所需的方法 - 不要修改
-        /// 使用代码编辑器修改此方法的内容。
-        /// </summary>
-        private void InitializeComponent()
-        {
-            this.chart1 = new ScottPlot.WinForms.FormsPlot();
-            this.button2 = new System.Windows.Forms.Button();
-            this.chart2 = new ScottPlot.WinForms.FormsPlot();
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.修改配置ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.修改后重新加载ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.清理白板数据ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.请夜班数据ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.同时清除白夜班数据ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.设置项目ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.打开校验程序表ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.重新加载测试表ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.调试DEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.debugmyrelayToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.skrelaydebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.innoverrelaydebugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.语言配置ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.英语ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.汉语ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.cancelTESTToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.singleStepModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.breakpointToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.nextsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.productionInfoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripTextBox1 = new System.Windows.Forms.ToolStripTextBox();
-            this.调试ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.debugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.label1 = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.textBox2 = new System.Windows.Forms.TextBox();
-            this.textBox6 = new System.Windows.Forms.TextBox();
-            this.label7 = new System.Windows.Forms.Label();
-            this.textBox5 = new System.Windows.Forms.TextBox();
-            this.label6 = new System.Windows.Forms.Label();
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
-            this.textBox4 = new System.Windows.Forms.TextBox();
-            this.label5 = new System.Windows.Forms.Label();
-            this.textBox3 = new System.Windows.Forms.TextBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
-            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.easyChartX1 = new ScottPlot.WinForms.FormsPlot();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.reoGridControl1 = new unvell.ReoGrid.ReoGridControl();
-            this.timer2 = new System.Windows.Forms.Timer(this.components);
-            this.timer3 = new System.Windows.Forms.Timer(this.components);
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel3 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.menuStrip1.SuspendLayout();
-            this.tableLayoutPanel1.SuspendLayout();
-            this.panel1.SuspendLayout();
-            this.statusStrip1.SuspendLayout();
-            this.SuspendLayout();
-            // 
-            // backgroundWorker1
-            // 
-            this.backgroundWorker1.WorkerReportsProgress = true;
-            this.backgroundWorker1.WorkerSupportsCancellation = true;
-            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
-            this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
-            this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
-            // 
-            // chart1
-            // 
-            this.chart1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.chart1.BackColor = System.Drawing.Color.Transparent;
-            this.tableLayoutPanel1.SetColumnSpan(this.chart1, 5);
-            this.chart1.Location = new System.Drawing.Point(484, 3);
-            this.chart1.Name = "chart1";
-            this.chart1.Size = new System.Drawing.Size(708, 95);
-            this.chart1.TabIndex = 2;
-            this.chart1.TabStop = false;
-            this.chart1.Text = "chart1";
-            // 
-            // button2
-            // 
-            this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tableLayoutPanel1.SetColumnSpan(this.button2, 2);
-            this.button2.Font = new System.Drawing.Font("宋体", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.button2.Location = new System.Drawing.Point(484, 261);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(303, 41);
-            this.button2.TabIndex = 3;
-            this.button2.Text = "start";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
-            this.button2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.button2_KeyDown);
-            // 
-            // chart2
-            // 
-            this.chart2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.chart2.BackColor = System.Drawing.Color.Transparent;
-            this.tableLayoutPanel1.SetColumnSpan(this.chart2, 5);
-            this.chart2.Location = new System.Drawing.Point(484, 104);
-            this.chart2.Name = "chart2";
-            this.chart2.Size = new System.Drawing.Size(708, 92);
-            this.chart2.TabIndex = 4;
-            this.chart2.TabStop = false;
-            this.chart2.Text = "chart2";
-            // 
-            // menuStrip1
-            // 
-            this.menuStrip1.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripMenuItem1,
-            this.语言配置ToolStripMenuItem,
-            this.productionInfoToolStripMenuItem,
-            this.调试ToolStripMenuItem});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
-            this.menuStrip1.Size = new System.Drawing.Size(1195, 25);
-            this.menuStrip1.TabIndex = 5;
-            this.menuStrip1.Text = "menuStrip1";
-            this.menuStrip1.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.menuStrip1_ItemClicked);
-            // 
-            // toolStripMenuItem1
-            // 
-            this.toolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.修改配置ToolStripMenuItem,
-            this.修改后重新加载ToolStripMenuItem,
-            this.清理白板数据ToolStripMenuItem,
-            this.请夜班数据ToolStripMenuItem,
-            this.同时清除白夜班数据ToolStripMenuItem,
-            this.设置项目ToolStripMenuItem,
-            this.打开校验程序表ToolStripMenuItem,
-            this.重新加载测试表ToolStripMenuItem,
-            this.调试DEBUGToolStripMenuItem,
-            this.debugmyrelayToolStripMenuItem,
-            this.skrelaydebugToolStripMenuItem,
-            this.innoverrelaydebugToolStripMenuItem});
-            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(44, 21);
-            this.toolStripMenuItem1.Text = "配置";
-            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
-            // 
-            // 修改配置ToolStripMenuItem
-            // 
-            this.修改配置ToolStripMenuItem.Name = "修改配置ToolStripMenuItem";
-            this.修改配置ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.修改配置ToolStripMenuItem.Text = "修改配置";
-            this.修改配置ToolStripMenuItem.Click += new System.EventHandler(this.修改配置ToolStripMenuItem_Click);
-            // 
-            // 修改后重新加载ToolStripMenuItem
-            // 
-            this.修改后重新加载ToolStripMenuItem.Name = "修改后重新加载ToolStripMenuItem";
-            this.修改后重新加载ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.修改后重新加载ToolStripMenuItem.Text = "修改后重新加载";
-            this.修改后重新加载ToolStripMenuItem.Click += new System.EventHandler(this.修改后重新加载ToolStripMenuItem_Click);
-            // 
-            // 清理白板数据ToolStripMenuItem
-            // 
-            this.清理白板数据ToolStripMenuItem.Name = "清理白板数据ToolStripMenuItem";
-            this.清理白板数据ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.清理白板数据ToolStripMenuItem.Text = "清理白班数据";
-            this.清理白板数据ToolStripMenuItem.Click += new System.EventHandler(this.清理白板数据ToolStripMenuItem_Click);
-            // 
-            // 请夜班数据ToolStripMenuItem
-            // 
-            this.请夜班数据ToolStripMenuItem.Name = "请夜班数据ToolStripMenuItem";
-            this.请夜班数据ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.请夜班数据ToolStripMenuItem.Text = "清除夜班数据";
-            this.请夜班数据ToolStripMenuItem.Click += new System.EventHandler(this.请夜班数据ToolStripMenuItem_Click);
-            // 
-            // 同时清除白夜班数据ToolStripMenuItem
-            // 
-            this.同时清除白夜班数据ToolStripMenuItem.Name = "同时清除白夜班数据ToolStripMenuItem";
-            this.同时清除白夜班数据ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.同时清除白夜班数据ToolStripMenuItem.Text = "同时清除白夜班数据";
-            this.同时清除白夜班数据ToolStripMenuItem.Click += new System.EventHandler(this.同时清除白夜班数据ToolStripMenuItem_Click);
-            // 
-            // 设置项目ToolStripMenuItem
-            // 
-            this.设置项目ToolStripMenuItem.Name = "设置项目ToolStripMenuItem";
-            this.设置项目ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.设置项目ToolStripMenuItem.Text = "设置项目";
-            this.设置项目ToolStripMenuItem.Click += new System.EventHandler(this.设置项目ToolStripMenuItem_Click);
-            // 
-            // 打开校验程序表ToolStripMenuItem
-            // 
-            this.打开校验程序表ToolStripMenuItem.Name = "打开校验程序表ToolStripMenuItem";
-            this.打开校验程序表ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.打开校验程序表ToolStripMenuItem.Text = "打开校验程序表";
-            this.打开校验程序表ToolStripMenuItem.Click += new System.EventHandler(this.打开校验程序表ToolStripMenuItem_Click);
-            // 
-            // 重新加载测试表ToolStripMenuItem
-            // 
-            this.重新加载测试表ToolStripMenuItem.Name = "重新加载测试表ToolStripMenuItem";
-            this.重新加载测试表ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.重新加载测试表ToolStripMenuItem.Text = "重新加载测试表";
-            this.重新加载测试表ToolStripMenuItem.Click += new System.EventHandler(this.重新加载测试表ToolStripMenuItem_Click);
-            // 
-            // 调试DEBUGToolStripMenuItem
-            // 
-            this.调试DEBUGToolStripMenuItem.Name = "调试DEBUGToolStripMenuItem";
-            this.调试DEBUGToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.调试DEBUGToolStripMenuItem.Text = "调试DEBUG";
-            this.调试DEBUGToolStripMenuItem.Click += new System.EventHandler(this.调试DEBUGToolStripMenuItem_Click);
-            // 
-            // debugmyrelayToolStripMenuItem
-            // 
-            this.debugmyrelayToolStripMenuItem.Name = "debugmyrelayToolStripMenuItem";
-            this.debugmyrelayToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.debugmyrelayToolStripMenuItem.Text = "debug_myrelay";
-            this.debugmyrelayToolStripMenuItem.Click += new System.EventHandler(this.debugmyrelayToolStripMenuItem_Click);
-            // 
-            // skrelaydebugToolStripMenuItem
-            // 
-            this.skrelaydebugToolStripMenuItem.Name = "skrelaydebugToolStripMenuItem";
-            this.skrelaydebugToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.skrelaydebugToolStripMenuItem.Text = "sk_relay_debug";
-            this.skrelaydebugToolStripMenuItem.Click += new System.EventHandler(this.skrelaydebugToolStripMenuItem_Click);
-            // 
-            // innoverrelaydebugToolStripMenuItem
-            // 
-            this.innoverrelaydebugToolStripMenuItem.Name = "innoverrelaydebugToolStripMenuItem";
-            this.innoverrelaydebugToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.innoverrelaydebugToolStripMenuItem.Text = "innover_relay_debug";
-            this.innoverrelaydebugToolStripMenuItem.Click += new System.EventHandler(this.innoverrelaydebugToolStripMenuItem_Click);
-            // 
-            // 语言配置ToolStripMenuItem
-            // 
-            this.语言配置ToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.英语ToolStripMenuItem,
-            this.汉语ToolStripMenuItem,
-            this.cancelTESTToolStripMenuItem,
-            this.singleStepModeToolStripMenuItem,
-            this.breakpointToolStripMenuItem,
-            this.nextsToolStripMenuItem});
-            this.语言配置ToolStripMenuItem.Name = "语言配置ToolStripMenuItem";
-            this.语言配置ToolStripMenuItem.Size = new System.Drawing.Size(68, 21);
-            this.语言配置ToolStripMenuItem.Text = "语言设置";
-            // 
-            // 英语ToolStripMenuItem
-            // 
-            this.英语ToolStripMenuItem.Name = "英语ToolStripMenuItem";
-            this.英语ToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
-            this.英语ToolStripMenuItem.Text = "英语";
-            this.英语ToolStripMenuItem.Click += new System.EventHandler(this.英语ToolStripMenuItem_Click);
-            // 
-            // 汉语ToolStripMenuItem
-            // 
-            this.汉语ToolStripMenuItem.Name = "汉语ToolStripMenuItem";
-            this.汉语ToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
-            this.汉语ToolStripMenuItem.Text = "汉语";
-            this.汉语ToolStripMenuItem.Click += new System.EventHandler(this.汉语ToolStripMenuItem_Click);
-            // 
-            // cancelTESTToolStripMenuItem
-            // 
-            this.cancelTESTToolStripMenuItem.Name = "cancelTESTToolStripMenuItem";
-            this.cancelTESTToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
-            this.cancelTESTToolStripMenuItem.Text = "Cancel_TEST";
-            this.cancelTESTToolStripMenuItem.Click += new System.EventHandler(this.cancelTESTToolStripMenuItem_Click);
-            // 
-            // singleStepModeToolStripMenuItem
-            // 
-            this.singleStepModeToolStripMenuItem.Name = "singleStepModeToolStripMenuItem";
-            this.singleStepModeToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
-            this.singleStepModeToolStripMenuItem.Text = "Single_Step_Mode";
-            this.singleStepModeToolStripMenuItem.Click += new System.EventHandler(this.singleStepModeToolStripMenuItem_Click);
-            // 
-            // breakpointToolStripMenuItem
-            // 
-            this.breakpointToolStripMenuItem.Name = "breakpointToolStripMenuItem";
-            this.breakpointToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
-            this.breakpointToolStripMenuItem.Text = "breakpoint_Debug_Mode";
-            this.breakpointToolStripMenuItem.Click += new System.EventHandler(this.Break_PointToolStripMenuItem_Click);
-            // 
-            // nextsToolStripMenuItem
-            // 
-            this.nextsToolStripMenuItem.Name = "nextsToolStripMenuItem";
-            this.nextsToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
-            this.nextsToolStripMenuItem.Text = "Next_Step &F4";
-            this.nextsToolStripMenuItem.Click += new System.EventHandler(this.nextsToolStripMenuItem_Click);
-            // 
-            // productionInfoToolStripMenuItem
-            // 
-            this.productionInfoToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripTextBox1});
-            this.productionInfoToolStripMenuItem.Name = "productionInfoToolStripMenuItem";
-            this.productionInfoToolStripMenuItem.Size = new System.Drawing.Size(68, 21);
-            this.productionInfoToolStripMenuItem.Text = "产品信息";
-            // 
-            // toolStripTextBox1
-            // 
-            this.toolStripTextBox1.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
-            this.toolStripTextBox1.Name = "toolStripTextBox1";
-            this.toolStripTextBox1.Size = new System.Drawing.Size(100, 23);
-            this.toolStripTextBox1.Text = "123456";
-            this.toolStripTextBox1.TextChanged += new System.EventHandler(this.toolStripTextBox1_TextChanged);
-            // 
-            // 调试ToolStripMenuItem
-            // 
-            this.调试ToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.debugToolStripMenuItem});
-            this.调试ToolStripMenuItem.Name = "调试ToolStripMenuItem";
-            this.调试ToolStripMenuItem.Size = new System.Drawing.Size(44, 21);
-            this.调试ToolStripMenuItem.Text = "调试";
-            // 
-            // debugToolStripMenuItem
-            // 
-            this.debugToolStripMenuItem.Name = "debugToolStripMenuItem";
-            this.debugToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
-            this.debugToolStripMenuItem.Text = "Debug";
-            this.debugToolStripMenuItem.Click += new System.EventHandler(this.debugToolStripMenuItem_Click);
-            // 
-            // label1
-            // 
-            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.AutoSize = true;
-            this.tableLayoutPanel1.SetColumnSpan(this.label1, 2);
-            this.label1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label1.Location = new System.Drawing.Point(484, 221);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(303, 16);
-            this.label1.TabIndex = 7;
-            this.label1.Text = "total：100PCS |NG : 3|OK:99";
-            // 
-            // textBox1
-            // 
-            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tableLayoutPanel1.SetColumnSpan(this.textBox1, 2);
-            this.textBox1.Font = new System.Drawing.Font("宋体", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.textBox1.Location = new System.Drawing.Point(484, 344);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox1.Size = new System.Drawing.Size(303, 31);
-            this.textBox1.TabIndex = 1;
-            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
-            this.textBox1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBox1_KeyDown);
-            // 
-            // label2
-            // 
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.AutoSize = true;
-            this.tableLayoutPanel1.SetColumnSpan(this.label2, 2);
-            this.label2.Location = new System.Drawing.Point(484, 329);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(303, 12);
-            this.label2.TabIndex = 9;
-            this.label2.Text = "条码扫入：";
-            // 
-            // label3
-            // 
-            this.tableLayoutPanel1.SetColumnSpan(this.label3, 3);
-            this.label3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label3.Font = new System.Drawing.Font("宋体", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label3.Location = new System.Drawing.Point(793, 199);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(399, 38);
-            this.label3.TabIndex = 10;
-            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // textBox2
-            // 
-            this.textBox2.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.textBox2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBox2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.textBox2.ForeColor = System.Drawing.Color.Lime;
-            this.textBox2.Location = new System.Drawing.Point(3, 496);
-            this.textBox2.Multiline = true;
-            this.textBox2.Name = "textBox2";
-            this.textBox2.ReadOnly = true;
-            this.textBox2.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox2.Size = new System.Drawing.Size(475, 142);
-            this.textBox2.TabIndex = 11;
-            this.textBox2.TabStop = false;
-            this.textBox2.SizeChanged += new System.EventHandler(this.textBox2_SizeChanged);
-            this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
-            // 
-            // textBox6
-            // 
-            this.textBox6.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tableLayoutPanel1.SetColumnSpan(this.textBox6, 2);
-            this.textBox6.Location = new System.Drawing.Point(887, 471);
-            this.textBox6.Name = "textBox6";
-            this.textBox6.ReadOnly = true;
-            this.textBox6.Size = new System.Drawing.Size(305, 21);
-            this.textBox6.TabIndex = 8;
-            this.textBox6.TabStop = false;
-            // 
-            // label7
-            // 
-            this.label7.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label7.AutoSize = true;
-            this.label7.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label7.Location = new System.Drawing.Point(793, 472);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(87, 16);
-            this.label7.TabIndex = 7;
-            this.label7.Text = "TimerIndex";
-            // 
-            // textBox5
-            // 
-            this.textBox5.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBox5.Location = new System.Drawing.Point(593, 471);
-            this.textBox5.Name = "textBox5";
-            this.textBox5.ReadOnly = true;
-            this.textBox5.Size = new System.Drawing.Size(194, 21);
-            this.textBox5.TabIndex = 6;
-            this.textBox5.TabStop = false;
-            // 
-            // label6
-            // 
-            this.label6.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label6.Location = new System.Drawing.Point(484, 473);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(77, 14);
-            this.label6.TabIndex = 5;
-            this.label6.Text = "Totle time";
-            // 
-            // progressBar1
-            // 
-            this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tableLayoutPanel1.SetColumnSpan(this.progressBar1, 2);
-            this.progressBar1.Location = new System.Drawing.Point(484, 414);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(303, 26);
-            this.progressBar1.TabIndex = 4;
-            // 
-            // textBox4
-            // 
-            this.textBox4.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tableLayoutPanel1.SetColumnSpan(this.textBox4, 2);
-            this.textBox4.Location = new System.Drawing.Point(887, 446);
-            this.textBox4.Name = "textBox4";
-            this.textBox4.ReadOnly = true;
-            this.textBox4.Size = new System.Drawing.Size(305, 21);
-            this.textBox4.TabIndex = 3;
-            this.textBox4.TabStop = false;
-            // 
-            // label5
-            // 
-            this.label5.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label5.AutoSize = true;
-            this.label5.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label5.Location = new System.Drawing.Point(793, 447);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(71, 16);
-            this.label5.TabIndex = 2;
-            this.label5.Text = "end time";
-            // 
-            // textBox3
-            // 
-            this.textBox3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBox3.Location = new System.Drawing.Point(593, 446);
-            this.textBox3.Name = "textBox3";
-            this.textBox3.ReadOnly = true;
-            this.textBox3.Size = new System.Drawing.Size(194, 21);
-            this.textBox3.TabIndex = 1;
-            this.textBox3.TabStop = false;
-            this.textBox3.TextChanged += new System.EventHandler(this.textBox3_TextChanged);
-            // 
-            // label4
-            // 
-            this.label4.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.label4.AutoSize = true;
-            this.label4.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label4.Location = new System.Drawing.Point(484, 447);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(87, 16);
-            this.label4.TabIndex = 0;
-            this.label4.Text = "start time";
-            // 
-            // timer1
-            // 
-            this.timer1.Enabled = true;
-            this.timer1.Interval = 300;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
-            // 
-            // richTextBox1
-            // 
-            this.richTextBox1.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.tableLayoutPanel1.SetColumnSpan(this.richTextBox1, 3);
-            this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBox1.Location = new System.Drawing.Point(793, 240);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.ReadOnly = true;
-            this.tableLayoutPanel1.SetRowSpan(this.richTextBox1, 4);
-            this.richTextBox1.Size = new System.Drawing.Size(399, 200);
-            this.richTextBox1.TabIndex = 13;
-            this.richTextBox1.TabStop = false;
-            this.richTextBox1.Text = "";
-            // 
-            // tableLayoutPanel1
-            // 
-            this.tableLayoutPanel1.ColumnCount = 6;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 81.46912F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 18.53089F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 200F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 94F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 38F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 272F));
-            this.tableLayoutPanel1.Controls.Add(this.textBox6, 4, 8);
-            this.tableLayoutPanel1.Controls.Add(this.textBox2, 0, 9);
-            this.tableLayoutPanel1.Controls.Add(this.label7, 3, 8);
-            this.tableLayoutPanel1.Controls.Add(this.chart1, 1, 0);
-            this.tableLayoutPanel1.Controls.Add(this.textBox5, 2, 8);
-            this.tableLayoutPanel1.Controls.Add(this.chart2, 1, 1);
-            this.tableLayoutPanel1.Controls.Add(this.label6, 1, 8);
-            this.tableLayoutPanel1.Controls.Add(this.label2, 1, 4);
-            this.tableLayoutPanel1.Controls.Add(this.textBox4, 4, 7);
-            this.tableLayoutPanel1.Controls.Add(this.textBox1, 1, 5);
-            this.tableLayoutPanel1.Controls.Add(this.label5, 3, 7);
-            this.tableLayoutPanel1.Controls.Add(this.button2, 1, 3);
-            this.tableLayoutPanel1.Controls.Add(this.textBox3, 2, 7);
-            this.tableLayoutPanel1.Controls.Add(this.progressBar1, 1, 6);
-            this.tableLayoutPanel1.Controls.Add(this.label1, 1, 2);
-            this.tableLayoutPanel1.Controls.Add(this.label4, 1, 7);
-            this.tableLayoutPanel1.Controls.Add(this.richTextBox1, 3, 3);
-            this.tableLayoutPanel1.Controls.Add(this.label3, 3, 2);
-            this.tableLayoutPanel1.Controls.Add(this.easyChartX1, 1, 9);
-            this.tableLayoutPanel1.Controls.Add(this.panel1, 0, 0);
-            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 25);
-            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-            this.tableLayoutPanel1.RowCount = 10;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.91575F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 49.08425F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 38F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 68F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 36F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 70F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 147F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(1195, 641);
-            this.tableLayoutPanel1.TabIndex = 14;
-            // 
-            // easyChartX1
-            // 
-            this.easyChartX1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));            this.easyChartX1.BackColor = System.Drawing.Color.WhiteSmoke;
-            this.tableLayoutPanel1.SetColumnSpan(this.easyChartX1, 5);
-            this.easyChartX1.Location = new System.Drawing.Point(483, 495);
-            this.easyChartX1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);            this.easyChartX1.Name = "easyChartX1";
-            this.easyChartX1.Size = new System.Drawing.Size(710, 144);
-            this.easyChartX1.TabIndex = 15;
-            this.easyChartX1.Visible = false;            // ;
-            // panel1
-            // 
-            this.panel1.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.panel1.Controls.Add(this.reoGridControl1);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(3, 3);
-            this.panel1.Name = "panel1";
-            this.tableLayoutPanel1.SetRowSpan(this.panel1, 9);
-            this.panel1.Size = new System.Drawing.Size(475, 487);
-            this.panel1.TabIndex = 14;
-            // 
-            // reoGridControl1
-            // 
-            this.reoGridControl1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.reoGridControl1.ColumnHeaderContextMenuStrip = null;
-            this.reoGridControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.reoGridControl1.LeadHeaderContextMenuStrip = null;
-            this.reoGridControl1.Location = new System.Drawing.Point(0, 0);
-            this.reoGridControl1.Margin = new System.Windows.Forms.Padding(0, 0, 3, 0);
-            this.reoGridControl1.MinimumSize = new System.Drawing.Size(200, 487);
-            this.reoGridControl1.Name = "reoGridControl1";
-            this.reoGridControl1.RowHeaderContextMenuStrip = null;
-            this.reoGridControl1.Script = null;
-            this.reoGridControl1.SheetTabContextMenuStrip = null;
-            this.reoGridControl1.SheetTabNewButtonVisible = false;
-            this.reoGridControl1.SheetTabVisible = false;
-            this.reoGridControl1.SheetTabWidth = 60;
-            this.reoGridControl1.ShowScrollEndSpacing = true;
-            this.reoGridControl1.Size = new System.Drawing.Size(475, 487);
-            this.reoGridControl1.TabIndex = 0;
-            this.reoGridControl1.Text = "reoGridControl1";
-            this.reoGridControl1.Click += new System.EventHandler(this.reoGridControl1_Click);
-            this.reoGridControl1.DoubleClick += new System.EventHandler(this.reoGridControl1_DoubleClick);
-            // 
-            // timer2
-            // 
-            this.timer2.Interval = 300;
-            this.timer2.Tick += new System.EventHandler(this.timer2_Tick);
-            // 
-            // timer3
-            // 
-            this.timer3.Tick += new System.EventHandler(this.timer3_Tick);
-            // 
-            // statusStrip1
-            // 
-            this.statusStrip1.AllowMerge = false;
-            this.statusStrip1.AutoSize = false;
-            this.statusStrip1.BackColor = System.Drawing.Color.WhiteSmoke;
-            this.statusStrip1.Font = new System.Drawing.Font("Microsoft YaHei UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.statusStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Visible;
-            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripStatusLabel1,
-            this.toolStripStatusLabel2,
-            this.toolStripStatusLabel3});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 666);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.statusStrip1.ShowItemToolTips = true;
-            this.statusStrip1.Size = new System.Drawing.Size(1195, 25);
-            this.statusStrip1.Stretch = false;
-            this.statusStrip1.TabIndex = 15;
-            this.statusStrip1.Text = "statusStrip1";
-            // 
-            // toolStripStatusLabel1
-            // 
-            this.toolStripStatusLabel1.Font = new System.Drawing.Font("Microsoft YaHei UI", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.toolStripStatusLabel1.Margin = new System.Windows.Forms.Padding(0);
-            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(393, 25);
-            this.toolStripStatusLabel1.Spring = true;
-            this.toolStripStatusLabel1.Text = "                                   ";
-            this.toolStripStatusLabel1.Click += new System.EventHandler(this.toolStripStatusLabel1_Click);
-            // 
-            // toolStripStatusLabel2
-            // 
-            this.toolStripStatusLabel2.BorderSides = ((System.Windows.Forms.ToolStripStatusLabelBorderSides)((System.Windows.Forms.ToolStripStatusLabelBorderSides.Left | System.Windows.Forms.ToolStripStatusLabelBorderSides.Right)));
-            this.toolStripStatusLabel2.BorderStyle = System.Windows.Forms.Border3DStyle.Etched;
-            this.toolStripStatusLabel2.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripStatusLabel2.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.toolStripStatusLabel2.Margin = new System.Windows.Forms.Padding(0);
-            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(393, 25);
-            this.toolStripStatusLabel2.Spring = true;
-            this.toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // toolStripStatusLabel3
-            // 
-            this.toolStripStatusLabel3.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.toolStripStatusLabel3.Name = "toolStripStatusLabel3";
-            this.toolStripStatusLabel3.Size = new System.Drawing.Size(393, 20);
-            this.toolStripStatusLabel3.Spring = true;
-            // 
-            // Main_f
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.ClientSize = new System.Drawing.Size(1195, 691);
-            this.Controls.Add(this.tableLayoutPanel1);
-            this.Controls.Add(this.menuStrip1);
-            this.Controls.Add(this.statusStrip1);
-            this.DoubleBuffered = true;
-            this.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.MainMenuStrip = this.menuStrip1;
-            this.Name = "Main_f";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Form1";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-            this.Load += new System.EventHandler(this.Form1_Load);
-            this.Shown += new System.EventHandler(this.Form1_Shown);
-            this.SizeChanged += new System.EventHandler(this.Form1_SizeChanged);
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
-            this.tableLayoutPanel1.ResumeLayout(false);
-            this.tableLayoutPanel1.PerformLayout();
-            this.panel1.ResumeLayout(false);
-            this.statusStrip1.ResumeLayout(false);
-            this.statusStrip1.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
-        }
-
-        #endregion
-        private ScottPlot.WinForms.FormsPlot chart1;
-        private System.Windows.Forms.Button button2;
-        private ScottPlot.WinForms.FormsPlot chart2;
-        public System.ComponentModel.BackgroundWorker backgroundWorker1;
-        private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem 修改配置ToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem 修改后重新加载ToolStripMenuItem;
-        private System.Windows.Forms.Label label1;
-        private TextBox textBox1;
-        private Label label2;
-        private ToolStripMenuItem 清理白板数据ToolStripMenuItem;
-        private ToolStripMenuItem 请夜班数据ToolStripMenuItem;
-        private ToolStripMenuItem 同时清除白夜班数据ToolStripMenuItem;
-        private Label label3;
-        private ToolStripMenuItem 设置项目ToolStripMenuItem;
-        private TextBox textBox2;
-        private ProgressBar progressBar1;
-        private TextBox textBox4;
-        private Label label5;
-        private TextBox textBox3;
-        private Label label4;
-        private Timer timer1;
-        private TextBox textBox5;
-        private Label label6;
-        private TextBox textBox6;
-        private Label label7;
-        private ToolStripMenuItem 语言配置ToolStripMenuItem;
-        private ToolStripMenuItem 英语ToolStripMenuItem;
-        private ToolStripMenuItem 汉语ToolStripMenuItem;
-        private ToolStripMenuItem 打开校验程序表ToolStripMenuItem;
-        private ToolStripMenuItem 重新加载测试表ToolStripMenuItem;
-        private RichTextBox richTextBox1;
-        private ToolStripMenuItem 调试DEBUGToolStripMenuItem;
-        private TableLayoutPanel tableLayoutPanel1;
-        private Panel panel1;
-        private ScottPlot.WinForms.FormsPlot easyChartX1;
-        private ToolStripMenuItem debugmyrelayToolStripMenuItem;
-    
-        private Timer timer2;
-        private ToolStripMenuItem skrelaydebugToolStripMenuItem;
-        internal Timer timer3;
-       // private Sunisoft.IrisSkin.SkinCollectionItem skinCollectionItem1;
-        private StatusStrip statusStrip1;
-        private ToolStripStatusLabel toolStripStatusLabel1;
-        private ToolStripStatusLabel toolStripStatusLabel2;
-        private unvell.ReoGrid.ReoGridControl reoGridControl1;
-        private ToolStripMenuItem cancelTESTToolStripMenuItem;
-        private ToolStripMenuItem productionInfoToolStripMenuItem;
-        private ToolStripTextBox toolStripTextBox1;
-        private ToolStripMenuItem innoverrelaydebugToolStripMenuItem;
-        private ToolStripMenuItem singleStepModeToolStripMenuItem;
-        private ToolStripMenuItem breakpointToolStripMenuItem;
-        private ToolStripMenuItem nextsToolStripMenuItem;
-        private ToolStripMenuItem 调试ToolStripMenuItem;
-        private ToolStripMenuItem debugToolStripMenuItem;
-        private ToolStripStatusLabel toolStripStatusLabel3;
-    }
-}
-
+﻿using System;
+using System.Windows.Forms;
+using ScottPlot.WinForms;
+
+namespace testapp
+{
+    partial class Main_f
+    {
+        /// <summary>
+        /// 必需的设计器变量。
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// 清理所有正在使用的资源。
+        /// </summary>
+        /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+        private void rep1ini() {
+
+
+        }
+
+        #region Windows 窗体设计器生成的代码
+
+        /// <summary>
+        /// 设计器支持所需的方法 - 不要修改
+        /// 使用代码编辑器修改此方法的内容。
+        /// </summary>
+        private void InitializeComponent()
+        {
+            components = new System.ComponentModel.Container();
+            backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            chart1 = new FormsPlot();
+            button2 = new Button();
+            chart2 = new FormsPlot();
+            menuStrip1 = new MenuStrip();
+            toolStripMenuItem1 = new ToolStripMenuItem();
+            修改配置ToolStripMenuItem = new ToolStripMenuItem();
+            修改后重新加载ToolStripMenuItem = new ToolStripMenuItem();
+            清理白板数据ToolStripMenuItem = new ToolStripMenuItem();
+            请夜班数据ToolStripMenuItem = new ToolStripMenuItem();
+            同时清除白夜班数据ToolStripMenuItem = new ToolStripMenuItem();
+            设置项目ToolStripMenuItem = new ToolStripMenuItem();
+            打开校验程序表ToolStripMenuItem = new ToolStripMenuItem();
+            重新加载测试表ToolStripMenuItem = new ToolStripMenuItem();
+            调试DEBUGToolStripMenuItem = new ToolStripMenuItem();
+            debugmyrelayToolStripMenuItem = new ToolStripMenuItem();
+            skrelaydebugToolStripMenuItem = new ToolStripMenuItem();
+            innoverrelaydebugToolStripMenuItem = new ToolStripMenuItem();
+            语言配置ToolStripMenuItem = new ToolStripMenuItem();
+            英语ToolStripMenuItem = new ToolStripMenuItem();
+            汉语ToolStripMenuItem = new ToolStripMenuItem();
+            cancelTESTToolStripMenuItem = new ToolStripMenuItem();
+            singleStepModeToolStripMenuItem = new ToolStripMenuItem();
+            breakpointToolStripMenuItem = new ToolStripMenuItem();
+            nextsToolStripMenuItem = new ToolStripMenuItem();
+            productionInfoToolStripMenuItem = new ToolStripMenuItem();
+            toolStripTextBox1 = new ToolStripTextBox();
+            调试ToolStripMenuItem = new ToolStripMenuItem();
+            debugToolStripMenuItem = new ToolStripMenuItem();
+            label1 = new Label();
+            textBox1 = new TextBox();
+            label2 = new Label();
+            label3 = new Label();
+            textBox2 = new TextBox();
+            textBox6 = new TextBox();
+            label7 = new Label();
+            textBox5 = new TextBox();
+            label6 = new Label();
+            progressBar1 = new ProgressBar();
+            textBox4 = new TextBox();
+            label5 = new Label();
+            textBox3 = new TextBox();
+            label4 = new Label();
+            timer1 = new Timer(components);
+            richTextBox1 = new RichTextBox();
+            tableLayoutPanel1 = new TableLayoutPanel();
+            easyChartX1 = new FormsPlot();
+            panel1 = new Panel();
+            reoGridControl1 = new unvell.ReoGrid.ReoGridControl();
+            timer2 = new Timer(components);
+            timer3 = new Timer(components);
+            statusStrip1 = new StatusStrip();
+            toolStripStatusLabel1 = new ToolStripStatusLabel();
+            toolStripStatusLabel2 = new ToolStripStatusLabel();
+            toolStripStatusLabel3 = new ToolStripStatusLabel();
+            menuStrip1.SuspendLayout();
+            tableLayoutPanel1.SuspendLayout();
+            panel1.SuspendLayout();
+            statusStrip1.SuspendLayout();
+            SuspendLayout();
+            // 
+            // backgroundWorker1
+            // 
+            backgroundWorker1.WorkerReportsProgress = true;
+            backgroundWorker1.WorkerSupportsCancellation = true;
+            backgroundWorker1.DoWork += backgroundWorker1_DoWork;
+            backgroundWorker1.ProgressChanged += backgroundWorker1_ProgressChanged;
+            backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;
+            // 
+            // chart1
+            // 
+            chart1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            chart1.BackColor = System.Drawing.Color.Transparent;
+            tableLayoutPanel1.SetColumnSpan(chart1, 5);
+            chart1.Location = new System.Drawing.Point(721, 4);
+            chart1.Margin = new Padding(4);
+            chart1.Name = "chart1";
+            chart1.Size = new System.Drawing.Size(804, 109);
+            chart1.TabIndex = 2;
+            chart1.TabStop = false;
+            // 
+            // button2
+            // 
+            button2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tableLayoutPanel1.SetColumnSpan(button2, 2);
+            button2.Font = new System.Drawing.Font("宋体", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            button2.Location = new System.Drawing.Point(721, 298);
+            button2.Margin = new Padding(4);
+            button2.Name = "button2";
+            button2.Size = new System.Drawing.Size(375, 58);
+            button2.TabIndex = 3;
+            button2.Text = "start";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
+            button2.KeyDown += button2_KeyDown;
+            // 
+            // chart2
+            // 
+            chart2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            chart2.BackColor = System.Drawing.Color.Transparent;
+            tableLayoutPanel1.SetColumnSpan(chart2, 5);
+            chart2.Location = new System.Drawing.Point(721, 121);
+            chart2.Margin = new Padding(4);
+            chart2.Name = "chart2";
+            chart2.Size = new System.Drawing.Size(804, 102);
+            chart2.TabIndex = 4;
+            chart2.TabStop = false;
+            // 
+            // menuStrip1
+            // 
+            menuStrip1.BackColor = System.Drawing.SystemColors.ControlLightLight;
+            menuStrip1.Items.AddRange(new ToolStripItem[] { toolStripMenuItem1, 语言配置ToolStripMenuItem, productionInfoToolStripMenuItem, 调试ToolStripMenuItem });
+            menuStrip1.Location = new System.Drawing.Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Padding = new Padding(7, 3, 0, 3);
+            menuStrip1.RenderMode = ToolStripRenderMode.Professional;
+            menuStrip1.Size = new System.Drawing.Size(1529, 27);
+            menuStrip1.TabIndex = 5;
+            menuStrip1.Text = "menuStrip1";
+            menuStrip1.ItemClicked += menuStrip1_ItemClicked;
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { 修改配置ToolStripMenuItem, 修改后重新加载ToolStripMenuItem, 清理白板数据ToolStripMenuItem, 请夜班数据ToolStripMenuItem, 同时清除白夜班数据ToolStripMenuItem, 设置项目ToolStripMenuItem, 打开校验程序表ToolStripMenuItem, 重新加载测试表ToolStripMenuItem, 调试DEBUGToolStripMenuItem, debugmyrelayToolStripMenuItem, skrelaydebugToolStripMenuItem, innoverrelaydebugToolStripMenuItem });
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new System.Drawing.Size(44, 21);
+            toolStripMenuItem1.Text = "配置";
+            toolStripMenuItem1.Click += toolStripMenuItem1_Click;
+            // 
+            // 修改配置ToolStripMenuItem
+            // 
+            修改配置ToolStripMenuItem.Name = "修改配置ToolStripMenuItem";
+            修改配置ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            修改配置ToolStripMenuItem.Text = "修改配置";
+            修改配置ToolStripMenuItem.Click += 修改配置ToolStripMenuItem_Click;
+            // 
+            // 修改后重新加载ToolStripMenuItem
+            // 
+            修改后重新加载ToolStripMenuItem.Name = "修改后重新加载ToolStripMenuItem";
+            修改后重新加载ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            修改后重新加载ToolStripMenuItem.Text = "修改后重新加载";
+            修改后重新加载ToolStripMenuItem.Click += 修改后重新加载ToolStripMenuItem_Click;
+            // 
+            // 清理白板数据ToolStripMenuItem
+            // 
+            清理白板数据ToolStripMenuItem.Name = "清理白板数据ToolStripMenuItem";
+            清理白板数据ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            清理白板数据ToolStripMenuItem.Text = "清理白班数据";
+            清理白板数据ToolStripMenuItem.Click += 清理白板数据ToolStripMenuItem_Click;
+            // 
+            // 请夜班数据ToolStripMenuItem
+            // 
+            请夜班数据ToolStripMenuItem.Name = "请夜班数据ToolStripMenuItem";
+            请夜班数据ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            请夜班数据ToolStripMenuItem.Text = "清除夜班数据";
+            请夜班数据ToolStripMenuItem.Click += 请夜班数据ToolStripMenuItem_Click;
+            // 
+            // 同时清除白夜班数据ToolStripMenuItem
+            // 
+            同时清除白夜班数据ToolStripMenuItem.Name = "同时清除白夜班数据ToolStripMenuItem";
+            同时清除白夜班数据ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            同时清除白夜班数据ToolStripMenuItem.Text = "同时清除白夜班数据";
+            同时清除白夜班数据ToolStripMenuItem.Click += 同时清除白夜班数据ToolStripMenuItem_Click;
+            // 
+            // 设置项目ToolStripMenuItem
+            // 
+            设置项目ToolStripMenuItem.Name = "设置项目ToolStripMenuItem";
+            设置项目ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            设置项目ToolStripMenuItem.Text = "设置项目";
+            设置项目ToolStripMenuItem.Click += 设置项目ToolStripMenuItem_Click;
+            // 
+            // 打开校验程序表ToolStripMenuItem
+            // 
+            打开校验程序表ToolStripMenuItem.Name = "打开校验程序表ToolStripMenuItem";
+            打开校验程序表ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            打开校验程序表ToolStripMenuItem.Text = "打开校验程序表";
+            打开校验程序表ToolStripMenuItem.Click += 打开校验程序表ToolStripMenuItem_Click;
+            // 
+            // 重新加载测试表ToolStripMenuItem
+            // 
+            重新加载测试表ToolStripMenuItem.Name = "重新加载测试表ToolStripMenuItem";
+            重新加载测试表ToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            重新加载测试表ToolStripMenuItem.Text = "重新加载测试表";
+            重新加载测试表ToolStripMenuItem.Click += 重新加载测试表ToolStripMenuItem_Click;
+            // 
+            // 调试DEBUGToolStripMenuItem
+            // 
+            调试DEBUGToolStripMenuItem.Name = "调试DEBUGToolStripMenuItem";
+            调试DEBUGToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            调试DEBUGToolStripMenuItem.Text = "调试DEBUG";
+            调试DEBUGToolStripMenuItem.Click += 调试DEBUGToolStripMenuItem_Click;
+            // 
+            // debugmyrelayToolStripMenuItem
+            // 
+            debugmyrelayToolStripMenuItem.Name = "debugmyrelayToolStripMenuItem";
+            debugmyrelayToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            debugmyrelayToolStripMenuItem.Text = "debug_myrelay";
+            debugmyrelayToolStripMenuItem.Click += debugmyrelayToolStripMenuItem_Click;
+            // 
+            // skrelaydebugToolStripMenuItem
+            // 
+            skrelaydebugToolStripMenuItem.Name = "skrelaydebugToolStripMenuItem";
+            skrelaydebugToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            skrelaydebugToolStripMenuItem.Text = "sk_relay_debug";
+            skrelaydebugToolStripMenuItem.Click += skrelaydebugToolStripMenuItem_Click;
+            // 
+            // innoverrelaydebugToolStripMenuItem
+            // 
+            innoverrelaydebugToolStripMenuItem.Name = "innoverrelaydebugToolStripMenuItem";
+            innoverrelaydebugToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            innoverrelaydebugToolStripMenuItem.Text = "innover_relay_debug";
+            innoverrelaydebugToolStripMenuItem.Click += innoverrelaydebugToolStripMenuItem_Click;
+            // 
+            // 语言配置ToolStripMenuItem
+            // 
+            语言配置ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { 英语ToolStripMenuItem, 汉语ToolStripMenuItem, cancelTESTToolStripMenuItem, singleStepModeToolStripMenuItem, breakpointToolStripMenuItem, nextsToolStripMenuItem });
+            语言配置ToolStripMenuItem.Name = "语言配置ToolStripMenuItem";
+            语言配置ToolStripMenuItem.Size = new System.Drawing.Size(68, 21);
+            语言配置ToolStripMenuItem.Text = "语言设置";
+            // 
+            // 英语ToolStripMenuItem
+            // 
+            英语ToolStripMenuItem.Name = "英语ToolStripMenuItem";
+            英语ToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
+            英语ToolStripMenuItem.Text = "英语";
+            英语ToolStripMenuItem.Click += 英语ToolStripMenuItem_Click;
+            // 
+            // 汉语ToolStripMenuItem
+            // 
+            汉语ToolStripMenuItem.Name = "汉语ToolStripMenuItem";
+            汉语ToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
+            汉语ToolStripMenuItem.Text = "汉语";
+            汉语ToolStripMenuItem.Click += 汉语ToolStripMenuItem_Click;
+            // 
+            // cancelTESTToolStripMenuItem
+            // 
+            cancelTESTToolStripMenuItem.Name = "cancelTESTToolStripMenuItem";
+            cancelTESTToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
+            cancelTESTToolStripMenuItem.Text = "Cancel_TEST";
+            cancelTESTToolStripMenuItem.Click += cancelTESTToolStripMenuItem_Click;
+            // 
+            // singleStepModeToolStripMenuItem
+            // 
+            singleStepModeToolStripMenuItem.Name = "singleStepModeToolStripMenuItem";
+            singleStepModeToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
+            singleStepModeToolStripMenuItem.Text = "Single_Step_Mode";
+            singleStepModeToolStripMenuItem.Click += singleStepModeToolStripMenuItem_Click;
+            // 
+            // breakpointToolStripMenuItem
+            // 
+            breakpointToolStripMenuItem.Name = "breakpointToolStripMenuItem";
+            breakpointToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
+            breakpointToolStripMenuItem.Text = "breakpoint_Debug_Mode";
+            breakpointToolStripMenuItem.Click += Break_PointToolStripMenuItem_Click;
+            // 
+            // nextsToolStripMenuItem
+            // 
+            nextsToolStripMenuItem.Name = "nextsToolStripMenuItem";
+            nextsToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
+            nextsToolStripMenuItem.Text = "Next_Step &F4";
+            nextsToolStripMenuItem.Click += nextsToolStripMenuItem_Click;
+            // 
+            // productionInfoToolStripMenuItem
+            // 
+            productionInfoToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripTextBox1 });
+            productionInfoToolStripMenuItem.Name = "productionInfoToolStripMenuItem";
+            productionInfoToolStripMenuItem.Size = new System.Drawing.Size(68, 21);
+            productionInfoToolStripMenuItem.Text = "产品信息";
+            // 
+            // toolStripTextBox1
+            // 
+            toolStripTextBox1.Name = "toolStripTextBox1";
+            toolStripTextBox1.Size = new System.Drawing.Size(100, 23);
+            toolStripTextBox1.Text = "123456";
+            toolStripTextBox1.TextChanged += toolStripTextBox1_TextChanged;
+            // 
+            // 调试ToolStripMenuItem
+            // 
+            调试ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { debugToolStripMenuItem });
+            调试ToolStripMenuItem.Name = "调试ToolStripMenuItem";
+            调试ToolStripMenuItem.Size = new System.Drawing.Size(44, 21);
+            调试ToolStripMenuItem.Text = "调试";
+            // 
+            // debugToolStripMenuItem
+            // 
+            debugToolStripMenuItem.Name = "debugToolStripMenuItem";
+            debugToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
+            debugToolStripMenuItem.Text = "Debug";
+            debugToolStripMenuItem.Click += debugToolStripMenuItem_Click;
+            // 
+            // label1
+            // 
+            label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            label1.AutoSize = true;
+            tableLayoutPanel1.SetColumnSpan(label1, 2);
+            label1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
+            label1.Location = new System.Drawing.Point(721, 248);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(375, 16);
+            label1.TabIndex = 7;
+            label1.Text = "total：100PCS |NG : 3|OK:99";
+            // 
+            // textBox1
+            // 
+            textBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tableLayoutPanel1.SetColumnSpan(textBox1, 2);
+            textBox1.Font = new System.Drawing.Font("宋体", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            textBox1.Location = new System.Drawing.Point(721, 415);
+            textBox1.Margin = new Padding(4);
+            textBox1.Name = "textBox1";
+            textBox1.ScrollBars = ScrollBars.Vertical;
+            textBox1.Size = new System.Drawing.Size(375, 31);
+            textBox1.TabIndex = 1;
+            textBox1.TextChanged += textBox1_TextChanged;
+            textBox1.KeyDown += textBox1_KeyDown;
+            // 
+            // label2
+            // 
+            label2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            label2.AutoSize = true;
+            tableLayoutPanel1.SetColumnSpan(label2, 2);
+            label2.Location = new System.Drawing.Point(721, 394);
+            label2.Margin = new Padding(4, 0, 4, 0);
+            label2.Name = "label2";
+            label2.Size = new System.Drawing.Size(375, 17);
+            label2.TabIndex = 9;
+            label2.Text = "条码扫入：";
+            // 
+            // label3
+            // 
+            tableLayoutPanel1.SetColumnSpan(label3, 3);
+            label3.Dock = DockStyle.Fill;
+            label3.Font = new System.Drawing.Font("宋体", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            label3.Location = new System.Drawing.Point(1104, 227);
+            label3.Margin = new Padding(4, 0, 4, 0);
+            label3.Name = "label3";
+            label3.Size = new System.Drawing.Size(421, 37);
+            label3.TabIndex = 10;
+            label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // textBox2
+            // 
+            textBox2.BackColor = System.Drawing.SystemColors.ControlLightLight;
+            textBox2.Dock = DockStyle.Fill;
+            textBox2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            textBox2.ForeColor = System.Drawing.Color.Lime;
+            textBox2.Location = new System.Drawing.Point(4, 629);
+            textBox2.Margin = new Padding(4);
+            textBox2.Multiline = true;
+            textBox2.Name = "textBox2";
+            textBox2.ReadOnly = true;
+            textBox2.ScrollBars = ScrollBars.Vertical;
+            textBox2.Size = new System.Drawing.Size(709, 201);
+            textBox2.TabIndex = 11;
+            textBox2.TabStop = false;
+            textBox2.SizeChanged += textBox2_SizeChanged;
+            textBox2.TextChanged += textBox2_TextChanged;
+            // 
+            // textBox6
+            // 
+            textBox6.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tableLayoutPanel1.SetColumnSpan(textBox6, 2);
+            textBox6.Location = new System.Drawing.Point(1170, 594);
+            textBox6.Margin = new Padding(4);
+            textBox6.Name = "textBox6";
+            textBox6.ReadOnly = true;
+            textBox6.Size = new System.Drawing.Size(355, 23);
+            textBox6.TabIndex = 8;
+            textBox6.TabStop = false;
+            // 
+            // label7
+            // 
+            label7.Anchor = AnchorStyles.Left;
+            label7.AutoSize = true;
+            label7.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            label7.Location = new System.Drawing.Point(1104, 591);
+            label7.Margin = new Padding(4, 0, 4, 0);
+            label7.Name = "label7";
+            label7.Size = new System.Drawing.Size(55, 32);
+            label7.TabIndex = 7;
+            label7.Text = "TimerIndex";
+            // 
+            // textBox5
+            // 
+            textBox5.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            textBox5.Location = new System.Drawing.Point(827, 594);
+            textBox5.Margin = new Padding(4);
+            textBox5.Name = "textBox5";
+            textBox5.ReadOnly = true;
+            textBox5.Size = new System.Drawing.Size(269, 23);
+            textBox5.TabIndex = 6;
+            textBox5.TabStop = false;
+            // 
+            // label6
+            // 
+            label6.Anchor = AnchorStyles.Left;
+            label6.AutoSize = true;
+            label6.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            label6.Location = new System.Drawing.Point(721, 600);
+            label6.Margin = new Padding(4, 0, 4, 0);
+            label6.Name = "label6";
+            label6.Size = new System.Drawing.Size(77, 14);
+            label6.TabIndex = 5;
+            label6.Text = "Totle time";
+            // 
+            // progressBar1
+            // 
+            progressBar1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tableLayoutPanel1.SetColumnSpan(progressBar1, 2);
+            progressBar1.Location = new System.Drawing.Point(721, 514);
+            progressBar1.Margin = new Padding(4);
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new System.Drawing.Size(375, 37);
+            progressBar1.TabIndex = 4;
+            // 
+            // textBox4
+            // 
+            textBox4.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tableLayoutPanel1.SetColumnSpan(textBox4, 2);
+            textBox4.Location = new System.Drawing.Point(1170, 559);
+            textBox4.Margin = new Padding(4);
+            textBox4.Name = "textBox4";
+            textBox4.ReadOnly = true;
+            textBox4.Size = new System.Drawing.Size(355, 23);
+            textBox4.TabIndex = 3;
+            textBox4.TabStop = false;
+            // 
+            // label5
+            // 
+            label5.Anchor = AnchorStyles.Left;
+            label5.AutoSize = true;
+            label5.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            label5.Location = new System.Drawing.Point(1104, 556);
+            label5.Margin = new Padding(4, 0, 4, 0);
+            label5.Name = "label5";
+            label5.Size = new System.Drawing.Size(39, 32);
+            label5.TabIndex = 2;
+            label5.Text = "end time";
+            // 
+            // textBox3
+            // 
+            textBox3.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            textBox3.Location = new System.Drawing.Point(827, 559);
+            textBox3.Margin = new Padding(4);
+            textBox3.Name = "textBox3";
+            textBox3.ReadOnly = true;
+            textBox3.Size = new System.Drawing.Size(269, 23);
+            textBox3.TabIndex = 1;
+            textBox3.TabStop = false;
+            textBox3.TextChanged += textBox3_TextChanged;
+            // 
+            // label4
+            // 
+            label4.Anchor = AnchorStyles.Left;
+            label4.AutoSize = true;
+            label4.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            label4.Location = new System.Drawing.Point(721, 564);
+            label4.Margin = new Padding(4, 0, 4, 0);
+            label4.Name = "label4";
+            label4.Size = new System.Drawing.Size(87, 16);
+            label4.TabIndex = 0;
+            label4.Text = "start time";
+            // 
+            // timer1
+            // 
+            timer1.Interval = 300;
+            timer1.Tick += timer1_Tick;
+            // 
+            // richTextBox1
+            // 
+            richTextBox1.BackColor = System.Drawing.SystemColors.ControlLightLight;
+            tableLayoutPanel1.SetColumnSpan(richTextBox1, 3);
+            richTextBox1.Dock = DockStyle.Fill;
+            richTextBox1.Location = new System.Drawing.Point(1104, 268);
+            richTextBox1.Margin = new Padding(4);
+            richTextBox1.Name = "richTextBox1";
+            richTextBox1.ReadOnly = true;
+            tableLayoutPanel1.SetRowSpan(richTextBox1, 4);
+            richTextBox1.Size = new System.Drawing.Size(421, 283);
+            richTextBox1.TabIndex = 13;
+            richTextBox1.TabStop = false;
+            richTextBox1.Text = "";
+            // 
+            // tableLayoutPanel1
+            // 
+            tableLayoutPanel1.ColumnCount = 6;
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 87.12029F));
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12.8797083F));
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 277F));
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 66F));
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 44F));
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 318F));
+            tableLayoutPanel1.Controls.Add(textBox6, 4, 8);
+            tableLayoutPanel1.Controls.Add(textBox2, 0, 9);
+            tableLayoutPanel1.Controls.Add(label7, 3, 8);
+            tableLayoutPanel1.Controls.Add(chart1, 1, 0);
+            tableLayoutPanel1.Controls.Add(textBox5, 2, 8);
+            tableLayoutPanel1.Controls.Add(chart2, 1, 1);
+            tableLayoutPanel1.Controls.Add(label6, 1, 8);
+            tableLayoutPanel1.Controls.Add(label2, 1, 4);
+            tableLayoutPanel1.Controls.Add(textBox4, 4, 7);
+            tableLayoutPanel1.Controls.Add(textBox1, 1, 5);
+            tableLayoutPanel1.Controls.Add(label5, 3, 7);
+            tableLayoutPanel1.Controls.Add(button2, 1, 3);
+            tableLayoutPanel1.Controls.Add(textBox3, 2, 7);
+            tableLayoutPanel1.Controls.Add(progressBar1, 1, 6);
+            tableLayoutPanel1.Controls.Add(label1, 1, 2);
+            tableLayoutPanel1.Controls.Add(label4, 1, 7);
+            tableLayoutPanel1.Controls.Add(richTextBox1, 3, 3);
+            tableLayoutPanel1.Controls.Add(label3, 3, 2);
+            tableLayoutPanel1.Controls.Add(easyChartX1, 1, 9);
+            tableLayoutPanel1.Controls.Add(panel1, 0, 0);
+            tableLayoutPanel1.Dock = DockStyle.Fill;
+            tableLayoutPanel1.Location = new System.Drawing.Point(0, 27);
+            tableLayoutPanel1.Margin = new Padding(4);
+            tableLayoutPanel1.Name = "tableLayoutPanel1";
+            tableLayoutPanel1.RowCount = 10;
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 51.5021477F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 48.4978523F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 37F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 96F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 51F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 99F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 45F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 35F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 35F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 208F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
+            tableLayoutPanel1.Size = new System.Drawing.Size(1529, 834);
+            tableLayoutPanel1.TabIndex = 14;
+            // 
+            // easyChartX1
+            // 
+            easyChartX1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            easyChartX1.BackColor = System.Drawing.Color.WhiteSmoke;
+            tableLayoutPanel1.SetColumnSpan(easyChartX1, 5);
+            easyChartX1.Location = new System.Drawing.Point(721, 629);
+            easyChartX1.Margin = new Padding(4);
+            easyChartX1.Name = "easyChartX1";
+            easyChartX1.Size = new System.Drawing.Size(804, 201);
+            easyChartX1.TabIndex = 14;
+            easyChartX1.Visible = false;
+            // 
+            // panel1
+            // 
+            panel1.BackColor = System.Drawing.SystemColors.ActiveCaption;
+            panel1.Controls.Add(reoGridControl1);
+            panel1.Dock = DockStyle.Fill;
+            panel1.Location = new System.Drawing.Point(4, 4);
+            panel1.Margin = new Padding(4);
+            panel1.Name = "panel1";
+            tableLayoutPanel1.SetRowSpan(panel1, 9);
+            panel1.Size = new System.Drawing.Size(709, 617);
+            panel1.TabIndex = 14;
+            // 
+            // reoGridControl1
+            // 
+            reoGridControl1.BackColor = System.Drawing.Color.FromArgb(255, 255, 255);
+            reoGridControl1.ColumnHeaderContextMenuStrip = null;
+            reoGridControl1.Dock = DockStyle.Fill;
+            reoGridControl1.LeadHeaderContextMenuStrip = null;
+            reoGridControl1.Location = new System.Drawing.Point(0, 0);
+            reoGridControl1.Margin = new Padding(0, 0, 4, 0);
+            reoGridControl1.MinimumSize = new System.Drawing.Size(233, 690);
+            reoGridControl1.Name = "reoGridControl1";
+            reoGridControl1.RowHeaderContextMenuStrip = null;
+            reoGridControl1.Script = null;
+            reoGridControl1.SheetTabContextMenuStrip = null;
+            reoGridControl1.SheetTabNewButtonVisible = false;
+            reoGridControl1.SheetTabVisible = false;
+            reoGridControl1.SheetTabWidth = 70;
+            reoGridControl1.ShowScrollEndSpacing = true;
+            reoGridControl1.Size = new System.Drawing.Size(709, 690);
+            reoGridControl1.TabIndex = 0;
+            reoGridControl1.Text = "reoGridControl1";
+            reoGridControl1.Click += reoGridControl1_Click;
+            reoGridControl1.DoubleClick += reoGridControl1_DoubleClick;
+            // 
+            // timer2
+            // 
+            timer2.Interval = 300;
+            timer2.Tick += timer2_Tick;
+            // 
+            // timer3
+            // 
+            timer3.Tick += timer3_Tick;
+            // 
+            // statusStrip1
+            // 
+            statusStrip1.AllowMerge = false;
+            statusStrip1.AutoSize = false;
+            statusStrip1.BackColor = System.Drawing.Color.WhiteSmoke;
+            statusStrip1.Font = new System.Drawing.Font("Microsoft YaHei UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            statusStrip1.GripStyle = ToolStripGripStyle.Visible;
+            statusStrip1.Items.AddRange(new ToolStripItem[] { toolStripStatusLabel1, toolStripStatusLabel2, toolStripStatusLabel3 });
+            statusStrip1.Location = new System.Drawing.Point(0, 861);
+            statusStrip1.Name = "statusStrip1";
+            statusStrip1.Padding = new Padding(1, 0, 16, 0);
+            statusStrip1.RightToLeft = RightToLeft.No;
+            statusStrip1.ShowItemToolTips = true;
+            statusStrip1.Size = new System.Drawing.Size(1529, 35);
+            statusStrip1.Stretch = false;
+            statusStrip1.TabIndex = 15;
+            statusStrip1.Text = "statusStrip1";
+            // 
+            // toolStripStatusLabel1
+            // 
+            toolStripStatusLabel1.Font = new System.Drawing.Font("Microsoft YaHei UI", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            toolStripStatusLabel1.Margin = new Padding(0);
+            toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            toolStripStatusLabel1.RightToLeft = RightToLeft.No;
+            toolStripStatusLabel1.Size = new System.Drawing.Size(504, 35);
+            toolStripStatusLabel1.Spring = true;
+            toolStripStatusLabel1.Text = "                                   ";
+            toolStripStatusLabel1.Click += toolStripStatusLabel1_Click;
+            // 
+            // toolStripStatusLabel2
+            // 
+            toolStripStatusLabel2.BorderSides = ToolStripStatusLabelBorderSides.Left | ToolStripStatusLabelBorderSides.Right;
+            toolStripStatusLabel2.BorderStyle = Border3DStyle.Etched;
+            toolStripStatusLabel2.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            toolStripStatusLabel2.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            toolStripStatusLabel2.Margin = new Padding(0);
+            toolStripStatusLabel2.Name = "toolStripStatusLabel2";
+            toolStripStatusLabel2.RightToLeft = RightToLeft.No;
+            toolStripStatusLabel2.Size = new System.Drawing.Size(504, 35);
+            toolStripStatusLabel2.Spring = true;
+            toolStripStatusLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // toolStripStatusLabel3
+            // 
+            toolStripStatusLabel3.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
+            toolStripStatusLabel3.Name = "toolStripStatusLabel3";
+            toolStripStatusLabel3.Size = new System.Drawing.Size(504, 30);
+            toolStripStatusLabel3.Spring = true;
+            // 
+            // Main_f
+            // 
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
+            AutoScaleMode = AutoScaleMode.Font;
+            BackColor = System.Drawing.SystemColors.ControlLightLight;
+            ClientSize = new System.Drawing.Size(1529, 896);
+            Controls.Add(tableLayoutPanel1);
+            Controls.Add(menuStrip1);
+            Controls.Add(statusStrip1);
+            DoubleBuffered = true;
+            ForeColor = System.Drawing.SystemColors.ControlText;
+            MainMenuStrip = menuStrip1;
+            Margin = new Padding(4);
+            Name = "Main_f";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "Form1";
+            FormClosing += Form1_FormClosing;
+            Load += Form1_Load;
+            Shown += Form1_Shown;
+            SizeChanged += Form1_SizeChanged;
+            KeyDown += Form1_KeyDown;
+            menuStrip1.ResumeLayout(false);
+            menuStrip1.PerformLayout();
+            tableLayoutPanel1.ResumeLayout(false);
+            tableLayoutPanel1.PerformLayout();
+            panel1.ResumeLayout(false);
+            statusStrip1.ResumeLayout(false);
+            statusStrip1.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
+
+        }
+
+        #endregion
+        private ScottPlot.WinForms.FormsPlot chart1;
+        private System.Windows.Forms.Button button2;
+        private ScottPlot.WinForms.FormsPlot chart2;
+        public System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem 修改配置ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 修改后重新加载ToolStripMenuItem;
+        private System.Windows.Forms.Label label1;
+        private TextBox textBox1;
+        private Label label2;
+        private ToolStripMenuItem 清理白板数据ToolStripMenuItem;
+        private ToolStripMenuItem 请夜班数据ToolStripMenuItem;
+        private ToolStripMenuItem 同时清除白夜班数据ToolStripMenuItem;
+        private Label label3;
+        private ToolStripMenuItem 设置项目ToolStripMenuItem;
+        private TextBox textBox2;
+        private ProgressBar progressBar1;
+        private TextBox textBox4;
+        private Label label5;
+        private TextBox textBox3;
+        private Label label4;
+        private Timer timer1;
+        private TextBox textBox5;
+        private Label label6;
+        private TextBox textBox6;
+        private Label label7;
+        private ToolStripMenuItem 语言配置ToolStripMenuItem;
+        private ToolStripMenuItem 英语ToolStripMenuItem;
+        private ToolStripMenuItem 汉语ToolStripMenuItem;
+        private ToolStripMenuItem 打开校验程序表ToolStripMenuItem;
+        private ToolStripMenuItem 重新加载测试表ToolStripMenuItem;
+        private RichTextBox richTextBox1;
+        private ToolStripMenuItem 调试DEBUGToolStripMenuItem;
+        private TableLayoutPanel tableLayoutPanel1;
+        private Panel panel1;
+        private ScottPlot.WinForms.FormsPlot easyChartX1;
+        private ToolStripMenuItem debugmyrelayToolStripMenuItem;
+    
+        private Timer timer2;
+        private ToolStripMenuItem skrelaydebugToolStripMenuItem;
+        internal Timer timer3;
+       // private Sunisoft.IrisSkin.SkinCollectionItem skinCollectionItem1;
+        private StatusStrip statusStrip1;
+        private ToolStripStatusLabel toolStripStatusLabel1;
+        private ToolStripStatusLabel toolStripStatusLabel2;
+        private unvell.ReoGrid.ReoGridControl reoGridControl1;
+        private ToolStripMenuItem cancelTESTToolStripMenuItem;
+        private ToolStripMenuItem productionInfoToolStripMenuItem;
+        private ToolStripTextBox toolStripTextBox1;
+        private ToolStripMenuItem innoverrelaydebugToolStripMenuItem;
+        private ToolStripMenuItem singleStepModeToolStripMenuItem;
+        private ToolStripMenuItem breakpointToolStripMenuItem;
+        private ToolStripMenuItem nextsToolStripMenuItem;
+        private ToolStripMenuItem 调试ToolStripMenuItem;
+        private ToolStripMenuItem debugToolStripMenuItem;
+        private ToolStripStatusLabel toolStripStatusLabel3;
+    }
+}
+
+

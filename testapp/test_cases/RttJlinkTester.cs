@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using DeviceLibrary;
+using NAudio.Wave;
 using testapp.glob_set;
 
 namespace testapp.test_cases
@@ -25,7 +29,7 @@ namespace testapp.test_cases
         private JLinkRTT rtt;
         private string id = "rtt_";
         // 连接参数 — 供重连使用
-        private string _device = "nRF52840_xxAA";
+        private string _device = "nRF52832_xxAA";
         private int _speedKhz = 4000;
         private int _tif = 1;
         private bool _interactiveMode = false;
@@ -59,6 +63,12 @@ namespace testapp.test_cases
             tc.funcs[id + "query_range"]         = rtt_query_range;
             tc.funcs[id + "query_multi"]         = rtt_query_multi;
             tc.funcs[id + "query_regex"]         = rtt_query_regex;
+            tc.funcs[id + "write_sn"]           = rtt_write_sn;
+            tc.funcs[id + "read_sn"]            = rtt_read_sn;
+            tc.funcs[id + "read_deviceid"]      = rtt_read_deviceid;
+            tc.funcs[id + "save_mes"]           = rtt_save_mes;
+            tc.funcs[id + "play_mp3"]           = rtt_play_mp3;
+            tc.funcs[id + "scan_barcode"]       = rtt_scan_barcode;
         }
 
         // ============================================================
@@ -91,18 +101,12 @@ namespace testapp.test_cases
                 rtt.SetTIF(_tif);
                 rtt.Connect();
 
-                // 初始化 RTT（Terminal API 优先）
-                if (rtt.UseTerminalApi)
-                {
-                    rtt.EnableTerminalApi();
-                }
-
                 if (!rtt.IsConnected)
                 {
                     c = "fail;connect_failed";
                     return "fail";
                 }
-
+                mylib.utility_func.callbackdebuginfo($"[RTT] jlink_connect: pass");
                 _interactiveMode = false;
                 c = "pass";
                 return "pass";
@@ -149,13 +153,14 @@ namespace testapp.test_cases
                 {
                     // 清缓冲区
                     FlushRtt();
-                    if (rtt.WriteString("0xdeadbeef", false) <= 0)
+                    if (rtt.WriteString("test enter 0xdeadbeef", false) <= 0)
                         return "fail;write_failed";
 
                     int waited = 0;
                     while (waited < timeoutMs)
                     {
                         string rev = rtt.ReadString(4096);
+                        mylib.utility_func.callbackdebuginfo($"[RTT] enter_interactive: received [{rev}]");
                         if (!string.IsNullOrEmpty(rev))
                         {
                             _interactiveMode = true;
@@ -268,7 +273,7 @@ namespace testapp.test_cases
                     c = "fail;param_error";
                     return "fail";
                 }
-
+                FlushRtt();
                 string result = RetryQuery("query_contains", () =>
                     DoQuery(cmd, timeoutMs, resp =>
                         resp.Contains(keyword)
@@ -482,6 +487,339 @@ namespace testapp.test_cases
             }
         }
 
+        /// <summary>通过 RTT 写入 SN 到设备 — SN 从全局字典 golb_var_default["input_sn"] 获取</summary>
+        /// d: "超时ms"（可选，默认 3000）
+        private string rtt_write_sn(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 从全局字典获取 SN
+                string sn = null;
+                if (tc.golb_var_default.TryGetValue("input_sn", out object val) && val != null)
+                    sn = val.ToString();
+
+                if (string.IsNullOrWhiteSpace(sn))
+                {
+                    mylib.utility_func.callbackdebuginfo("[RTT] write_sn: 全局字典中未找到 input_sn");
+                    c = "fail;no_sn";
+                    return "fail";
+                }
+
+                // 2) 解析超时
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                // 3) 发送 write serial_number {sn} 并等待回应包含 ok
+                string result = RetryQuery("write_sn", () =>
+                    DoQuery($"write serial_number {sn}", timeoutMs, resp =>
+                    {
+                        if (resp.Contains("ok"))
+                        {
+                            localC = "pass";
+                            return "pass";
+                        }
+                        return Fail(out localC, "write_failed", $"回应不含 ok: {resp.Trim()}");
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] write_sn: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>通过 RTT 读取设备 SN，并与全局字典 golb_var_default["input_sn"] 对比</summary>
+        /// d: "超时ms"（可选，默认 3000）
+        private string rtt_read_sn(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 解析超时
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                // 2) 从全局字典获取期望的 SN
+                string expectedSn = null;
+                if (tc.golb_var_default.TryGetValue("input_sn", out object val) && val != null)
+                    expectedSn = val.ToString();
+
+                // 3) 发送 read serial_number 并提取设备 SN
+                string result = RetryQuery("read_sn", () =>
+                    DoQuery("read serial_number", timeoutMs, resp =>
+                    {
+                        // 解析 "ok: xxxxxxxxxx" 格式
+                        var m = Regex.Match(resp, @"ok:\s*(\w+)");
+                        if (!m.Success)
+                            return Fail(out localC, "invalid_response", $"回应格式错误: {resp.Trim()}");
+
+                        string deviceSn = m.Groups[1].Value;
+
+                        // 4) 对比
+                        if (string.IsNullOrEmpty(expectedSn))
+                        {
+                            // 字典无 SN，只返回设备值
+                            localC = deviceSn;
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_sn: 设备SN={deviceSn} (全局未设置，仅返回设备值)");
+                            return "pass";
+                        }
+
+                        if (deviceSn == expectedSn)
+                        {
+                            localC = "pass";
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_sn: SN 匹配 [{deviceSn}]");
+                            return "pass";
+                        }
+
+                        return Fail(out localC, "sn_mismatch",
+                            $"dut=[{deviceSn}] scanner=[{expectedSn}]");
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] read_sn: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>通过 RTT 读取设备 ID，存入 golb_var_default["deviceid"]</summary>
+        /// d: "超时ms"（可选，默认 3000）
+        private string rtt_read_deviceid(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                string result = RetryQuery("read_deviceid", () =>
+                    DoQuery("read deviceid", timeoutMs, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok:\s*(0x[0-9a-fA-F]{7,8})");
+                        if (!m.Success)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_deviceid: 回应格式错误: {resp.Trim()}");
+                            return "fail;invalid_response";
+                        }
+
+                        string deviceId = m.Groups[1].Value;
+                        tc.golb_var_default["deviceid"] = deviceId;
+                        mylib.utility_func.callbackdebuginfo($"[RTT] read_deviceid: {deviceId} → golb_var_default[deviceid]");
+                        localC = deviceId;
+                        return "pass";
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] read_deviceid: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>将 SN + deviceid 保存到 MES_DATA/mes_data.csv（覆盖写入）</summary>
+        /// 从 golb_var_default 取 input_sn 和 deviceid
+        /// d: 无用，传空即可
+        private string rtt_save_mes(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                string sn = tc.golb_var_default.TryGetValue("input_sn", out object v1) ? v1?.ToString() : null;
+                string deviceId = tc.golb_var_default.TryGetValue("deviceid", out object v2) ? v2?.ToString() : null;
+
+                if (string.IsNullOrWhiteSpace(sn) || string.IsNullOrWhiteSpace(deviceId))
+                {
+                    mylib.utility_func.callbackdebuginfo($"[RTT] save_mes: 数据不完整 sn=[{sn}] deviceid=[{deviceId}]");
+                    c = "fail;incomplete_data";
+                    return "fail";
+                }
+
+                string dir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MES_DATA");
+                string filePath = System.IO.Path.Combine(dir, "mes_data.csv");
+
+                System.IO.Directory.CreateDirectory(dir);
+                System.IO.File.WriteAllText(filePath, $"SN,deviceid\n{sn},{deviceId}");
+
+                mylib.utility_func.callbackdebuginfo($"[RTT] save_mes: 已保存 {filePath}");
+                c = "pass";
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] save_mes: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>异步播放 MP3/WAV 文件（后台播放，立即返回）</summary>
+        /// d: "文件路径"
+        /// 例: d="D:\\sounds\\alarm.mp3"
+        private string rtt_play_mp3(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                if (string.IsNullOrWhiteSpace(d))
+                {
+                    c = "fail;no_path";
+                    return "fail";
+                }
+
+                if (!System.IO.File.Exists(d))
+                {
+                    mylib.utility_func.callbackdebuginfo($"[RTT] play_mp3: 文件不存在 [{d}]");
+                    c = "fail;file_not_found";
+                    return "fail";
+                }
+
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        using (var audioFile = new AudioFileReader(d))
+                        using (var outputDevice = new WaveOutEvent())
+                        {
+                            outputDevice.Init(audioFile);
+                            outputDevice.Play();
+                            while (outputDevice.PlaybackState == PlaybackState.Playing)
+                            {
+                                Thread.Sleep(100);
+                            }
+                        }
+                        mylib.utility_func.callbackdebuginfo($"[RTT] play_mp3: 播放完成 [{d}]");
+                    }
+                    catch (Exception ex)
+                    {
+                        mylib.utility_func.callbackdebuginfo($"[RTT] play_mp3: 播放失败 [{d}]: {ex.Message}");
+                    }
+                });
+
+                mylib.utility_func.callbackdebuginfo($"[RTT] play_mp3: 已启动异步播放 [{d}]");
+                c = "pass";
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] play_mp3: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 弹出扫码输入框 → 正则验证条码 → RTT "read UUID" → 对比 MAC
+        /// d: "正则表达式"（用于验证扫描的条码格式）
+        /// </summary>
+        private string rtt_scan_barcode(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                string pattern = d?.Trim();
+                if (string.IsNullOrEmpty(pattern))
+                { c = "fail;no_regex"; return "fail"; }
+
+                // 验证正则有效性
+                try { new Regex(pattern); }
+                catch { c = "fail;invalid_regex"; return "fail"; }
+
+                // 弹出扫码输入框（UI 线程）
+                string barcode = null;
+                var mainForm = Application.OpenForms[0];
+                if (mainForm == null || !mainForm.IsHandleCreated)
+                { c = "fail;no_window"; return "fail"; }
+
+                mainForm.Invoke((MethodInvoker)(() =>
+                {
+                    using (var frm = new Form())
+                    {
+                        frm.Text = "Scan Barcode";
+                        frm.Size = new Size(420, 150);
+                        frm.StartPosition = FormStartPosition.CenterParent;
+                        frm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                        frm.MaximizeBox = false;
+                        frm.MinimizeBox = false;
+                        frm.TopMost = true;
+
+                        var lbl = new Label { Text = "Scan barcode / QR code:", Location = new Point(20, 15), Size = new Size(380, 20) };
+                        var txt = new TextBox { Location = new Point(20, 40), Size = new Size(380, 25), Font = new Font("Microsoft YaHei UI", 11) };
+                        var btnOk = new Button { Text = "OK", Location = new Point(110, 75), Size = new Size(80, 30), DialogResult = DialogResult.OK };
+                        var btnCancel = new Button { Text = "Cancel", Location = new Point(200, 75), Size = new Size(80, 30), DialogResult = DialogResult.Cancel };
+
+                        frm.Controls.Add(lbl);
+                        frm.Controls.Add(txt);
+                        frm.Controls.Add(btnOk);
+                        frm.Controls.Add(btnCancel);
+                        frm.AcceptButton = btnOk;
+                        frm.CancelButton = btnCancel;
+
+                        if (frm.ShowDialog() == DialogResult.OK)
+                            barcode = txt.Text.Trim();
+                    }
+                }));
+
+                if (string.IsNullOrEmpty(barcode))
+                { c = "fail;cancelled"; return "fail"; }
+
+                // 正则验证条码
+                if (!Regex.IsMatch(barcode, pattern))
+                {
+                    mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 条码 [{barcode}] 不匹配正则 [{pattern}]");
+                    c = "fail;barcode_mismatch";
+                    return "fail";
+                }
+
+                mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 条码验证通过 [{barcode}]");
+
+                // RTT 读取 UUID（蓝牙 MAC 无冒号）
+                string result = RetryQuery("scan_barcode", () =>
+                    DoQuery("read UUID", 3000, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok:\s*([0-9A-Fa-f]+)");
+                        if (!m.Success)
+                            return Fail(out localC, "uuid_invalid", $"UUID 回应格式错误: {resp.Trim()}");
+
+                        string uuid = m.Groups[1].Value;
+
+                        if (string.Equals(barcode, uuid, StringComparison.OrdinalIgnoreCase))
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 匹配成功 [{barcode}]");
+                            localC = "pass";
+                            return "pass";
+                        }
+
+                        return Fail(out localC, "uuid_mismatch", $"条码=[{barcode}] UUID=[{uuid}]");
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
         // ============================================================
         // 内部工具
         // ============================================================
@@ -567,8 +905,6 @@ namespace testapp.test_cases
                 rtt.SetSpeed(_speedKhz);
                 rtt.SetTIF(_tif);
                 rtt.Connect();
-                if (rtt.UseTerminalApi)
-                    rtt.EnableTerminalApi();
                 return true;
             }
             catch (Exception ex)
@@ -594,7 +930,7 @@ namespace testapp.test_cases
         private string[] SplitParam(string d, int expectedCount)
         {
             if (string.IsNullOrEmpty(d)) return null;
-            string[] p = d.Trim().Split(',');
+            string[] p = d.Trim().Split(';');
             if (p.Length < expectedCount) return null;
             return p;
         }

@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using testapp;
 using testapp.glob_set;
+using SprojFileBrowser;
 using static AntdUI.Modal;
 using Column = AntdUI.Column;
 using Label = AntdUI.Label;
@@ -688,11 +689,11 @@ namespace test_antdui
             {
                 e.Item.StateBadge = new CellBadge(TState.Default, AppStrings.Get("state_running"));
                 e.Item.BackColor = Color.FromArgb(24, 144, 255);
-                RefreshTableData();
+                _table.Refresh();           // 轻量重绘，不动行结构
                 _table.SelectedIndex = e.Index + 1;
                 _table.ScrollLine(e.Index + 1);
                 _table.Focus();
-                Application.DoEvents();
+                Application.DoEvents();     // 保持 UI 响应
             }
             UpdateProgress(e.Index + 1, e.Total);
             if (_debugForm != null && !_debugForm.IsDisposed)
@@ -743,11 +744,11 @@ namespace test_antdui
                 e.Item.StateBadge = new CellBadge(badgeState, displayText);
                 e.Item.BackColor = backColor;
 
-                RefreshTableData();
+                _table.Refresh();           // 轻量重绘
                 _table.ScrollLine(e.Index + 1);
                 _table.SelectedIndex = e.Index + 1;
                 _table.Focus();
-                Application.DoEvents();
+                Application.DoEvents();     // 保持 UI 响应
             }
             UpdateCurrentTestStats();
         }
@@ -879,7 +880,7 @@ namespace test_antdui
             progress3.Value = 0;
 
             _project.ResetAllBadges();
-            RefreshTableData();
+            _table.Refresh();           // 仅重绘，不需重建 DataSource
 
             AddLog(AppStrings.Get("log_items", _project.Items.Count));
 
@@ -1193,6 +1194,91 @@ namespace test_antdui
         private void button1_Click_1(object sender, EventArgs e)
         {
             _engine.Cancel();
+        }
+
+        private void _btnEditSproj_Click(object sender, EventArgs e)
+        {
+            // 密码验证 — 输入密码后才能编辑
+            string expected = DateTime.Now.ToString("ddmm");
+            using (var pwdForm = new Form())
+            {
+                pwdForm.Text = "Password Required";
+                pwdForm.Size = new System.Drawing.Size(320, 160);
+                pwdForm.StartPosition = FormStartPosition.CenterParent;
+                pwdForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                pwdForm.MaximizeBox = false;
+                pwdForm.MinimizeBox = false;
+                pwdForm.ShowInTaskbar = false;
+
+                var lbl = new System.Windows.Forms.Label
+                {
+                    Text = "Enter password to edit test cases:",
+                    Location = new System.Drawing.Point(20, 20),
+                    Size = new System.Drawing.Size(260, 20),
+                    Font = new System.Drawing.Font("Microsoft YaHei UI", 10F)
+                };
+
+                var txtPwd = new System.Windows.Forms.TextBox
+                {
+                    UseSystemPasswordChar = true,
+                    Location = new System.Drawing.Point(20, 50),
+                    Size = new System.Drawing.Size(260, 25),
+                    Font = new System.Drawing.Font("Microsoft YaHei UI", 11F)
+                };
+
+                var btnOk = new System.Windows.Forms.Button
+                {
+                    Text = "OK",
+                    Location = new System.Drawing.Point(80, 90),
+                    Size = new System.Drawing.Size(70, 30),
+                    DialogResult = DialogResult.OK
+                };
+
+                var btnCancel = new System.Windows.Forms.Button
+                {
+                    Text = "Cancel",
+                    Location = new System.Drawing.Point(170, 90),
+                    Size = new System.Drawing.Size(70, 30),
+                    DialogResult = DialogResult.Cancel
+                };
+
+                pwdForm.Controls.Add(lbl);
+                pwdForm.Controls.Add(txtPwd);
+                pwdForm.Controls.Add(btnOk);
+                pwdForm.Controls.Add(btnCancel);
+                pwdForm.AcceptButton = btnOk;
+                pwdForm.CancelButton = btnCancel;
+
+                if (pwdForm.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                if (txtPwd.Text != expected)
+                {
+                    AntdUI.Message.error(this, "Incorrect password!", autoClose: 2);
+                    return;
+                }
+            }
+
+            var form = SprojEditForm.get_instance();
+            form.is_called_by_other = (s, args) =>
+            {
+                // 保存后重新加载测试用例
+                this.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        string path = SprojFileBrowser.ProjectLoader.Instance.GetProjectNames()[0];
+                        if (System.IO.File.Exists(path))
+                        {
+                            LoadFromExcel(path);
+                            AddLog("Test cases reloaded from sproj", Color.FromArgb(82, 196, 26));
+                        }
+                    }
+                    catch { }
+                }));
+            };
+            form.Show();
+            form.BringToFront();
         }
 
         private void breadcrumb1_ItemClick(object sender, BreadcrumbItemEventArgs e)

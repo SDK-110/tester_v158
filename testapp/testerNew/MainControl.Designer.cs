@@ -31,6 +31,7 @@ namespace test_antdui
             this.chkStopOnFail = new AntdUI.Checkbox();
             this.progress3 = new AntdUI.Progress();
             this.button1 = new AntdUI.Button();
+            this._btnEditSproj = new AntdUI.Button();
             this.iconState = new AntdUI.IconState();
             this.tBadge7 = new AntdUI.Badge();
             this.windowBar = new AntdUI.PageHeader();
@@ -158,6 +159,7 @@ namespace test_antdui
             this.chkSaveExcel.Size = new System.Drawing.Size(130, 20);
             this.chkSaveExcel.TabIndex = 8;
             this.chkSaveExcel.Text = "Save Excel";
+            this.chkSaveExcel.CheckedChanged += new AntdUI.BoolEventHandler(this.ChkSaveExcel_CheckedChanged);
             // 
             // chkSaveAppend
             // 
@@ -199,7 +201,18 @@ namespace test_antdui
             this.button1.Text = "⏹ Stop";
             this.button1.ToggleType = AntdUI.TTypeMini.Primary;
             this.button1.Click += new System.EventHandler(this.button1_Click_1);
-            // 
+            //
+            // _btnEditSproj
+            //
+            this._btnEditSproj.Font = new System.Drawing.Font("Microsoft YaHei UI", 12F);
+            this._btnEditSproj.Location = new System.Drawing.Point(502, 10);
+            this._btnEditSproj.Name = "_btnEditSproj";
+            this._btnEditSproj.Size = new System.Drawing.Size(120, 35);
+            this._btnEditSproj.TabIndex = 20;
+            this._btnEditSproj.Text = "📝 Edit";
+            this._btnEditSproj.Type = AntdUI.TTypeMini.Primary;
+            this._btnEditSproj.Click += new System.EventHandler(this._btnEditSproj_Click);
+            //
             // iconState
             // 
             this.iconState.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -861,6 +874,7 @@ namespace test_antdui
             this._bottomPanel.Controls.Add(this._btnStart);
             this._bottomPanel.Controls.Add(this._btnSave);
             this._bottomPanel.Controls.Add(this.button1);
+            this._bottomPanel.Controls.Add(this._btnEditSproj);
             this._bottomPanel.Controls.Add(this.progress3);
             this._bottomPanel.Controls.Add(this.chkSaveExcel);
             this._bottomPanel.Controls.Add(this.chkSaveAppend);
@@ -935,6 +949,7 @@ namespace test_antdui
         private AntdUI.Checkbox chkStopOnFail;
         private AntdUI.Progress progress3;
         private AntdUI.Button button1;
+        private AntdUI.Button _btnEditSproj;
         private AntdUI.IconState iconState;
         private AntdUI.Badge tBadge7;
         private AntdUI.PageHeader windowBar;

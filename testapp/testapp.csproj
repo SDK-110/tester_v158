@@ -18,6 +18,8 @@
     <LangVersion>latest</LangVersion>
     <NoWarn>CS0168;CS0219;CS0414;CS0649;CS0162;CS8601;CS8602;CS8603;CS8625;CA1416;CA1418</NoWarn>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <PackageIcon>Bff10.png</PackageIcon>
+    <PackageIconUrl />
   </PropertyGroup>
 
   <!-- Exclude old/duplicate directories from compilation -->
@@ -337,6 +339,13 @@
     <None Update="..\CustomControl.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\Bff10.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="mylib\modbus_ecloab\" />
   </ItemGroup>
 
 </Project>

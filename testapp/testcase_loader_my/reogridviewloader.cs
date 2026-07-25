@@ -1,4 +1,4 @@
-﻿using rebuild.testcase_loader;
+using rebuild.testcase_loader;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -23,17 +23,17 @@ namespace 重构程序.viewmode
         public ReoGridControl reftb;
         public reogridviewloader(ref ReoGridControl workbook, Dictionary<string, pointfun> testcase_lib, tester_project tester_proj)
         {
-            this.testcase_lib = testcase_lib;    
+            this.testcase_lib = testcase_lib;
             this.tester_proj = tester_proj;
-           
+
             reftb = workbook;
             myworksheet1 = workbook.CurrentWorksheet;
-           
+
             set_dt_headr_name(new string[] { "ID", "Test_Case_Description", "High_Limit", "LOW_Limit", "Test_Result", "Test_Judge", "Test_Time" });
         }
         public  Worksheet get_and_init_tb()
         {
-      
+
             return myworksheet1;
         }
 
@@ -82,6 +82,7 @@ namespace 重构程序.viewmode
 
 
 
+
             //dataGridView1.Columns["Column1"].HeaderText = "序号";
             //dataGridView1.Columns["Column1"].Width = (int)(dataGridView1.Width * 0.1);
             //dataGridView1.Columns["Column2"].HeaderText = "EPC";
@@ -92,7 +93,7 @@ namespace 重构程序.viewmode
             //dataGridView1.Columns["Column4"].Width = (int)(dataGridView1.Width * 0.2);
             //dataGridView1.Columns["Column5"].HeaderText = "天线(4-1)";
             //dataGridView1.Columns["Column5"].Width = (int)(dataGridView1.Width * 0.2);
-       
+
 
         }
 
@@ -115,7 +116,6 @@ namespace 重构程序.viewmode
 
 
 
-
         }
 
         public  void table_load_into_viewer(int updateflog=1)
@@ -125,56 +125,53 @@ namespace 重构程序.viewmode
 
             tester_proj.clear_result();
 
+            // 暂停布局和事件，批量写入后一次性恢复
+            reftb.SuspendLayout();
+            myworksheet1.SuspendDataChangedEvents();
+
+            int count = tester_proj.test_cases.Count;
+
             if (updateflog == 3) {
 
-                for (int i = tester_proj.test_cases.Count; i < myworksheet1.RowCount; i++) {
+                for (int i = count; i < myworksheet1.RowCount; i++) {
 
                     if (myworksheet1.Cells[i, 1].Data ==null) break;
                     myworksheet1[$"A{i + 1}:G{i + 1}"] = new string[] { "", "", "", "", "", "", "" };
 
                 }
             }
-            for (int i = 0; i < tester_proj.test_cases.Count; i++)
+
+            // 将第F列（结果列）文字颜色还原为黑色
+            if (count > 0)
             {
-                myworksheet1.Cells[i, 5].Style.TextColor = Color.Black;
-                myworksheet1[$"A{i+1}:G{i+1}"] =new string[] { tester_proj.test_cases[i].id.ToString(),
-                                                                    tester_proj.test_cases[i].testcase_description,
-                                                                    tester_proj.test_cases[i].testcase_high_limit,
-                                                                    tester_proj.test_cases[i].testcase_low_limit,
-                                                                    tester_proj.test_cases[i].result_msg,
-                                                                    tester_proj.test_cases[i].get_judge_result,
-                                                                    tester_proj.test_cases[i].runtime.ToString(),
-                };
-
-
-
-
+                for (int i = 0; i < count; i++)
+                    myworksheet1.Cells[i, 5].Style.TextColor = Color.Black;
             }
+
+            // 构建二维数组批量写入，避免逐行触发内部更新
+            string[,] allData = new string[count, 7];
+            for (int i = 0; i < count; i++)
+            {
+                allData[i, 0] = tester_proj.test_cases[i].id.ToString();
+                allData[i, 1] = tester_proj.test_cases[i].testcase_description;
+                allData[i, 2] = tester_proj.test_cases[i].testcase_high_limit;
+                allData[i, 3] = tester_proj.test_cases[i].testcase_low_limit;
+                allData[i, 4] = tester_proj.test_cases[i].result_msg;
+                allData[i, 5] = tester_proj.test_cases[i].get_judge_result;
+                allData[i, 6] = tester_proj.test_cases[i].runtime.ToString();
+            }
+
+            if (count > 0)
+            {
+                myworksheet1[$"A1:G{count}"] = allData;
+            }
+
+            myworksheet1.ResumeDataChangedEvents();
+            reftb.ResumeLayout();
 
         }
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -220,6 +217,7 @@ namespace 重构程序.viewmode
 
 
     //        }
+
 
 
 

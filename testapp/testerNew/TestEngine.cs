@@ -213,7 +213,11 @@ namespace test_antdui
                     return "SKIP";
                 }
 
-                if (!_functionLib.ContainsKey(item.FunctionName))
+                // Remove @ and !! from function name before lookup (same as old engine: test_lib_string.Replace("@", "").Replace("!!",""))
+                // @ presence marks special logger items (is_teshu_logger in old engine)
+                string funcKey = (item.FunctionName ?? "").Replace("@", "").Replace("!!", "");
+
+                if (!_functionLib.ContainsKey(funcKey))
                 {
                     OnLogMessage($"  错误: 函数 [{item.FunctionName}] 未注册!");
                     item.ResultMessage = $"函数未注册: {item.FunctionName}";
@@ -231,7 +235,7 @@ namespace test_antdui
                    
                     try
                     {
-                        TestFunctionDelegate func = _functionLib[item.FunctionName];
+                        TestFunctionDelegate func = _functionLib[funcKey];
                        
                         lastResult = func(item.HighLimit, item.LowLimit,out rsu , item.Parameter);
 
@@ -262,7 +266,7 @@ namespace test_antdui
                     }
                 }
 
-                item.ResultMessage = rsu;
+                item.ResultMessage = lastResult;
                 return lastResult;
             }, token);
         }

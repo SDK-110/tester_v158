@@ -216,6 +216,7 @@ namespace testapp
 
             set
             {
+                this.golb_var_default["input_sn"] = value;
                 if (setup_ini_data["setport"]["Festoolport"] != null) // for festool_mmu
                 {
                     if (setup_ini_data["setport"]["Festool_contol_add"] == null)
@@ -3350,11 +3351,11 @@ namespace testapp
         string test_temp(string a, string b, out string c, string d = "")
         {
 
-            ivps.CarRefrigeratorPowerONTest();
+            //ivps.CarRefrigeratorPowerONTest();
 
             // mylib.utility_func.test_mysql_creat_table();
 
-
+            mylib.utility_func.callbackdebuginfo("tttttttttttttttttttttt");
 
 
             //var pp = new asmpt_03271042_U10_Write();
