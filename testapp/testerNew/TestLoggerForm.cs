@@ -49,6 +49,11 @@ namespace test_antdui
             CheckForIllegalCrossThreadCalls = false;
             InitTimer();
             StartNewLog();
+            // 默认置顶 + 屏幕左上角
+            TopMost = true;
+            StartPosition = FormStartPosition.Manual;
+            Location = new Point(0, 0);
+            checkbox1.Checked = true;   // 同步「TopLevel」复选框为勾选
         }
 
         public static TestLoggerForm Instance
