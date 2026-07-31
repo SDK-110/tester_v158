@@ -897,6 +897,10 @@ namespace test_antdui
             await _engine.RunAsync();
             await _engine.RunCleanupAsync();
             AddLog(AppStrings.Get("log_test_complete"));
+
+            // 测试总耗时（含初始化与清理）
+            var elapsed = DateTime.Now - _testStartTime;
+            AddLog($"总耗时: {elapsed:hh\\:mm\\:ss\\.fff}", Color.FromArgb(250, 173, 20));
         }
 
         private void _btnLoad_Click(object sender, EventArgs e)
