@@ -621,7 +621,6 @@ namespace testapp
             //  skinEngine1.AddForm(this);
             //  skinEngine1.SkinFormOnly = true;
             //skinEngine1.SkinDialogs = true;
-            this.BeginInvoke(new Action(() => chart_display(1)));
            // this.label1.Text = string.Format("TOTAL：{0}PCS |NG :{1}|OK:{2}", inidata["recorder"]["title"], inidata["recorder"]["titleng"], inidata["recorder"]["titleok"]);
             this.label1.Text = string.Format("TOTAL：{0}PCS |NG :{1}|OK:{2}", data_.total_number, data_.total_ng_qty, data_.total_ok_qty);
           
@@ -635,73 +634,10 @@ namespace testapp
                     this.label1.Text = string.Format("TOTAL：{0}PCS |NG :{1}|OK:{2}", data_.total_number, data_.total_ng_qty, data_.total_ok_qty);
 
                 }));
-              
-                passed_failed_data.save_json_char_data(data_);
+
             };
 
             #endregion
-            #region 语言设定
-            if (inidata["language"]["english"] == "1")
-            {
-
-                this.调试ToolStripMenuItem.Text = "Debug";
-                this.语言配置ToolStripMenuItem.Text = "setup_language";
-                this.英语ToolStripMenuItem.Text = "SetTOEnglish ";
-                this.汉语ToolStripMenuItem.Text = "SetToChinese";
-                this.toolStripMenuItem1.Text = "SetUp";
-                this.修改配置ToolStripMenuItem.Text = "Modify_Test_parameters";
-                this.修改后重新加载ToolStripMenuItem.Text = "After_Modify_Reload";
-                this.清理白板数据ToolStripMenuItem.Text = "Clear_TheDayShift_TestData";
-                this.请夜班数据ToolStripMenuItem.Text = "Clear_TheNightShift_TestData";
-                this.同时清除白夜班数据ToolStripMenuItem.Text = "Clear_AllShift_TestData";
-                this.设置项目ToolStripMenuItem.Text = "OtherSetUp";
-                this.label2.Text = "please scan barcode :";
-                this.打开校验程序表ToolStripMenuItem.Text = "load calibration table";
-                this.重新加载测试表ToolStripMenuItem.Text = "after reload test table";
-                this.调试DEBUGToolStripMenuItem.Text = "relay debug";
-                this.productionInfoToolStripMenuItem.Text = "product_info_set";
-
-            }
-            else
-            {
-
-                this.调试ToolStripMenuItem.Text = "调试";
-                this.语言配置ToolStripMenuItem.Text = "语言设置";
-                this.英语ToolStripMenuItem.Text = "设置到英语 ";
-                this.汉语ToolStripMenuItem.Text = "汉语";
-                this.toolStripMenuItem1.Text = "设置";
-                this.修改配置ToolStripMenuItem.Text = "修改配置";
-                this.设置项目ToolStripMenuItem.Text = "设置项目";
-                this.修改后重新加载ToolStripMenuItem.Text = "修改后重新加载";
-                this.清理白板数据ToolStripMenuItem.Text = "清理白板数据";
-                this.请夜班数据ToolStripMenuItem.Text = "请夜班数据";
-                this.同时清除白夜班数据ToolStripMenuItem.Text = "同时清除白夜班数据";
-                this.label2.Text = "条码扫入：";
-                this.打开校验程序表ToolStripMenuItem.Text = "打开校验程序表";
-                this.重新加载测试表ToolStripMenuItem.Text = "重新加载测试表";
-                this.调试DEBUGToolStripMenuItem.Text = "调试debug";
-                this.productionInfoToolStripMenuItem.Text = "生产信息设定";
-
-
-
-
-
-
-            }
-
-            #endregion
-            string filepath = SprojFileBrowser.ProjectLoader.Instance.GetProjectNames()[0];
-            string filename = Path.GetFileName(filepath);
-            this.toolStripStatusLabel3.Text = "ver: " + filename.Substring(0, filename.Length - 6);
-            // Excel test cases loading moved to Form1_Shown for async background loading
-            this.reoGridControl1.CurrentWorksheet.SetSettings(WorksheetSettings.View_ShowRowHeader, false);
-       //if (inidata["statu"]["input_status"] != null) { 
-       //     input_form inf = new input_form();
-       //     inf.ShowDialog();
-       //         opter = inf.oper_str;
-                
-       //   }
-           
         }
 
         private void update_dataview(tester_standard_style tester, int id)
@@ -1246,6 +1182,7 @@ namespace testapp
                 
             }
             chart_display(1);
+            passed_failed_data.save_json_char_data(data_);
 
            // inidata["recorder"]["title"] = (int.Parse(inidata["recorder"]["title"]) + 1).ToString();
           //  glob_ini_instance.getInstance().write2Ini(inidata);
@@ -2367,7 +2304,8 @@ private void 汉语ToolStripMenuItem_Click(object sender, EventArgs e)
             }
 
             // Wait for both to complete (they run in parallel, so total time = max, not sum)
-            await Task.WhenAll(excelTask, dllTask);
+         await Task.WhenAll(excelTask, dllTask);
+      
             mu = excelTask.Result;
             testcase_lib = dllTask.Result;
 
@@ -2407,6 +2345,8 @@ private void 汉语ToolStripMenuItem_Click(object sender, EventArgs e)
             {
                 this.timer3.Enabled = true;
             }
+
+            chart_display(1);
 
             timer1.Enabled = true;
         }

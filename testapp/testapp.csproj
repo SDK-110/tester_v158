@@ -55,6 +55,9 @@
     <!-- UI Libraries -->
     <PackageReference Include="AntdUI" Version="2.4.3" />
     <PackageReference Include="AntdUI.EmojiFluentFlat" Version="2025.1.31" />
+    <PackageReference Include="Costura.Fody" Version="6.2.0">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="ReaLTaiizor" Version="3.8.2.1" />
     <PackageReference Include="DockPanelSuite" Version="3.1.0" />
     <PackageReference Include="DockPanelSuite.ThemeVS2015" Version="3.1.0" />
@@ -248,8 +251,8 @@
   <!-- ============ DLL References: FTD2XX (temporarily kept) ============ -->
   <ItemGroup>
     <Reference Include="FTDI2XX">
-      <HintPath>..\packages\FTD2XX.Net.1.2.1\lib\net45\FTDI2XX.dll</HintPath>
-      <Private>true</Private>
+      <HintPath>..\packages\FTD2XX.Net.1.2.1\lib\netstandard2.1\FTDI2XX.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
 
@@ -315,7 +318,7 @@
       <HintPath>dll_lib\SeeSharpTools.JY.TCP.dll</HintPath>
     </Reference>
     <Reference Include="RFExplorerCommunicator">
-      <HintPath>bin\Debug\RFExplorerCommunicator.dll</HintPath>
+      <HintPath>..\RFExplorerCommunicator.dll</HintPath>
     </Reference>
   </ItemGroup>
 

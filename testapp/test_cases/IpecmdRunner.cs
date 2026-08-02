@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 public static class IpecmdRunner
 {
-    static string ipecmdpath = "D:\\Microchip\\MPLABX\\v6.30\\mplab_platform\\mplab_ipe";
+    static string ipecmdpath = "C:\\Program Files\\Microchip\\MPLABX\\v6.30\\mplab_platform\\mplab_ipe";
     static string PORTID = "2026";
 
     /// <summary>
@@ -115,7 +115,7 @@ public static class IpecmdRunner
 
     public static string GetChecksum(string hexFilePath, int timeoutMs = 50000)
     {
-        string args = $@"-P24F32KA302 -TPPK4 -F""{hexFilePath}"" -W -K -OY{PORTID}";
+        string args = $@"-P24F32KA302 -TPPK5 -F""{hexFilePath}"" -W -K -OY{PORTID}";
         string result = null;
         Regex regex = new Regex(@"checksum\s*=\s*([0-9A-Fa-f]+)", RegexOptions.IgnoreCase);
 
@@ -134,7 +134,7 @@ public static class IpecmdRunner
 
     public static (bool OK, string Output) ProgramDevice(string hexFilePath, int timeoutMs = 120000)
     {
-        string args = $@"-P24F32KA302 -TPPK4 -F""{hexFilePath}""  -W -YP -M -OY{PORTID}";
+        string args = $@"-P24F32KA302 -TPPK5 -F""{hexFilePath}""  -W  -M -OY{PORTID}";
         bool found = false;
 
         string[] lines = RunCmd(args, timeoutMs, (ln) =>

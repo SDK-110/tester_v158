@@ -29,214 +29,210 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripSplitButton1 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel3 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel4 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel5 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
-            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripMenuItem();
-            this.lTrackBar1 = new DemoControls.LTrackBar();
-            this.tableLayoutPanel1.SuspendLayout();
-            this.statusStrip1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
-            this.contextMenuStrip1.SuspendLayout();
-            this.SuspendLayout();
+            components = new System.ComponentModel.Container();
+            tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            richTextBox1 = new System.Windows.Forms.RichTextBox();
+            statusStrip1 = new System.Windows.Forms.StatusStrip();
+            toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
+            toolStripSplitButton1 = new System.Windows.Forms.ToolStripStatusLabel();
+            toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
+            toolStripStatusLabel3 = new System.Windows.Forms.ToolStripStatusLabel();
+            toolStripStatusLabel4 = new System.Windows.Forms.ToolStripStatusLabel();
+            toolStripStatusLabel5 = new System.Windows.Forms.ToolStripStatusLabel();
+            dataGridView1 = new System.Windows.Forms.DataGridView();
+            lTrackBar1 = new DemoControls.LTrackBar();
+            backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(components);
+            toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripMenuItem4 = new System.Windows.Forms.ToolStripMenuItem();
+            tableLayoutPanel1.SuspendLayout();
+            statusStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
+            contextMenuStrip1.SuspendLayout();
+            SuspendLayout();
             // 
             // tableLayoutPanel1
             // 
-            this.tableLayoutPanel1.BackColor = System.Drawing.Color.White;
-            this.tableLayoutPanel1.ColumnCount = 4;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0F));
-            this.tableLayoutPanel1.Controls.Add(this.richTextBox1, 0, 3);
-            this.tableLayoutPanel1.Controls.Add(this.statusStrip1, 0, 5);
-            this.tableLayoutPanel1.Controls.Add(this.dataGridView1, 0, 0);
-            this.tableLayoutPanel1.Controls.Add(this.lTrackBar1, 0, 4);
-            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
-            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-            this.tableLayoutPanel1.RowCount = 6;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 48.9712F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 51.0288F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 141F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 77F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 21F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(489, 322);
-            this.tableLayoutPanel1.TabIndex = 1;
+            tableLayoutPanel1.BackColor = System.Drawing.Color.White;
+            tableLayoutPanel1.ColumnCount = 4;
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0F));
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0F));
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0F));
+            tableLayoutPanel1.Controls.Add(richTextBox1, 0, 3);
+            tableLayoutPanel1.Controls.Add(statusStrip1, 0, 5);
+            tableLayoutPanel1.Controls.Add(dataGridView1, 0, 0);
+            tableLayoutPanel1.Controls.Add(lTrackBar1, 0, 4);
+            tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            tableLayoutPanel1.Margin = new System.Windows.Forms.Padding(4);
+            tableLayoutPanel1.Name = "tableLayoutPanel1";
+            tableLayoutPanel1.RowCount = 6;
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 48.9712F));
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 51.0288F));
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 184F));
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 101F));
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 27F));
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 29F));
+            tableLayoutPanel1.Size = new System.Drawing.Size(570, 421);
+            tableLayoutPanel1.TabIndex = 1;
             // 
             // richTextBox1
             // 
-            this.richTextBox1.BackColor = System.Drawing.Color.White;
-            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBox1.Location = new System.Drawing.Point(3, 204);
-            this.richTextBox1.MinimumSize = new System.Drawing.Size(4, 22);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.richTextBox1.Size = new System.Drawing.Size(483, 71);
-            this.richTextBox1.TabIndex = 2;
-            this.richTextBox1.Text = "";
-            this.richTextBox1.TextChanged += new System.EventHandler(this.richTextBox1_TextChanged);
+            richTextBox1.BackColor = System.Drawing.Color.White;
+            richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            richTextBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            richTextBox1.Location = new System.Drawing.Point(4, 267);
+            richTextBox1.Margin = new System.Windows.Forms.Padding(4);
+            richTextBox1.MinimumSize = new System.Drawing.Size(5, 29);
+            richTextBox1.Name = "richTextBox1";
+            richTextBox1.ReadOnly = true;
+            richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
+            richTextBox1.Size = new System.Drawing.Size(562, 93);
+            richTextBox1.TabIndex = 2;
+            richTextBox1.Text = "";
+            richTextBox1.TextChanged += richTextBox1_TextChanged;
             // 
             // statusStrip1
             // 
-            this.statusStrip1.AutoSize = false;
-            this.statusStrip1.BackColor = System.Drawing.Color.White;
-            this.statusStrip1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripStatusLabel1,
-            this.toolStripSplitButton1,
-            this.toolStripStatusLabel2,
-            this.toolStripStatusLabel3,
-            this.toolStripStatusLabel4,
-            this.toolStripStatusLabel5});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 299);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.statusStrip1.Size = new System.Drawing.Size(489, 23);
-            this.statusStrip1.TabIndex = 3;
-            this.statusStrip1.Text = "statusStrip1";
+            statusStrip1.AutoSize = false;
+            statusStrip1.BackColor = System.Drawing.Color.White;
+            statusStrip1.Dock = System.Windows.Forms.DockStyle.Fill;
+            statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { toolStripStatusLabel1, toolStripSplitButton1, toolStripStatusLabel2, toolStripStatusLabel3, toolStripStatusLabel4, toolStripStatusLabel5 });
+            statusStrip1.Location = new System.Drawing.Point(0, 391);
+            statusStrip1.Name = "statusStrip1";
+            statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 16, 0);
+            statusStrip1.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            statusStrip1.Size = new System.Drawing.Size(570, 30);
+            statusStrip1.TabIndex = 3;
+            statusStrip1.Text = "statusStrip1";
             // 
             // toolStripStatusLabel1
             // 
-            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(66, 18);
-            this.toolStripStatusLabel1.Text = "start time:";
+            toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            toolStripStatusLabel1.Size = new System.Drawing.Size(66, 25);
+            toolStripStatusLabel1.Text = "start time:";
             // 
             // toolStripSplitButton1
             // 
-            this.toolStripSplitButton1.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Right;
-            this.toolStripSplitButton1.Name = "toolStripSplitButton1";
-            this.toolStripSplitButton1.Size = new System.Drawing.Size(84, 18);
-            this.toolStripSplitButton1.Text = "00:00:00.000";
+            toolStripSplitButton1.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Right;
+            toolStripSplitButton1.Name = "toolStripSplitButton1";
+            toolStripSplitButton1.Size = new System.Drawing.Size(84, 25);
+            toolStripSplitButton1.Text = "00:00:00.000";
             // 
             // toolStripStatusLabel2
             // 
-            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(59, 18);
-            this.toolStripStatusLabel2.Text = "End time";
+            toolStripStatusLabel2.Name = "toolStripStatusLabel2";
+            toolStripStatusLabel2.Size = new System.Drawing.Size(59, 25);
+            toolStripStatusLabel2.Text = "End time";
             // 
             // toolStripStatusLabel3
             // 
-            this.toolStripStatusLabel3.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Right;
-            this.toolStripStatusLabel3.Name = "toolStripStatusLabel3";
-            this.toolStripStatusLabel3.Size = new System.Drawing.Size(84, 18);
-            this.toolStripStatusLabel3.Text = "00:00:00.000";
+            toolStripStatusLabel3.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Right;
+            toolStripStatusLabel3.Name = "toolStripStatusLabel3";
+            toolStripStatusLabel3.Size = new System.Drawing.Size(84, 25);
+            toolStripStatusLabel3.Text = "00:00:00.000";
             // 
             // toolStripStatusLabel4
             // 
-            this.toolStripStatusLabel4.Name = "toolStripStatusLabel4";
-            this.toolStripStatusLabel4.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.toolStripStatusLabel4.Size = new System.Drawing.Size(64, 18);
-            this.toolStripStatusLabel4.Text = "Test Time";
+            toolStripStatusLabel4.Name = "toolStripStatusLabel4";
+            toolStripStatusLabel4.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            toolStripStatusLabel4.Size = new System.Drawing.Size(64, 25);
+            toolStripStatusLabel4.Text = "Test Time";
             // 
             // toolStripStatusLabel5
             // 
-            this.toolStripStatusLabel5.Name = "toolStripStatusLabel5";
-            this.toolStripStatusLabel5.Size = new System.Drawing.Size(63, 18);
-            this.toolStripStatusLabel5.Text = "00:00.000";
+            toolStripStatusLabel5.Name = "toolStripStatusLabel5";
+            toolStripStatusLabel5.Size = new System.Drawing.Size(63, 25);
+            toolStripStatusLabel5.Text = "00:00.000";
             // 
             // dataGridView1
             // 
-            this.dataGridView1.AllowUserToAddRows = false;
-            this.dataGridView1.AllowUserToDeleteRows = false;
-            this.dataGridView1.AllowUserToResizeColumns = false;
-            this.dataGridView1.AllowUserToResizeRows = false;
-            this.dataGridView1.BackgroundColor = System.Drawing.Color.White;
-            this.dataGridView1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dataGridView1.Location = new System.Drawing.Point(3, 3);
-            this.dataGridView1.Name = "dataGridView1";
-            this.tableLayoutPanel1.SetRowSpan(this.dataGridView1, 3);
-            this.dataGridView1.RowTemplate.Height = 23;
-            this.dataGridView1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.dataGridView1.Size = new System.Drawing.Size(483, 195);
-            this.dataGridView1.TabIndex = 4;
-            // 
-            // backgroundWorker1
-            // 
-            this.backgroundWorker1.WorkerReportsProgress = true;
-            this.backgroundWorker1.WorkerSupportsCancellation = true;
-            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
-            this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
-            this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
-            // 
-            // contextMenuStrip1
-            // 
-            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripMenuItem2,
-            this.toolStripMenuItem3,
-            this.toolStripMenuItem4});
-            this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(91, 70);
-            // 
-            // toolStripMenuItem2
-            // 
-            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(90, 22);
-            this.toolStripMenuItem2.Text = "11";
-            // 
-            // toolStripMenuItem3
-            // 
-            this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(90, 22);
-            this.toolStripMenuItem3.Text = "22";
-            // 
-            // toolStripMenuItem4
-            // 
-            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-            this.toolStripMenuItem4.Size = new System.Drawing.Size(90, 22);
-            this.toolStripMenuItem4.Text = "33";
+            dataGridView1.AllowUserToAddRows = false;
+            dataGridView1.AllowUserToDeleteRows = false;
+            dataGridView1.AllowUserToResizeColumns = false;
+            dataGridView1.AllowUserToResizeRows = false;
+            dataGridView1.BackgroundColor = System.Drawing.Color.White;
+            dataGridView1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridView1.Dock = System.Windows.Forms.DockStyle.Fill;
+            dataGridView1.Location = new System.Drawing.Point(4, 4);
+            dataGridView1.Margin = new System.Windows.Forms.Padding(4);
+            dataGridView1.Name = "dataGridView1";
+            tableLayoutPanel1.SetRowSpan(dataGridView1, 3);
+            dataGridView1.RowTemplate.Height = 23;
+            dataGridView1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            dataGridView1.Size = new System.Drawing.Size(562, 255);
+            dataGridView1.TabIndex = 4;
             // 
             // lTrackBar1
             // 
-            this.lTrackBar1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lTrackBar1.L_BarColor = System.Drawing.Color.White;
-            this.lTrackBar1.L_BarSize = 10;
-            this.lTrackBar1.L_IsRound = true;
-            this.lTrackBar1.L_Maximum = 100;
-            this.lTrackBar1.L_Minimum = 0;
-            this.lTrackBar1.L_Orientation = DemoControls.Orientation.Horizontal_LR;
-            this.lTrackBar1.L_SliderColor = System.Drawing.Color.Lime;
-            this.lTrackBar1.L_Value = 0;
-            this.lTrackBar1.Location = new System.Drawing.Point(0, 278);
-            this.lTrackBar1.Margin = new System.Windows.Forms.Padding(0);
-            this.lTrackBar1.Name = "lTrackBar1";
-            this.lTrackBar1.Size = new System.Drawing.Size(489, 10);
-            this.lTrackBar1.TabIndex = 5;
-            this.lTrackBar1.Text = "lTrackBar1";
+            lTrackBar1.Dock = System.Windows.Forms.DockStyle.Fill;
+            lTrackBar1.L_BarColor = System.Drawing.Color.White;
+            lTrackBar1.L_BarSize = 10;
+            lTrackBar1.L_IsRound = true;
+            lTrackBar1.L_Maximum = 100;
+            lTrackBar1.L_Minimum = 0;
+            lTrackBar1.L_Orientation = DemoControls.Orientation.Horizontal_LR;
+            lTrackBar1.L_SliderColor = System.Drawing.Color.Lime;
+            lTrackBar1.L_Value = 0;
+            lTrackBar1.Location = new System.Drawing.Point(0, 364);
+            lTrackBar1.Margin = new System.Windows.Forms.Padding(0);
+            lTrackBar1.Name = "lTrackBar1";
+            lTrackBar1.Size = new System.Drawing.Size(570, 10);
+            lTrackBar1.TabIndex = 5;
+            lTrackBar1.Text = "lTrackBar1";
+            // 
+            // backgroundWorker1
+            // 
+            backgroundWorker1.WorkerReportsProgress = true;
+            backgroundWorker1.WorkerSupportsCancellation = true;
+            backgroundWorker1.DoWork += backgroundWorker1_DoWork;
+            backgroundWorker1.ProgressChanged += backgroundWorker1_ProgressChanged;
+            backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;
+            // 
+            // contextMenuStrip1
+            // 
+            contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { toolStripMenuItem2, toolStripMenuItem3, toolStripMenuItem4 });
+            contextMenuStrip1.Name = "contextMenuStrip1";
+            contextMenuStrip1.Size = new System.Drawing.Size(91, 70);
+            // 
+            // toolStripMenuItem2
+            // 
+            toolStripMenuItem2.Name = "toolStripMenuItem2";
+            toolStripMenuItem2.Size = new System.Drawing.Size(90, 22);
+            toolStripMenuItem2.Text = "11";
+            // 
+            // toolStripMenuItem3
+            // 
+            toolStripMenuItem3.Name = "toolStripMenuItem3";
+            toolStripMenuItem3.Size = new System.Drawing.Size(90, 22);
+            toolStripMenuItem3.Text = "22";
+            // 
+            // toolStripMenuItem4
+            // 
+            toolStripMenuItem4.Name = "toolStripMenuItem4";
+            toolStripMenuItem4.Size = new System.Drawing.Size(90, 22);
+            toolStripMenuItem4.Text = "33";
             // 
             // Mydata_gridview
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.tableLayoutPanel1);
-            this.DoubleBuffered = true;
-            this.Name = "Mydata_gridview";
-            this.Size = new System.Drawing.Size(489, 322);
-            this.Load += new System.EventHandler(this.UserControl2_Load);
-            this.SizeChanged += new System.EventHandler(this.UserControl2_SizeChanged);
-            this.tableLayoutPanel1.ResumeLayout(false);
-            this.statusStrip1.ResumeLayout(false);
-            this.statusStrip1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
-            this.contextMenuStrip1.ResumeLayout(false);
-            this.ResumeLayout(false);
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            Controls.Add(tableLayoutPanel1);
+            DoubleBuffered = true;
+            Margin = new System.Windows.Forms.Padding(4);
+            Name = "Mydata_gridview";
+            Size = new System.Drawing.Size(570, 421);
+            Load += UserControl2_Load;
+            SizeChanged += UserControl2_SizeChanged;
+            tableLayoutPanel1.ResumeLayout(false);
+            statusStrip1.ResumeLayout(false);
+            statusStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
+            contextMenuStrip1.ResumeLayout(false);
+            ResumeLayout(false);
 
         }
 

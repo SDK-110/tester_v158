@@ -1,0 +1,187 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using unvell.ReoGrid;
+using unvell.ReoGrid.IO;
+using 重构程序.testcase_loader;
+
+namespace rebuild.testcase_loader
+{
+
+
+    class excel2tester_standard
+    {
+      static   IWorkbook workbook;
+      static Worksheet mtt = null;
+        public  excel2tester_standard()
+        {
+
+          //  workbook = ReoGridControl.CreateMemoryWorkbook();
+          //  mtt = workbook.GetWorksheetByName("sheet1");
+          //  workbook.InsertWorksheet(1, mtt);
+        //    workbook.WorksheetInserted += Workbook_install;
+
+
+        }
+
+        private void Workbook_install(object sender, EventArgs e)
+        {
+
+            System.Windows.Forms.MessageBox.Show("Test");
+
+        }
+
+        public  void save_excel_test_cases(ref tester_project sav, string project_tester_name = "project_tester_name.sproj")
+        {
+            if (workbook == null)
+            {
+                workbook = ReoGridControl.CreateMemoryWorkbook();
+                mtt = workbook.GetWorksheetByName("sheet1");
+            }
+            else {
+
+                workbook = ReoGridControl.CreateMemoryWorkbook();
+                workbook.Load($"{project_tester_name}",FileFormat.Excel2007);
+                mtt = workbook.GetWorksheetByName("sheet1");
+
+            }
+
+            mtt[0, 0] = "project_name:";
+            mtt[0, 1] = sav.project;
+            mtt[1, 0] = "tester_name:";
+            mtt[1, 1] = sav.project_tester_name;
+            mtt[3, 0] = "id";
+            mtt[3, 1] = "test_description";
+            mtt[3, 2] = "testcase_high_limit";
+            mtt[3, 3] = "testcase_low_limit";
+            mtt[3, 4] = "test_spik_if";
+            mtt[3, 5] = "repeat_goto";
+            mtt[3, 6] = "test_lib_string";
+            mtt[3, 7] = "test_loop_count";
+            mtt[3, 8] = "parameter";
+            mtt[2, 0] = "test_case:";
+            for (int i = 0; i < sav.test_cases.Count; i++)
+            {
+                mtt[i+4, 0] = sav.test_cases[i].id;
+                mtt[i+4, 1] = sav.test_cases[i].testcase_description;
+                mtt[i+4, 2] = sav.test_cases[i].testcase_high_limit;
+                mtt[i+4, 3] = sav.test_cases[i].testcase_low_limit;
+                mtt[i+4, 4] = sav.test_cases[i].test_spik;
+                mtt[i+4, 5] = sav.test_cases[i].repeat_goto;
+                mtt[i+4, 6] = sav.test_cases[i].test_lib_string;
+                mtt[i + 4, 7] = sav.test_cases[i].self_run_count;
+                mtt[i + 4, 8] = sav.test_cases[i].parameter;
+
+
+            }
+
+
+
+
+            workbook.Save(project_tester_name,FileFormat.Excel2007);
+
+
+
+        }
+
+
+
+
+        public static tester_project read_excel_test_cases(string project_tester_name = "project_tester_name.sproj",string worksheet = "sheet1")
+        {
+
+            var sav = new tester_project();
+            sav.test_cases = new List<tester_standard_style>();
+             workbook = ReoGridControl.CreateMemoryWorkbook();
+            workbook.Load($"{project_tester_name}", FileFormat.Excel2007);
+
+            //workbook.Load($"project_tester_name.xlsx", FileFormat.Excel2007);
+            // mtt = workbook.Worksheets[0];
+            mtt = workbook.Worksheets[worksheet];
+
+
+            if (mtt == null) return null;
+
+
+            try
+            {
+
+                sav.project = mtt.Cells[0, 1].Data.ToString();
+                sav.project_tester_name = mtt.Cells[1, 1].Data.ToString();
+
+                int i = 4;
+                string id="";
+                string test_description="";
+                string testcase_high_limit="";
+                string testcase_low_limit="";
+                string test_spik_if ="";
+                string repeat_goto ="";
+                string test_lib_string="";
+                string self_run_count="";
+                string parameter="";
+                while(mtt.Cells[i, 0].Data!=null)
+                {
+                    try
+                    {
+                        id = mtt.Cells[i, 0].Data.ToString();
+                        test_description = mtt.Cells[i, 1].Data.ToString();
+                        testcase_high_limit = mtt.Cells[i, 2].Data.ToString();
+                        testcase_low_limit = mtt.Cells[i, 3].Data.ToString();
+                        test_spik_if = mtt.Cells[i, 4].Data.ToString();
+                        repeat_goto = mtt.Cells[i, 5].Data.ToString();
+                        test_lib_string = mtt.Cells[i, 6].Data.ToString();
+                        self_run_count = mtt.Cells[i, 7].Data.ToString();
+                        parameter = mtt.Cells[i, 8].Data!=null? mtt.Cells[i, 8].Data.ToString():"";
+                    }
+                    catch (Exception e) { System.Windows.Forms.MessageBox.Show(e.ToString());}
+                    if (id == null || id == "" ||
+                        test_description==null || test_description==""||
+                        testcase_high_limit==null || testcase_high_limit ==""||
+                         testcase_low_limit == null || testcase_low_limit == "" ||
+                         test_spik_if == null || test_spik_if == "" ||
+                         repeat_goto == null || repeat_goto == "" ||
+                         test_lib_string == null || test_lib_string == "" ||
+                          parameter==null
+
+                        ) return null;
+
+                    sav.test_cases.Add(new tester_standard_style()
+                    {
+                        id = int.Parse(id),
+                        testcase_description = test_description,
+                        repeat_goto = repeat_goto,
+                        testcase_high_limit = testcase_high_limit,
+                        testcase_low_limit = testcase_low_limit,
+                        self_run_count = self_run_count,
+                         test_spik= test_spik_if,
+                         test_lib_string= test_lib_string,
+                         parameter = parameter,
+
+
+                    });
+
+
+                    i++;
+
+                };
+
+
+            }
+
+            catch(Exception e)
+            {
+
+            }
+            workbook.Dispose();
+
+            return sav ;
+        }
+
+        private static void Workbook_WorkbookLoaded(object sender, EventArgs e)
+        {
+            System.Windows.Forms.MessageBox.Show("Test");
+        }
+    }
+}

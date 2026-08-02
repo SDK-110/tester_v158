@@ -163,8 +163,10 @@ namespace testapp.test_cases
                
                 rst = $"wind:{windStr}m/s,dir:{direction}";
                 mylib.utility_func.callbackdebuginfo($"JY_YL2 read wind: {rst}");
-                if (double.Parse(high.Split(';')[0]) < double.Parse(windStr) && high.Split(';')[1]== "forward")
+               
+                if (double.Parse(high.Split(';')[0]) < double.Parse(windStr) && double.Parse(windStr)<10&& high.Split(';')[1]== "forward")
                 {
+                    
                     return "pass";
 
                 }

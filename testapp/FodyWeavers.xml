@@ -1,0 +1,30 @@
+<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
+  <Costura>
+    <!--
+      默认嵌入所有被引用的托管 DLL（自动包含 NuGet 和直接 Reference 的 DLL）
+      下面列出需要额外包含的非托管 native DLL（不含扩展名）
+    -->
+    <Unmanaged32Assemblies>
+      ControlCAN
+      ECanVci
+      JLinkARM
+      OUR_MIFARE
+      Modbus
+      CustomControl
+    </Unmanaged32Assemblies>
+
+    <!-- 可选：排除不需要嵌入的 DLL（按需取消注释）
+    <ExcludeAssemblies>
+      Ivi.Visa
+      NationalInstruments.Common
+      NationalInstruments.Visa
+    </ExcludeAssemblies>
+    -->
+
+    <!-- 创建临时目录前不删除旧文件 -->
+    <DisableCleanup>false</DisableCleanup>
+
+    <!-- 运行时 DLL 从临时目录加载而非内存加载，节省内存 -->
+    <CreateTemporaryAssemblies>false</CreateTemporaryAssemblies>
+  </Costura>
+</Weavers>

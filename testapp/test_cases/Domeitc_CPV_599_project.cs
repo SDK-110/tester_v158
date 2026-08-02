@@ -65,6 +65,7 @@ namespace testapp.test_cases
             tc.funcs.Add(id + "SetStandbyMode", SetStandbyMode);
             tc.funcs.Add(id + "SwitchFridgeMode", SwitchFridgeMode);
             tc.funcs.Add(id + "Get_Current_by_DMM", Get_Current_by_DMM);
+            tc.funcs.Add(id + "get_led_color", get_led_color);
             tc.golb_var_default["braking_pcba_tp25"] = "-100";
         }
 
@@ -109,6 +110,42 @@ namespace testapp.test_cases
 
         }
 
+
+        private string get_led_color(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+
+                if (tc.funcs["cloor_assy"](d.Split('/')[0].Split(',')[0], d.Split('/')[0].Split(',')[1], out _, d.Split('/')[0].Split(',')[2]) == "pass" &&
+                                  tc.funcs["cloor_assy"](d.Split('/')[1].Split(',')[0], d.Split('/')[1].Split(',')[1], out _, d.Split('/')[1].Split(',')[2]) == "pass")
+
+                {
+
+                    c = "pass";
+
+                    return "pass";
+
+
+
+                }
+                else { 
+                
+                return "fail";
+
+                }
+            }
+            catch (Exception e)
+            {
+
+                mylib.utility_func.callbackdebuginfo("color analyzer error:" + e.Message);
+
+            }
+
+
+            return "fail";
+
+        }
         private string get_poewer_cur(string a, string b, out string c, string d)
         {
             c = "fail";
@@ -255,7 +292,7 @@ namespace testapp.test_cases
                     Thread.Sleep(1000);
 
 
-                } while (cont++ > 30);
+                } while (cont++ < 30);
 
 
 
@@ -318,8 +355,8 @@ namespace testapp.test_cases
                     ivps.Open();
 
                 // d format: "device_start_v,start_timeout,start_threshold,device_hold_v,hold_sec,hold_threshold,device_shutdown_v,shutdown_sec,shutdown_limit,wire_loss"
-                // default:  "11.7,20,4.0,10.1,5,3.0,9.4,5,0.15,0.3"
-                if (string.IsNullOrEmpty(d)) d = "11.7,20,3.0,10.1,5,3.0,9.4,5,0.15,0.01";
+                // default:  "11.7,20,4.0,10.1,5,3.0,9.4,5,0.15,0.1"
+                if (string.IsNullOrEmpty(d)) d = "11.7,20,3.0,10.1,5,3.0,9.4,5,0.15,0.1";
                 string[] p = d.Trim().Split(",".ToArray());
 
                 double dev_start_v = double.Parse(p[0]);
@@ -364,7 +401,7 @@ namespace testapp.test_cases
                 if (!ivps.IsOpen)
                     ivps.Open();
 
-                if (string.IsNullOrEmpty(d)) d = "0.15,0.15,2.0,5,1000,40,10.4,11.0,0.05";
+                if (string.IsNullOrEmpty(d)) d = "0.15,0.15,2.0,5,1000,40,10.4,11.0,0.1";
                 string[] p = d.Trim().Split(",".ToArray());
 
                 double standby_limit = double.Parse(p[0]);
@@ -509,7 +546,7 @@ namespace testapp.test_cases
                 if (!ivps.IsOpen)
                     ivps.Open();
 
-                if (string.IsNullOrEmpty(d)) d = "12.0,3.0,3.0,5,1000,0.15,0.1,9.4,10.0,0.05";
+                if (string.IsNullOrEmpty(d)) d = "12.0,3.0,3.0,5,1000,0.15,0.1,9.4,10.0,0.1";
                 string[] p = d.Trim().Split(",".ToArray());
 
                 double boost_v = double.Parse(p[0]);

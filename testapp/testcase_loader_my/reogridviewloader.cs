@@ -39,45 +39,35 @@ namespace 重构程序.viewmode
 
         private void set_dt_headr_name(string[] header_names)
         {
+            myworksheet1.Columns = 7;
+            myworksheet1.Rows = 1000;
+            myworksheet1.SetSettings(WorksheetSettings.View_ShowColumnHeader, true);
+            myworksheet1.SetSettings(WorksheetSettings.View_ShowRowHeader, false);
 
+            myworksheet1.ColumnHeaders[0].Text = header_names[0];
+            myworksheet1.ColumnHeaders[0].Style.HorizontalAlign = ReoGridHorAlign.Left;
+            myworksheet1.ColumnHeaders[1].Text = header_names[1];
+            myworksheet1.ColumnHeaders[1].Style.HorizontalAlign = ReoGridHorAlign.Left;
+            myworksheet1.ColumnHeaders[2].Text = header_names[2];
+            myworksheet1.ColumnHeaders[2].Style.HorizontalAlign = ReoGridHorAlign.Left;
+            myworksheet1.ColumnHeaders[3].Text = header_names[3];
+            myworksheet1.ColumnHeaders[3].Style.HorizontalAlign = ReoGridHorAlign.Left;
+            myworksheet1.ColumnHeaders[4].Text = header_names[4];
+            myworksheet1.ColumnHeaders[4].Style.HorizontalAlign = ReoGridHorAlign.Left;
+            myworksheet1.ColumnHeaders[5].Text = header_names[5];
+            myworksheet1.ColumnHeaders[5].Style.HorizontalAlign = ReoGridHorAlign.Left;
+            myworksheet1.ColumnHeaders[6].Text = header_names[6];
+            myworksheet1.ColumnHeaders[6].Style.HorizontalAlign = ReoGridHorAlign.Left;
 
-            reftb.Invoke(new Action(() =>
-            {
+            myworksheet1.ColumnHeaders[0].Width = (ushort)(reftb.Width * 0.05);
+            myworksheet1.ColumnHeaders[1].Width = (ushort)(reftb.Width * 0.4);
+            myworksheet1.ColumnHeaders[2].Width = (ushort)(reftb.Width * 0.1);
+            myworksheet1.ColumnHeaders[3].Width = (ushort)(reftb.Width * 0.1);
+            myworksheet1.ColumnHeaders[4].Width = (ushort)(reftb.Width * 0.1);
+            myworksheet1.ColumnHeaders[5].Width = (ushort)(reftb.Width * 0.1);
+            myworksheet1.ColumnHeaders[6].Width = (ushort)(reftb.Width * 0.135);
 
-
-                myworksheet1.Columns = 7;
-                myworksheet1.Rows = 1000;
-                myworksheet1.SetSettings(WorksheetSettings.View_ShowColumnHeader, true);
-                myworksheet1.SetSettings(WorksheetSettings.View_ShowRowHeader, false);
-
-                // myworksheet1.Cells[0, 0].Style.BackColor = Color.Red;
-                myworksheet1.ColumnHeaders[0].Text = header_names[0];
-                myworksheet1.ColumnHeaders[0].Style.HorizontalAlign = ReoGridHorAlign.Left;
-                myworksheet1.ColumnHeaders[1].Text = header_names[1];
-                myworksheet1.ColumnHeaders[1].Style.HorizontalAlign = ReoGridHorAlign.Left;
-                myworksheet1.ColumnHeaders[2].Text = header_names[2];
-                myworksheet1.ColumnHeaders[2].Style.HorizontalAlign = ReoGridHorAlign.Left;
-                myworksheet1.ColumnHeaders[3].Text = header_names[3];
-                myworksheet1.ColumnHeaders[3].Style.HorizontalAlign = ReoGridHorAlign.Left;
-                myworksheet1.ColumnHeaders[4].Text = header_names[4];
-                myworksheet1.ColumnHeaders[4].Style.HorizontalAlign = ReoGridHorAlign.Left;
-                myworksheet1.ColumnHeaders[5].Text = header_names[5];
-                myworksheet1.ColumnHeaders[5].Style.HorizontalAlign = ReoGridHorAlign.Left;
-                myworksheet1.ColumnHeaders[6].Text = header_names[6];
-                myworksheet1.ColumnHeaders[6].Style.HorizontalAlign = ReoGridHorAlign.Left;
-
-                myworksheet1.ColumnHeaders[0].Width = (ushort)(reftb.Width * 0.05);
-                myworksheet1.ColumnHeaders[1].Width = (ushort)(reftb.Width * 0.4);
-                myworksheet1.ColumnHeaders[2].Width = (ushort)(reftb.Width * 0.1);
-                myworksheet1.ColumnHeaders[3].Width = (ushort)(reftb.Width * 0.1);
-                myworksheet1.ColumnHeaders[4].Width = (ushort)(reftb.Width * 0.1);
-                myworksheet1.ColumnHeaders[5].Width = (ushort)(reftb.Width * 0.1);
-                myworksheet1.ColumnHeaders[6].Width = (ushort)(reftb.Width * 0.135);
-
-                reftb.Readonly = true;
-
-
-            }));
+            reftb.Readonly = true;
 
 
 

@@ -430,7 +430,7 @@ namespace testapp
         Domeitc_CPV_599_project domeitc_CPV_599_Project = null;
         JY_YL2  JY_YL2_INSTANCE = null;
         RttJlinkTester rttJlinkTester = null;
-        testapp.test_cases.asmpt03214220_pj asmpt77221_project = null;
+        testapp.test_cases.asmpt03214220_pj _asmpt03214220_pj = null;
         public chroma19701 Chroma19701t
         {
 
@@ -2853,17 +2853,17 @@ namespace testapp
             }
 
 
-            if (setup_ini_data["setport"]["asmpt77221_project"] != null)
+            if (setup_ini_data["setport"]["asmpt03214220_pj"] != null)
             {
-                if (asmpt77221_project != null) return;
+                if (_asmpt03214220_pj != null) return;
                 try
                 {
                  
-                    asmpt77221_project = new testapp.test_cases.asmpt03214220_pj(this, ref ry, ref tonghui2818);
+                    _asmpt03214220_pj = new testapp.test_cases.asmpt03214220_pj(this, ref ry, ref tonghui2818);
                 }
                 catch (Exception e)
                 {
-                    System.Windows.Forms.MessageBox.Show(setup_ini_data["setport"]["asmpt77221_project"] + ": asmpt77221_project  does not exist or is occupied, please check");
+                    System.Windows.Forms.MessageBox.Show(setup_ini_data["setport"]["asmpt03214220_pj"] + ": asmpt03214220_pj  does not exist or is occupied, please check");
                 }
             }
 
