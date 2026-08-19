@@ -1996,12 +1996,13 @@ private void 清理白板数据ToolStripMenuItem_Click(object sender, EventArgs 
 {
            data_.clear_data();
             chart_display(1);
-
-}
+            passed_failed_data.save_json_char_data(data_);
+        }
 
 private void 请夜班数据ToolStripMenuItem_Click(object sender, EventArgs e)
 {
             data_.clear_data();
+            passed_failed_data.save_json_char_data(data_);
             chart_display(1);
 }
 
@@ -2010,7 +2011,8 @@ private void 同时清除白夜班数据ToolStripMenuItem_Click(object sender, E
 
             data_.clear_data();
             chart_display(1);
-}
+            passed_failed_data.save_json_char_data(data_);
+        }
 
 
 
