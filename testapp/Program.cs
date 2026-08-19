@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -45,6 +45,35 @@ namespace testapp
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
 
+                    // 员工登录窗体：可通过 setup.ini [setproduct] login_enable 配置启用/关闭
+                    // login_enable = true/1/yes 时显示登录窗体，取消则不进入系统
+                    bool loginEnabled = true;
+                    var iniData = testapp.glob_set.glob_ini_instance.getInstance().getSetupIniData;
+                    if (iniData["setproduct"] != null && iniData["setproduct"]["login_enable"] != null)
+                    {
+                        string v = iniData["setproduct"]["login_enable"].ToString().Trim().ToLower();
+                        loginEnabled = (v == "1" || v == "true" || v == "yes");
+                    }
+                    if (loginEnabled)
+                    {
+                        using (var login = new VMPro.Frm_Welcome())
+                        {
+                            if (login.ShowDialog() != DialogResult.OK)
+                                return;
+
+                            // 将员工工号传入主窗体：
+                            // setup.ini 的 personal_number 已由登录窗体写入（主窗体与测试备份均从 setup.ini 读取）；
+                            // 同时写入 ProductionTracker（testerNew 主窗体通过它读取）。
+                            try
+                            {
+                                test_antdui.ProductionTracker.Instance.OperatorName = login.EmployeeId;
+                            }
+                            catch (Exception)
+                            {
+                                // 生产跟踪不可用时忽略，不影响登录
+                            }
+                        }
+                    }
 
                         switch (setstr)
                         {

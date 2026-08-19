@@ -8,8 +8,6 @@ using RohdeSchwarz.RsCmwBluetoothSig;
 using RohdeSchwarz.RsCmwGprfGen;
 
 using RohdeSchwarz.RsCmwBase;
-using RohdeSchwarz.RsCmwBluetoothMeas;
-using RohdeSchwarz.RsCmwBluetoothSig;
 using BurstTypeEnum = RohdeSchwarz.RsCmwBluetoothSig.BurstTypeEnum;
 using LeRangePaternTypeEnum = RohdeSchwarz.RsCmwBluetoothSig.LeRangePaternTypeEnum;
 using RepetitionEnum = RohdeSchwarz.RsCmwBluetoothMeas.RepeatEnum;

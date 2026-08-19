@@ -1038,7 +1038,7 @@ namespace testapp
             }
             #endregion pangu
 
-            if (e.Result == "fail" && inidata["setproduct"]["lock"] != null) {
+            if ((string)e.Result == "fail" && inidata["setproduct"]["lock"] != null) {
                 this.Invoke(new Action(() => {
 
                     this.label3.Text = "DataBase error";
@@ -2303,6 +2303,9 @@ private void 汉语ToolStripMenuItem_Click(object sender, EventArgs e)
                 }
             }
 
+            // 产能 chart 只依赖 data_（构造时已加载），无需等待后台任务，提前绘制
+            chart_display(1);
+
             // Wait for both to complete (they run in parallel, so total time = max, not sum)
          await Task.WhenAll(excelTask, dllTask);
       
@@ -2345,8 +2348,6 @@ private void 汉语ToolStripMenuItem_Click(object sender, EventArgs e)
             {
                 this.timer3.Enabled = true;
             }
-
-            chart_display(1);
 
             timer1.Enabled = true;
         }

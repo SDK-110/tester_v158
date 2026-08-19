@@ -16,7 +16,11 @@
     <StartupObject>testapp.Program</StartupObject>
     <PlatformTarget>x86</PlatformTarget>
     <LangVersion>latest</LangVersion>
-    <NoWarn>CS0168;CS0219;CS0414;CS0649;CS0162;CS8601;CS8602;CS8603;CS8625;CA1416;CA1418</NoWarn>
+    <NoWarn>CS0168;CS0219;CS0414;CS0649;CS0162;CS8601;CS8602;CS8603;CS8625;CA1416;CA1418;CS8981;CS0169;NU1701;SYSLIB0014</NoWarn>
+    <!-- MSB3277: 遗留 DLL 引用导致的程序集版本冲突（AForge/Metro/EPPlus 等），转为消息不再告警 -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <!-- MSB3825: 保留 resx 中 imageList 的 BinaryFormatter 使用，关闭该提示 -->
+    <GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <PackageIcon>Bff10.png</PackageIcon>
     <PackageIconUrl />
@@ -62,6 +66,7 @@
     <PackageReference Include="DockPanelSuite" Version="3.1.0" />
     <PackageReference Include="DockPanelSuite.ThemeVS2015" Version="3.1.0" />
     <PackageReference Include="ScottPlot.WinForms" Version="5.1.59" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="unvell.ReoGrid.dll" Version="3.3.1" />
 
     <!-- Communication Libraries -->

@@ -203,7 +203,6 @@ namespace testapp.mylib.USB2185DAQ
 
         }
         public int set_init_voltage_read() {
-            if (hDevice == null) return -1;
             set_init_voltage_paraeter();
 
             if (USB2185.USB2185_AI_VerifyParam(hDevice, ref AIParam) == false)
@@ -297,7 +296,6 @@ namespace testapp.mylib.USB2185DAQ
 
 
 
-            if (hDevice == null) return -1;
 
             if (USB2185.USB2185_AO_VerifyParam(hDevice, ref AOParam) == false)
             {
@@ -368,7 +366,6 @@ namespace testapp.mylib.USB2185DAQ
            
             Dictionary<UInt32, double> rsu = new Dictionary<UInt32, double>();
             result = rsu;
-            if (hDevice == null) return -1;
 
             if (USB2185.USB2185_AI_ReadAnalog(hDevice, fAnlgArray, nReadSampsPerChan, ref nSampsPerChanRead, ref nAvailSampsPerChan, fTimeout) == false)
                 {
@@ -432,7 +429,6 @@ namespace testapp.mylib.USB2185DAQ
 
 
 
-            if (hDevice == null) return -1;
             if (USB2185RSV.USB2185_AI_SelfCal(hDevice) == false)
             {
                 return -1;
@@ -507,7 +503,6 @@ namespace testapp.mylib.USB2185DAQ
         public int set_io(uint port, uint ionumber ,uint hi_low ) {
 
 
-            if (hDevice == null) return -1;
 
             if (USB2185.USB2185_DIO_WriteLine(hDevice, port, ionumber, hi_low) == false)
             {
@@ -527,7 +522,6 @@ namespace testapp.mylib.USB2185DAQ
 
         public int read_io(uint port, uint ionumber, ref uint hi_low) {
 
-            if (hDevice == null) return -1;
             if (USB2185.USB2185_DIO_ReadLine(hDevice, port, ionumber, ref hi_low) == false)
             {
                 return -1;

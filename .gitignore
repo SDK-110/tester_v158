@@ -338,3 +338,8 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/testapp/test_cases/HeroPromptForm.cs
+/testapp/test_cases/hero_aux_board.cs
+/testapp/test_cases/hero_final_assembly.cs
+/testapp/test_cases/hero_input_board.cs
+/testapp/test_cases/mic_thd_test_project.cs

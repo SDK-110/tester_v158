@@ -39,7 +39,6 @@ namespace testapp.useful
         public void clear() {
 
 
-            this.capacity = capacity;
             this.array = new List<T>(capacity);
             this.head = 0;
             this.tail = 0;

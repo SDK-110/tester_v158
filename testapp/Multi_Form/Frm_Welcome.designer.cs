@@ -1,4 +1,4 @@
-﻿namespace VMPro
+namespace VMPro
 {
     partial class Frm_Welcome
     {
@@ -28,134 +28,102 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Frm_Welcome));
-            this.lbl_companyName = new System.Windows.Forms.Label();
+            this.lblTitle = new System.Windows.Forms.Label();
+            this.lblSubtitle = new System.Windows.Forms.Label();
+            this.txtEmployeeNo = new AntdUI.Input();
+            this.btn_open = new AntdUI.Button();
+            this.btn_cancel = new AntdUI.Button();
             this.lbl_version = new System.Windows.Forms.Label();
-            this.lbl_step = new System.Windows.Forms.Label();
-            this.bar_step = new System.Windows.Forms.ProgressBar();
-            this.pictureBox2 = new System.Windows.Forms.PictureBox();
-            this.btn_exit = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
-            // 
-            // lbl_companyName
-            // 
-            this.lbl_companyName.BackColor = System.Drawing.Color.Transparent;
-            this.lbl_companyName.Font = new System.Drawing.Font("华文新魏", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lbl_companyName.ForeColor = System.Drawing.Color.White;
-            this.lbl_companyName.Location = new System.Drawing.Point(40, 121);
-            this.lbl_companyName.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.lbl_companyName.Name = "lbl_companyName";
-            this.lbl_companyName.Size = new System.Drawing.Size(493, 32);
-            this.lbl_companyName.TabIndex = 0;
-            this.lbl_companyName.Text = "yyyyyyyyyyyyyyyyy";
-            this.lbl_companyName.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
+            //
+            // lblTitle
+            //
+            this.lblTitle.AutoSize = true;
+            this.lblTitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 16F, System.Drawing.FontStyle.Bold);
+            this.lblTitle.ForeColor = System.Drawing.Color.White;
+            this.lblTitle.Location = new System.Drawing.Point(78, 52);
+            this.lblTitle.Name = "lblTitle";
+            this.lblTitle.Size = new System.Drawing.Size(212, 30);
+            this.lblTitle.TabIndex = 0;
+            this.lblTitle.Text = "Employee Login";
+            //
+            // lblSubtitle
+            //
+            this.lblSubtitle.AutoSize = true;
+            this.lblSubtitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
+            this.lblSubtitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(136)))), ((int)(((byte)(153)))), ((int)(((byte)(170)))));
+            this.lblSubtitle.Location = new System.Drawing.Point(80, 94);
+            this.lblSubtitle.Name = "lblSubtitle";
+            this.lblSubtitle.Size = new System.Drawing.Size(208, 20);
+            this.lblSubtitle.TabIndex = 1;
+            this.lblSubtitle.Text = "Enter employee ID and press Open";
+            //
+            // txtEmployeeNo
+            //
+            this.txtEmployeeNo.Font = new System.Drawing.Font("Microsoft YaHei UI", 12F);
+            this.txtEmployeeNo.Location = new System.Drawing.Point(44, 145);
+            this.txtEmployeeNo.Name = "txtEmployeeNo";
+            this.txtEmployeeNo.Padding = new System.Windows.Forms.Padding(10, 8, 10, 8);
+            this.txtEmployeeNo.PlaceholderText = "Employee ID";
+            this.txtEmployeeNo.PrefixSvg = "UserOutlined";
+            this.txtEmployeeNo.Size = new System.Drawing.Size(280, 55);
+            this.txtEmployeeNo.TabIndex = 0;
+            this.txtEmployeeNo.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtEmployeeNo_KeyDown);
+            //
+            // btn_open
+            //
+            this.btn_open.Font = new System.Drawing.Font("Microsoft YaHei UI", 12F);
+            this.btn_open.Location = new System.Drawing.Point(44, 216);
+            this.btn_open.Name = "btn_open";
+            this.btn_open.Size = new System.Drawing.Size(130, 40);
+            this.btn_open.TabIndex = 2;
+            this.btn_open.Text = "Open";
+            this.btn_open.Type = AntdUI.TTypeMini.Primary;
+            this.btn_open.Click += new System.EventHandler(this.btn_open_Click);
+            //
+            // btn_cancel
+            //
+            this.btn_cancel.Font = new System.Drawing.Font("Microsoft YaHei UI", 12F);
+            this.btn_cancel.Location = new System.Drawing.Point(194, 216);
+            this.btn_cancel.Name = "btn_cancel";
+            this.btn_cancel.Size = new System.Drawing.Size(130, 40);
+            this.btn_cancel.TabIndex = 3;
+            this.btn_cancel.Text = "Cancel";
+            this.btn_cancel.Click += new System.EventHandler(this.btn_cancel_Click);
+            //
             // lbl_version
-            // 
+            //
             this.lbl_version.AutoSize = true;
-            this.lbl_version.BackColor = System.Drawing.Color.Transparent;
-            this.lbl_version.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold);
-            this.lbl_version.ForeColor = System.Drawing.Color.White;
-            this.lbl_version.Location = new System.Drawing.Point(122, 5);
-            this.lbl_version.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.lbl_version.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
+            this.lbl_version.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(136)))), ((int)(((byte)(153)))), ((int)(((byte)(170)))));
+            this.lbl_version.Location = new System.Drawing.Point(44, 326);
             this.lbl_version.Name = "lbl_version";
-            this.lbl_version.Size = new System.Drawing.Size(70, 20);
-            this.lbl_version.TabIndex = 1;
+            this.lbl_version.Size = new System.Drawing.Size(80, 16);
+            this.lbl_version.TabIndex = 4;
             this.lbl_version.Text = "Version";
-            // 
-            // lbl_step
-            // 
-            this.lbl_step.BackColor = System.Drawing.Color.Transparent;
-            this.lbl_step.Font = new System.Drawing.Font("微软雅黑", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lbl_step.ForeColor = System.Drawing.Color.White;
-            this.lbl_step.Location = new System.Drawing.Point(26, 311);
-            this.lbl_step.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.lbl_step.Name = "lbl_step";
-            this.lbl_step.Size = new System.Drawing.Size(436, 24);
-            this.lbl_step.TabIndex = 2;
-            this.lbl_step.Text = "正在初始化......";
-            // 
-            // bar_step
-            // 
-            this.bar_step.ForeColor = System.Drawing.Color.Green;
-            this.bar_step.Location = new System.Drawing.Point(-2, 349);
-            this.bar_step.Margin = new System.Windows.Forms.Padding(2);
-            this.bar_step.Name = "bar_step";
-            this.bar_step.Size = new System.Drawing.Size(614, 11);
-            this.bar_step.TabIndex = 4;
-            // 
-            // pictureBox2
-            // 
-            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox2.Image = global::testapp.Properties.Resources.qq;
-            this.pictureBox2.Location = new System.Drawing.Point(548, 279);
-            this.pictureBox2.Margin = new System.Windows.Forms.Padding(2);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(62, 65);
-            this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox2.TabIndex = 9;
-            this.pictureBox2.TabStop = false;
-            // 
-            // btn_exit
-            // 
-            this.btn_exit.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(145)))), ((int)(((byte)(236)))));
-            this.btn_exit.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btn_exit.FlatAppearance.BorderSize = 0;
-            this.btn_exit.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btn_exit.Font = new System.Drawing.Font("新宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btn_exit.ForeColor = System.Drawing.Color.White;
-            this.btn_exit.Location = new System.Drawing.Point(586, 1);
-            this.btn_exit.Margin = new System.Windows.Forms.Padding(2);
-            this.btn_exit.Name = "btn_exit";
-            this.btn_exit.Padding = new System.Windows.Forms.Padding(5, 0, 0, 0);
-            this.btn_exit.Size = new System.Drawing.Size(24, 24);
-            this.btn_exit.TabIndex = 10;
-            this.btn_exit.TabStop = false;
-            this.btn_exit.Text = "×";
-            this.btn_exit.TextImageRelation = System.Windows.Forms.TextImageRelation.TextBeforeImage;
-            this.btn_exit.UseVisualStyleBackColor = false;
-            this.btn_exit.Click += new System.EventHandler(this.btn_exit_Click);
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.BackColor = System.Drawing.Color.Transparent;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.ForeColor = System.Drawing.Color.White;
-            this.label1.Location = new System.Drawing.Point(11, 5);
-            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(92, 20);
-            this.label1.TabIndex = 12;
-            this.label1.Text = "TEST APP";
-            // 
+            //
             // Frm_Welcome
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(145)))), ((int)(((byte)(236)))));
-            this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.ClientSize = new System.Drawing.Size(611, 343);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.btn_exit);
-            this.Controls.Add(this.lbl_companyName);
-            this.Controls.Add(this.lbl_step);
-            this.Controls.Add(this.bar_step);
+            //
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.ClientSize = new System.Drawing.Size(368, 360);
             this.Controls.Add(this.lbl_version);
-            this.Controls.Add(this.pictureBox2);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(2);
+            this.Controls.Add(this.btn_cancel);
+            this.Controls.Add(this.btn_open);
+            this.Controls.Add(this.txtEmployeeNo);
+            this.Controls.Add(this.lblSubtitle);
+            this.Controls.Add(this.lblTitle);
+            this.DisableTheme = true;
+            this.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
+            this.ForeColor = System.Drawing.Color.White;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "Frm_Welcome";
+            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Vision & Motion Tool";
+            this.Text = "Employee Login";
             this.Load += new System.EventHandler(this.Frm_Welcome_Load);
-            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.setForm_MouseDown);
-            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.setForm_MouseMove);
-            this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.setForm_MouseUp);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            this.Shown += new System.EventHandler(this.Frm_Welcome_Shown);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -163,12 +131,11 @@
 
         #endregion
 
-        internal System.Windows.Forms.Label lbl_step;
-        internal System.Windows.Forms.Label lbl_version;
-        internal System.Windows.Forms.ProgressBar bar_step;
-        public System.Windows.Forms.Label lbl_companyName;
-        private System.Windows.Forms.PictureBox pictureBox2;
-        private System.Windows.Forms.Button btn_exit;
-        internal System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.Label lblSubtitle;
+        private System.Windows.Forms.Label lbl_version;
+        private AntdUI.Input txtEmployeeNo;
+        private AntdUI.Button btn_open;
+        private AntdUI.Button btn_cancel;
     }
 }

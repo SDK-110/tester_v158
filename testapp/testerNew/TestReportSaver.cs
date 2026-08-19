@@ -86,7 +86,7 @@ namespace test_antdui
 
         private static uint ConvertDateTimeInt(DateTime time)
         {
-            DateTime startTime = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1, 0, 0, 0));
+            DateTime startTime = TimeZoneInfo.ConvertTimeFromUtc(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc), TimeZoneInfo.Local);
             return (uint)(time - startTime).TotalSeconds;
         }
 

@@ -135,11 +135,16 @@ namespace 重构程序.viewmode
             //  viewloader.reftb.DataSource = viewloader.dt ;
 
             tester_proj.clear_result();
-            dt.Clear();
-            for (int i = 0; i < tester_proj.test_cases.Count; i++)
-            {
 
-                dt.Rows.Add(new string[] {                          tester_proj.test_cases[i].id.ToString(),
+            // 批量加载：暂停布局与数据通知，避免逐行触发 DataGridView 刷新
+            reftb.SuspendLayout();
+            dt.BeginLoadData();
+            try
+            {
+                dt.Clear();
+                for (int i = 0; i < tester_proj.test_cases.Count; i++)
+                {
+                    dt.Rows.Add(new string[] {                          tester_proj.test_cases[i].id.ToString(),
                                                                     tester_proj.test_cases[i].testcase_description,
                                                                     tester_proj.test_cases[i].testcase_high_limit,
                                                                     tester_proj.test_cases[i].testcase_low_limit,
@@ -154,12 +159,13 @@ namespace 重构程序.viewmode
                                                                     
 
                 });
-
-
-
-
+                }
             }
-
+            finally
+            {
+                dt.EndLoadData();
+                reftb.ResumeLayout();
+            }
         }
 
 

@@ -315,7 +315,7 @@ namespace testapp.mylib
 
         public static uint ConvertDateTimeInt(System.DateTime time)
         {
-            System.DateTime startTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1, 0, 00, 00));
+            System.DateTime startTime = TimeZoneInfo.ConvertTimeFromUtc(new System.DateTime(1970, 1, 1, 0, 00, 00, System.DateTimeKind.Utc), TimeZoneInfo.Local);
             return (uint)(time - startTime).TotalSeconds;
         }
 
@@ -1261,7 +1261,7 @@ namespace testapp.mylib
                 if (rst.Rows.Count > 0)
                 {
 
-                    if (upload_mysql_value(rst.Rows[0][1] as string + "," + rst.Rows[0][2] as string + "," + rst.Rows[0][3] as string, url)[0] != "1") return -1;
+                    if (upload_mysql_value((rst.Rows[0][1] as string) + "," + (rst.Rows[0][2] as string) + "," + (rst.Rows[0][3] as string), url)[0] != "1") return -1;
 
 
                     if (mysql.ExecNonQuery($"delete {tablename } where `serial_number`='{serial_number}'") == 0) return -1;

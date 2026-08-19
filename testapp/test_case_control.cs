@@ -18,8 +18,6 @@ using 重构程序.viewmode;
 using 重构程序.testcase_loader;
 using rebuild.testcase_loader;
 using unvell.ReoGrid;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using testapp.duochuangti;
 
 namespace testapp
@@ -70,7 +68,6 @@ namespace testapp
 
             test_case_file = test_cases;
             proj = excel2tester_standard.read_excel_test_cases(test_cases,testcase_table_sel);
-            testcase_table_sel = testcase_table_sel;
             testcase_lib = testcase_Dll;
             viewloader = new reogridviewloader(ref this.reoGridControl1, testcase_lib.Getfun(), proj);
 
@@ -366,7 +363,7 @@ namespace testapp
             string temp_sn = Guid.NewGuid().ToString("N");
             this.toolStripStatusLabel5.Text = ts2.Subtract(ts1).Duration()+"";
             // MessageBox.Show((string)e.Result);
-            if (e.Result != "pass") {
+            if ((string)e.Result != "pass") {
                 ModifyProgressBarColor.SetState(this.progressBar1, 2);
                 
             }

@@ -337,6 +337,7 @@ namespace test_antdui
 
         public async Task<bool> RunInitAsync()
         {
+            await Task.CompletedTask;
             OnLogMessage("执行初始化函数...");
             foreach (var init in _initFunctions)
             {
@@ -356,6 +357,7 @@ namespace test_antdui
 
         public async Task RunCleanupAsync()
         {
+            await Task.CompletedTask;
             OnLogMessage("执行清理函数...");
             foreach (var cleanup in _cleanupFunctions)
             {

@@ -360,6 +360,7 @@ namespace testapp
         /// <returns></returns>
         public async Task<int> SetDeviceIntoTestMode()
         {
+            await Task.CompletedTask;
 
 
 
@@ -1058,6 +1059,7 @@ namespace testapp
         }
         public async Task<(int, object)> config_device()
         {
+            await Task.CompletedTask;
 
 
             try
@@ -1096,6 +1098,7 @@ namespace testapp
 
         public async Task<(int, object)> read_config()
         {
+            await Task.CompletedTask;
 
 
             try
@@ -2237,7 +2240,7 @@ namespace testapp
 
        public  uint ConvertDateTimeInt(System.DateTime time)
        {
-           System.DateTime startTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1,8,00,00));
+           System.DateTime startTime = TimeZoneInfo.ConvertTimeFromUtc(new System.DateTime(1970, 1, 1, 8, 00, 00, System.DateTimeKind.Utc), TimeZoneInfo.Local);
            return (uint)(time - startTime).TotalSeconds;
        }
 

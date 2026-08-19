@@ -189,7 +189,7 @@
             this.test_file_name.MaxLength = 32767;
             this.test_file_name.Name = "test_file_name";
             this.test_file_name.PasswordChar = '\0';
-            this.test_file_name.PromptText = "please input Tester File Name";
+            this.test_file_name.WaterMark = "please input Tester File Name";
             this.test_file_name.ReadOnly = true;
             this.test_file_name.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.test_file_name.SelectedText = "";
@@ -236,7 +236,7 @@
             this.Operator.MaxLength = 32767;
             this.Operator.Name = "Operator";
             this.Operator.PasswordChar = '\0';
-            this.Operator.PromptText = "please input operator";
+            this.Operator.WaterMark = "please input operator";
             this.Operator.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.Operator.SelectedText = "";
             this.Operator.SelectionLength = 0;
@@ -282,7 +282,7 @@
             this.PIC.MaxLength = 32767;
             this.PIC.Name = "PIC";
             this.PIC.PasswordChar = '\0';
-            this.PIC.PromptText = "please input Production site foreman";
+            this.PIC.WaterMark = "please input Production site foreman";
             this.PIC.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.PIC.SelectedText = "";
             this.PIC.SelectionLength = 0;
@@ -328,7 +328,7 @@
             this.Product_Name.MaxLength = 32767;
             this.Product_Name.Name = "Product_Name";
             this.Product_Name.PasswordChar = '\0';
-            this.Product_Name.PromptText = "please input Product";
+            this.Product_Name.WaterMark = "please input Product";
             this.Product_Name.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.Product_Name.SelectedText = "";
             this.Product_Name.SelectionLength = 0;
@@ -374,7 +374,7 @@
             this.Maufacturer.MaxLength = 32767;
             this.Maufacturer.Name = "Maufacturer";
             this.Maufacturer.PasswordChar = '\0';
-            this.Maufacturer.PromptText = "please input SN";
+            this.Maufacturer.WaterMark = "please input SN";
             this.Maufacturer.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.Maufacturer.SelectedText = "";
             this.Maufacturer.SelectionLength = 0;
@@ -432,7 +432,7 @@
             this.metroTextBox2.MaxLength = 32767;
             this.metroTextBox2.Name = "metroTextBox2";
             this.metroTextBox2.PasswordChar = '\0';
-            this.metroTextBox2.PromptText = "please input SN";
+            this.metroTextBox2.WaterMark = "please input SN";
             this.metroTextBox2.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.metroTextBox2.SelectedText = "";
             this.metroTextBox2.SelectionLength = 0;
@@ -628,7 +628,7 @@
             this.metroTextBox1.MaxLength = 32767;
             this.metroTextBox1.Name = "metroTextBox1";
             this.metroTextBox1.PasswordChar = '\0';
-            this.metroTextBox1.PromptText = "please input SN, and key ENter";
+            this.metroTextBox1.WaterMark = "please input SN, and key ENter";
             this.metroTextBox1.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.metroTextBox1.SelectedText = "";
             this.metroTextBox1.SelectionLength = 0;

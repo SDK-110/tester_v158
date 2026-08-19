@@ -19,6 +19,8 @@ namespace 重构程序.viewmode
     {
         public Dictionary<string, pointfun> testcase_lib;
         public tester_project tester_proj;
+        // 首次加载标记：首次填充时单元格文字默认为黑色，无需逐格还原，跳过加速
+        private bool _firstLoad = true;
         public Worksheet myworksheet1;
         public ReoGridControl reftb;
         public reogridviewloader(ref ReoGridControl workbook, Dictionary<string, pointfun> testcase_lib, tester_project tester_proj)
@@ -131,12 +133,13 @@ namespace 重构程序.viewmode
                 }
             }
 
-            // 将第F列（结果列）文字颜色还原为黑色
-            if (count > 0)
+            // 将第F列（结果列）文字颜色还原为黑色（首次加载跳过：单元格默认为黑色）
+            if (count > 0 && !_firstLoad)
             {
                 for (int i = 0; i < count; i++)
                     myworksheet1.Cells[i, 5].Style.TextColor = Color.Black;
             }
+            _firstLoad = false;
 
             // 构建二维数组批量写入，避免逐行触发内部更新
             string[,] allData = new string[count, 7];

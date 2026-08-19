@@ -9,7 +9,6 @@ using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Security.Cryptography;
 using Windows.Foundation;
-using System;
 namespace test_blue_dll
 {
 

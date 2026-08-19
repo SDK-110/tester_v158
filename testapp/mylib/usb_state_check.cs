@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NativeUsbLib;
 namespace testapp.mylib
 {
     internal  static class usb_state_check

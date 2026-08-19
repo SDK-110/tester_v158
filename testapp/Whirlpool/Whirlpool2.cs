@@ -26,7 +26,6 @@ using testapp.useful;
 using unvell.ReoGrid.IO.OpenXML.Schema;
 
 using System.Xml.Serialization;
-using System.IO;
 using NationalInstruments.Restricted;
 namespace testapp.whirlpool
 {
@@ -310,7 +309,7 @@ namespace testapp.whirlpool
 
         }
 
-        private async void metroTextBox1_TextChanged(object sender, EventArgs e)
+        private void metroTextBox1_TextChanged(object sender, EventArgs e)
         {
             /*
 

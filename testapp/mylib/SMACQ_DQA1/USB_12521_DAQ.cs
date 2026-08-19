@@ -17,8 +17,6 @@ namespace testapp.mylib.smacq_daq
 
             DevIndex = usb_1000_LIB.FindUSBDAQ();
 
-            if (DevIndex == null) new Exception("usb12521error");
-
             usb_1000_LIB.OpenDevice(DevIndex);
             usb_1000_LIB.ResetDevice(DevIndex);
 

@@ -1,90 +1,82 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading;
+using System;
 using System.Windows.Forms;
+using testapp.glob_set;
 
 namespace VMPro
 {
-    internal partial class Frm_Welcome : Form
+    internal partial class Frm_Welcome : AntdUI.Window
     {
+        /// <summary>
+        /// 当前输入的员工工号
+        /// </summary>
+        public string EmployeeId => txtEmployeeNo.Text.Trim();
+
         internal Frm_Welcome()
         {
             InitializeComponent();
-            Control.CheckForIllegalCrossThreadCalls = false;
-        }
-
-        #region 窗体拖动
-        private static bool IsDrag = false;
-        private int enterX;
-        private int enterY;
-        private void setForm_MouseDown(object sender, MouseEventArgs e)
-        {
-            IsDrag = true;
-            enterX = e.Location.X;
-            enterY = e.Location.Y;
-        }
-        private void setForm_MouseUp(object sender, MouseEventArgs e)
-        {
-            IsDrag = false;
-            enterX = 0;
-            enterY = 0;
-        }
-        private void setForm_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (IsDrag)
-            {
-                Left += e.Location.X - enterX;
-                Top += e.Location.Y - enterY;
-            }
-        }
-        #endregion
-        /// <summary>
-        /// 窗体对象实例
-        /// </summary>
-        private static Frm_Welcome _instance;
-        internal static Frm_Welcome Instance
-        {
-            get
-            {
-                if (_instance == null)
-                    _instance = new Frm_Welcome();
-                return _instance;
-            }
-        }
-             /// <summary>
-        /// 配置
-        /// </summary>
-        public string AssemblyConfiguration
-        {
-            get
-            {
-                object[] attributes = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyConfigurationAttribute), false);
-                if (attributes.Length == 0)
-                {
-                    return "";
-                }
-                return ((AssemblyConfigurationAttribute)attributes[0]).Configuration;
-            }
         }
 
         private void Frm_Welcome_Load(object sender, EventArgs e)
         {
-            lbl_version.Text =  this.AssemblyConfiguration;// System.Reflection.Assembly.GetExecutingAssembly().GetName().Version .ToString();
-            bar_step.Maximum = 100; 
-     
-        }
-        private void btn_exit_Click(object sender, EventArgs e)
-        {
-          
-            Process.GetCurrentProcess().Kill();
+            lbl_version.Text = "Version " + Application.ProductVersion;
+
+            // 登录框保持为空：员工需输入自己的工号（为空时不进入系统）
+            txtEmployeeNo.Text = "";
         }
 
+        private void Frm_Welcome_Shown(object sender, EventArgs e)
+        {
+            txtEmployeeNo.Focus();
+        }
+
+        /// <summary>
+        /// 【Open】按钮：保存员工工号到 setup.ini 并进入系统
+        /// </summary>
+        private void btn_open_Click(object sender, EventArgs e)
+        {
+            string employeeNo = EmployeeId;
+            if (employeeNo.Length == 0)
+            {
+                AntdUI.Message.warn(this, "Employee ID cannot be empty. Please enter your employee ID!", autoClose: 2);
+                txtEmployeeNo.Focus();
+                return;
+            }
+
+            try
+            {
+                var ini = glob_ini_instance.getInstance().getSetupIniData;
+                ini["setproduct"]["personal_number"] = employeeNo;
+                glob_ini_instance.getInstance().write2Ini(ini);
+            }
+            catch (Exception ex)
+            {
+                AntdUI.Message.error(this, "Failed to save employee ID: " + ex.Message, autoClose: 3);
+                return;
+            }
+
+            DialogResult = DialogResult.OK;
+            Close();
+        }
+
+        /// <summary>
+        /// 【Cancel】按钮：取消登录，不进入系统
+        /// </summary>
+        private void btn_cancel_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        /// <summary>
+        /// 输入框回车：直接触发【Open】
+        /// </summary>
+        private void txtEmployeeNo_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true;
+                btn_open_Click(sender, e);
+            }
+        }
     }
 }

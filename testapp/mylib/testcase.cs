@@ -24,7 +24,6 @@ using System.IO.Ports;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices;
 // using System.Runtime.Remoting.Channels;
 // using System.Runtime.Remoting.Contexts;
 using System.Text;
@@ -23795,7 +23794,7 @@ namespace testapp
                             c = temp;
                             // if (((ulong)(festoolcom.ReadPdatMode().Result)[1]).ToString().Substring(6, 2) == a.Trim()) { return "pass"; }
 
-                            if (rt != null && rt.Year >= 2021 && rt.Year <= 2025) { c = festoolcom.ConvertDateTimeInt(rt) + ""; return "pass"; }
+                            if (rt.Year >= 2021 && rt.Year <= 2025) { c = festoolcom.ConvertDateTimeInt(rt) + ""; return "pass"; }
 
                         }
                         c = "timeerror";
@@ -25628,7 +25627,7 @@ namespace testapp
                             c = temp;
                             // if (((ulong)(festoolcom.ReadPdatMode().Result)[1]).ToString().Substring(6, 2) == a.Trim()) { return "pass"; }
 
-                            if (rt != null && rt.Year >= 2021 && rt.Year <= 2025) { c = festoolcom.ConvertDateTimeInt(rt) + ""; return "pass"; }
+                            if (rt.Year >= 2021 && rt.Year <= 2025) { c = festoolcom.ConvertDateTimeInt(rt) + ""; return "pass"; }
 
                         }
                         c = "timeerror";
@@ -31348,7 +31347,7 @@ namespace testapp
                         }
                         else
                         {
-                            relay = (uint)(relay | (1 << (relay_number - 1)));
+                            relay |= (1u << (relay_number - 1));
 
 
                         }
@@ -31402,7 +31401,7 @@ namespace testapp
                         }
                         else
                         {
-                            relay = (uint)(relay | (1 << (relay_number - 1)));
+                            relay |= (1u << (relay_number - 1));
 
 
                         }

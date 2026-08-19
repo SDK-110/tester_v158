@@ -18,8 +18,6 @@ using 重构程序.viewmode;
 using 重构程序.testcase_loader;
 using rebuild.testcase_loader;
 using unvell.ReoGrid;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using testapp.duochuangti;
 using System.Reflection;
 using System.Threading;
@@ -96,7 +94,6 @@ namespace testapp
             
             test_case_file = test_cases;
             proj = json2tester_standard.red_json_test_project(test_cases+".json");
-            testcase_table_sel = testcase_table_sel;
             lib = testcase_Dll.Getfun();
         
 
