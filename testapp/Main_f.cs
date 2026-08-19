@@ -1104,7 +1104,9 @@ namespace testapp
 
                 if (viewloader.tester_proj.test_cases[a].get_judge_result == "fail")
                 { //MessageBox.Show("Test" + viewloader.tester_proj.test_cases[a].testcase_description);
-                    resultt = "fail"; }
+                    resultt = "fail"; 
+                
+                }
 
                     s.Append(viewloader.tester_proj.test_cases[a].result_msg+ ",");
             }
