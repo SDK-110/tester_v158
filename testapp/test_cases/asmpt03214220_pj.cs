@@ -60,7 +60,7 @@ namespace testapp.test_cases
 
         public void add_func_to_libs()
         {
-            id = "asmpt77221_";
+            id = "asmpt4220_";
          
             tc.funcs.Add(id + "cal_lcr", cal_lcr);
             tc.funcs.Add(id + "loop_waiting_read_voltage", loop_waiting_read_voltage);
@@ -149,7 +149,7 @@ namespace testapp.test_cases
                 const int intervalMs = 500;
                 int maxLoops = totalWaitMs / intervalMs;
 
-                double threshold = double.Parse(b);
+                double threshold = double.Parse(a);
                 List<double> readings = new List<double>();
 
                 for (int i = 0; i < maxLoops; i++)
@@ -157,19 +157,20 @@ namespace testapp.test_cases
                     Thread.Sleep(intervalMs);
 
                     string reading = "";
-                    tc.funcs["md3058_read_DC_200V"](a, b, out reading, "");
+                    tc.funcs["md3058_read_DC_200V"]("999", "-1", out reading, "");
 
                     double volt;
                     if (double.TryParse(reading, out volt))
                     {
                         readings.Add(volt);
                         utility_func.callbackdebuginfo(
-                            $"[asmpt77221] loop_waiting_read_voltage #{i + 1}: {volt:F3}V");
+                            $"[asmpt03214220] loop_waiting_read_voltage #{i + 1}: {volt:F3}V");
 
                         // 电压降到阈值以下 → 判定完成
-                        if (volt <= threshold)
+                        if (volt <= threshold && volt >= double.Parse(b))
                         {
-                            c = $"{volt:F3};loop={i + 1};samples={readings.Count}";
+                            mylib.utility_func.callbackdebuginfo($"{volt:F3};loop={i + 1};samples={readings.Count}");
+                            c = $"{volt:F3}";
                             return "pass";
                         }
                     }
@@ -177,19 +178,20 @@ namespace testapp.test_cases
 
                 // 超时仍未降到阈值
                 string last = readings.Count > 0 ? readings.Last().ToString("F3") : "N/A";
-                c = $"fail;timeout;last={last};samples={readings.Count}";
+                mylib.utility_func.callbackdebuginfo($"fail;timeout;last={last};samples={readings.Count}");
+                c = $"fail;timeout";
                 return "fail";
             }
             catch (Exception ex)
             {
-                utility_func.callbackdebuginfo($"[asmpt77221] loop_waiting_read_voltage error: {ex.Message}");
+                utility_func.callbackdebuginfo($"[asmpt4220] loop_waiting_read_voltage error: {ex.Message}");
                 c = $"fail;{ex.Message}";
                 return "fail";
             }
         }
 
 
-      
+
 
         /// <summary>
         /// 断开指定继电器后，精准计时测量电压从高位下降到阈值以下所用的放电时间(Δt)。
@@ -364,7 +366,7 @@ namespace testapp.test_cases
             try
             {
                 // ── 1. 解析 d ──────────────────────────────────────
-                var parts = d.Split(',');
+                var parts = d.Replace("'", "").Split(',');
                 if (parts.Length < 3)
                 {
                     utility_func.callbackdebuginfo(
@@ -384,7 +386,7 @@ namespace testapp.test_cases
                     $"range=[{voltLower},{voltUpper}]V maxWait={maxWaitMs}ms");
 
                 // ── 2. 闭合电压采集继电器 ─────────────────────────
-                tc.Getfun()["relay_set"]("", "", out _, $"#{acqRelay}:1#");
+                tc.Getfun()["sk_relay1_set"]("", "", out _, $"${acqRelay}:1$");
                 Thread.Sleep(200);
 
                 // ── 3. 读取初始电压 (读数异常直接 fail) ──────────
@@ -405,7 +407,7 @@ namespace testapp.test_cases
                 // ── 4. 断开触发继电器，计时起点 T₀ ──────────────
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 double t0 = sw.Elapsed.TotalSeconds;
-                tc.Getfun()["relay_set"]("", "", out _, $"#{disRelay}:0#");
+                tc.Getfun()["sk_relay1_set"]("", "", out _, $"${disRelay}:0$");
 
                 // ── 5. 精准延时 N 秒: 接近目标后忙等补足 ────────
                 while (true)
@@ -425,7 +427,7 @@ namespace testapp.test_cases
                     int sleepMs = (int)(remainS * 1000);
                     Thread.Sleep(sleepMs > 5 ? sleepMs - 5 : 1);
                 }
-
+                tc.Getfun()["sk_relay1_set"]("", "", out _, $"${disRelay}:1$");
                 // ── 6. 到点读表, 中点时间戳 ─────────────────────
                 long ticksPre = sw.ElapsedTicks;
                 string reading = "";
@@ -498,7 +500,7 @@ namespace testapp.test_cases
             try
             {
                 // ── 1. 解析 d ──────────────────────────────────────
-                var parts = d.Split(',');
+                var parts = d.Replace("'", "").Split(',');
                 if (parts.Length < 4)
                 {
                     utility_func.callbackdebuginfo(
@@ -520,7 +522,7 @@ namespace testapp.test_cases
                     $"ΔU={deltaUV}V limit=[{capLower},{capUpper}]F timeout={timeoutS}s");
 
                 // ── 2. 闭合电压采集继电器 → 读 V_start ───────────
-                tc.Getfun()["relay_set"]("", "", out _, $"#{acqRelay}:1#");
+                tc.Getfun()["sk_relay1_set"]("", "", out _, $"${acqRelay}:1$");
                 Thread.Sleep(200);
 
                 string startReading = "";
@@ -542,7 +544,7 @@ namespace testapp.test_cases
                 // ── 3. 闭合恒流源继电器，开始充电，计时 T₀ ─────
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 double t0 = sw.Elapsed.TotalSeconds;
-                tc.Getfun()["relay_set"]("", "", out _, $"#{ccRelay}:1#");
+                tc.Getfun()["sk_relay1_set"]("", "", out _, $"${ccRelay}:1$");
 
                 double vPrev = vStart;
                 double tPrev = t0;
