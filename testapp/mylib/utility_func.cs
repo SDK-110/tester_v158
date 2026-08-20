@@ -1261,7 +1261,7 @@ namespace testapp.mylib
                 if (rst.Rows.Count > 0)
                 {
 
-                    if (upload_mysql_value((rst.Rows[0][1] as string) + "," + (rst.Rows[0][2] as string) + "," + (rst.Rows[0][3] as string), url)[0] != "1") return -1;
+                    if (upload_mysql_value((rst.Rows[0][1] as string) + "," + (rst.Rows[0][2] as string) + "," + rst.Rows[0][3] as string, url)[0] != "1") return -1;
 
 
                     if (mysql.ExecNonQuery($"delete {tablename } where `serial_number`='{serial_number}'") == 0) return -1;
@@ -1987,9 +1987,10 @@ namespace testapp.mylib
         
         }
 
-        public static StringBuilder run_console_pip(string path = @"D:\my_workspac\temp\U10_PROG\TUV_U3_U10_Programming_Script\Read_MRAM_Data_U10_v02\Read_MRAM_Data.exe",int timeout=30000,string EndStr = "EEPROM Data Retrieved successfully: END")
+        public static StringBuilder run_console_pip(string path = @"D:\my_workspac\temp\U10_PROG\TUV_U3_U10_Programming_Script\Read_MRAM_Data_U10_v02\Read_MRAM_Data.exe",int timeout=30000,string EndStr = "EEPROM Data Retrieved successfully: END",string arg="")
         {
-            var processExited = new ManualResetEvent(false);    
+            var processExited = new ManualResetEvent(false);
+            bool processClosed = false; // 进程退出/关闭标志 — 防止异步回调写已关闭的 StandardInput
             string exePath = path;
              StringBuilder rsu = new StringBuilder();
             StringBuilder error = new StringBuilder();
@@ -2002,91 +2003,103 @@ namespace testapp.mylib
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 StandardOutputEncoding = Encoding.UTF8,
-                WorkingDirectory=Path.GetDirectoryName(exePath)
+                WorkingDirectory=Path.GetDirectoryName(exePath),
+                Arguments =  arg
             };
-
-            using (Process process = new Process())
+            try
             {
-                Regex regex = new Regex(EndStr.ToLower(), RegexOptions.IgnoreCase | RegexOptions.Multiline);
-                process.EnableRaisingEvents = true;
-                process.StartInfo = psi;
-                process.OutputDataReceived +=(sender, e) =>
+                using (Process process = new Process())
                 {
-                    if (!string.IsNullOrEmpty(e.Data))
+                    Regex regex = new Regex(EndStr.ToLower(), RegexOptions.IgnoreCase | RegexOptions.Multiline);
+                    process.EnableRaisingEvents = true;
+                    process.StartInfo = psi;
+
+                    process.OutputDataReceived += (sender, e) =>
                     {
-                       mylib.utility_func.callbackdebuginfo("rev:" + e.Data);
-                        rsu.Append(e.Data+";");
-                        // 检测关键提示，自动发送Enter
-                        if (regex.IsMatch(e.Data.ToLower())==true)
+                        if (!string.IsNullOrEmpty(e.Data))
                         {
-                           process.StandardInput.WriteLine("\r\n");
-                           process.StandardInput.Flush();
-                           
+                            mylib.utility_func.callbackdebuginfo("rev:" + e.Data);
+                            rsu.Append(e.Data + ";");
+                            // 检测关键提示，自动发送Enter
+                            // 注意: OutputDataReceived 在 ThreadPool 线程触发, 进程退出/Dispose 后
+                            // 仍有排队事件触发, 此时 StandardInput 已关闭会抛异常 → 未捕获即整个进程闪退
+                            if (!processClosed && regex.IsMatch(e.Data.ToLower()) == true)
+                            {
+                                try
+                                {
+                                    process.StandardInput.WriteLine("\r\n");
+                                    process.StandardInput.Flush();
+                                }
+                                catch { /* 进程已退出/管道已关闭, 忽略 */ }
+                            }
+                        }
+                    };
+
+                    process.ErrorDataReceived += (sender, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            mylib.utility_func.callbackdebuginfo("rev error:" + e.Data);
+                            error.Append(e.Data + ";");
+
+                        }
+                    };
+                    process.Exited += (s, e) =>
+                    {
+                        processClosed = true;
+                        processExited.Set();
+                    };
+
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+                    //string errorOutput = process.StandardError.ReadLine();
+                    //if (!string.IsNullOrEmpty(errorOutput))
+                    //{
+                    //    mylib.utility_func.callbackdebuginfo("Error: " + errorOutput);
+                    //}
+
+
+                    //Task.Factory.StartNew(() =>
+                    //{
+
+                    //    Thread.Sleep(timeout);
+                    //    process.Kill();
+
+
+                    //});
+
+
+                    //process.WaitForExit();
+
+                    if (!processExited.WaitOne(timeout))
+                    {
+                        processClosed = true;
+                        try
+                        {
+
+                            process.Kill();
+                        }
+                        catch (Exception e)
+                        {
+                            mylib.utility_func.callbackdebuginfo("debug:" + e.ToString());
 
                         }
                     }
-                };
-
-                process.ErrorDataReceived += (sender, e) =>
-                {
-                    if (!string.IsNullOrEmpty(e.Data))
-                    {
-                        mylib.utility_func.callbackdebuginfo("rev error:" + e.Data);
-                        error.Append(e.Data + ";");
-
-                    }
-                };
-                process.Exited += (s, e) =>
-                {
-
-                    processExited.Set();
-                };
-
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-                //string errorOutput = process.StandardError.ReadLine();
-                //if (!string.IsNullOrEmpty(errorOutput))
-                //{
-                //    mylib.utility_func.callbackdebuginfo("Error: " + errorOutput);
-                //}
-
-
-                //Task.Factory.StartNew(() =>
-                //{
-
-                //    Thread.Sleep(timeout);
-                //    process.Kill();
-
-
-                //});
-
-
-                //process.WaitForExit();
-
-                if (!processExited.WaitOne(timeout))
-                {
-                    try
+                    else
                     {
 
-                        process.Kill();
-                    }
-                    catch (Exception e)
-                    {
-                        mylib.utility_func.callbackdebuginfo("debug:" + e.ToString());
+                        process.WaitForExit();
+                        processClosed = true;
 
                     }
-                }
-                else { 
-                
-                process.WaitForExit();
+
 
                 }
-
-
             }
-
-            return rsu.Append(";" + error.ToString());
+            catch (Exception e) { }
+            
+                return rsu.Append(";" + error.ToString());
             
         }
 

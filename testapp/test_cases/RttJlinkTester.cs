@@ -1,3 +1,5 @@
+using DeviceLibrary;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -6,9 +8,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using DeviceLibrary;
-using NAudio.Wave;
 using testapp.glob_set;
+using testapp.mylib;
+using variable_space;
 
 namespace testapp.test_cases
 {
@@ -66,10 +68,99 @@ namespace testapp.test_cases
             tc.funcs[id + "write_sn"]           = rtt_write_sn;
             tc.funcs[id + "read_sn"]            = rtt_read_sn;
             tc.funcs[id + "read_deviceid"]      = rtt_read_deviceid;
+            tc.funcs[id + "ble_dongle_rtt_read_batty"] = ble_dongle_rtt_read_batty;
+            tc.funcs[id + "read_hwid_bluetooth"] = read_hwid_bluetooth;
+            tc.funcs[id + "enter_test_mode_usb_dongle"] = enter_test_mode_usb_dongle;
+            tc.funcs[id + "read_gpio_pin"] = rtt_read_gpio_pin;
+            tc.funcs[id + "write_gpio_pin"] = rtt_write_gpio_pin;
+            tc.funcs[id + "read_gpio_pin_ble_dongle"] = read_gpio_pin_ble_dongle;
+            tc.funcs[id + "read_rssi_from_usb_dongle"] = read_rssi_from_usb_dongle;
             tc.funcs[id + "save_mes"]           = rtt_save_mes;
             tc.funcs[id + "play_mp3"]           = rtt_play_mp3;
             tc.funcs[id + "scan_barcode"]       = rtt_scan_barcode;
+            tc.funcs[id + "ble_tx_power"]       = cmw_ble_tx_power;
+            tc.funcs[id + "ble_tx_offset"]      = cmw_ble_tx_offset;
+            tc.funcs[id + "write_deviceid"]      = rtt_write_deviceid;
+            tc.funcs[id + "dongle_read_sn"]      = rtt_dongle_read_sn;
+            tc.funcs[id + "dongle_connect"]      = rtt_dongle_connect;
         }
+
+
+
+
+
+
+
+
+
+        private string  cmw_ble_tx_power(string a, string b, out string c, string d)
+        {
+
+
+           
+                    try
+                    {
+
+                        cmw100_bluetooth_tx_pycom._cmw100_bluetooth_tx_pycom(freq: double.Parse(d.Split(';')[1]), Eattenuation: double.Parse(d.Split(';')[2]));
+                        //if (cmw100_bluetooth_tx_pycom.driver == null) { c = "cmw100 error"; return "fail"; }
+                        if (!cmw100_bluetooth_tx_pycom.run_ok) { c = "cmw100 error"; return "fail"; }
+                    tc.golb_var_default["ble_tx_offset"] = cmw100_bluetooth_tx_pycom.offset;
+                    tc.golb_var_default["ble_tx_power "] = cmw100_bluetooth_tx_pycom.txpower;
+                        c = "" + cmw100_bluetooth_tx_pycom.txpower;
+                        if (double.Parse(a) >= cmw100_bluetooth_tx_pycom.txpower && double.Parse(b) <= cmw100_bluetooth_tx_pycom.txpower)
+                {
+
+                            return "pass";
+                        }
+                        else
+                        {
+
+                            return "fail";
+                        }
+                    }
+                    catch
+                    {
+
+                        c = "cmw100 error";
+                        return "fail";
+                    }
+
+               
+                return "fail";
+              
+
+
+
+            }
+
+        private string cmw_ble_tx_offset(string a, string b, out string c, string d) {
+
+
+            double ble_tx_offset = double.NaN;
+            if (tc.golb_var_default.TryGetValue("ble_tx_offset", out object val) && val != null)
+            {
+                ble_tx_offset = (double)val;
+                c = "" + ble_tx_offset;
+                if (double.Parse(a) >= ble_tx_offset && double.Parse(b) <= ble_tx_offset)
+                {
+
+                    return "pass";
+                }
+                else
+                {
+
+                    return "fail";
+                }
+            }
+            c= "ble_tx_offset not found";
+            return "fail";
+
+
+
+        }
+
+
+
 
         // ============================================================
         // 核心函数实现
@@ -517,7 +608,7 @@ namespace testapp.test_cases
                     {
                         if (resp.Contains("ok"))
                         {
-                            localC = "pass";
+                            localC = $"{sn}";
                             return "pass";
                         }
                         return Fail(out localC, "write_failed", $"回应不含 ok: {resp.Trim()}");
@@ -593,6 +684,54 @@ namespace testapp.test_cases
             }
         }
 
+
+        private string rtt_dongle_read_sn(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 解析超时
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+    
+                // 3) 发送 read serial_number 并提取设备 SN
+                string result = RetryQuery("read_sn", () =>
+                    DoQuery("read serial_number", timeoutMs, resp =>
+                    {
+                        // 解析 "ok: xxxxxxxxxx" 格式
+                        var m = Regex.Match(resp, @"ok:\s*(\w+)");
+                        if (!m.Success)
+                            return Fail(out localC, "invalid_response", $"回应格式错误: {resp.Trim()}");
+
+                        string deviceSn = m.Groups[1].Value;
+
+                    
+                            // 字典无 SN，只返回设备值
+                            localC = deviceSn;
+                            tc.trf = deviceSn;
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_sn: 设备SN={deviceSn} (全局未设置，仅返回设备值)");
+                            return "pass";
+                       
+
+
+
+                        return Fail(out localC, "ERROR",
+                            $"dut=[{deviceSn}] ");
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] read_sn: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
         /// <summary>通过 RTT 读取设备 ID，存入 golb_var_default["deviceid"]</summary>
         /// d: "超时ms"（可选，默认 3000）
         private string rtt_read_deviceid(string a, string b, out string c, string d)
@@ -632,6 +771,529 @@ namespace testapp.test_cases
             }
         }
 
+
+
+        private string rtt_dongle_connect(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                {
+
+                    string ble_hwid = "";
+                    if (tc.golb_var_default.TryGetValue("input_sn", out object val) == false || val == null)
+                    {
+                        c = "fail;no_sn";
+                        return "fail";
+                    }
+                    ble_hwid = val.ToString();
+                    string result = RetryQuery($"rtt_dongle_connect", () =>
+                    DoQuery($"ble connect {ble_hwid.Replace("0x", "").Replace("0X", "")} ", timeoutMs, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok");
+                        if (!m.Success)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] rtt_dongle_connect: 回应格式错误: {resp.Trim()}");
+                            return "fail;invalid_response";
+                        }
+
+                        localC = "pass";
+                        return "pass";
+                    }));
+
+                    c = localC;
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] rtt_dongle_connect: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        private string rtt_write_deviceid(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                {
+
+                    string ble_hwid = "";
+                    if (tc.golb_var_default.TryGetValue("hwid_bluetooth", out object val) == false || val == null)
+                    {
+                        c= "fail;no_hwid_bluetooth";
+                        return "fail";
+                    }
+                    ble_hwid = val.ToString();
+                    string result = RetryQuery($"rtt_write_deviceid", () =>
+                    DoQuery($"write deviceid {ble_hwid} ", timeoutMs, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok");
+                        if (!m.Success)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] write_deviceid: 回应格式错误: {resp.Trim()}");
+                            return "fail;invalid_response";
+                        }
+
+                        localC = "pass";
+                        return "pass";
+                    }));
+
+                    c = localC;
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] read_deviceid: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>通过 RTT 读取 BLE 加密狗电池电量，与 a(下限) b(上限) 比较</summary>
+        /// a: "电量下限"（百分比整数，必填）
+        /// b: "电量上限"（百分比整数，必填）
+        /// d: "超时ms"（可选，默认 3000）
+        /// 例: b="10" a="90" → 电池在 10%~90% 之间则通过
+        private string ble_dongle_rtt_read_batty(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 解析上下限
+                if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
+                {
+                    c = "fail;param_error";
+                    return "fail";
+                }
+                if (!int.TryParse(b.Trim(), out int minLevel) || !int.TryParse(a.Trim(), out int maxLevel))
+                {
+                    c = "fail;invalid_limit";
+                    return "fail";
+                }
+                if (minLevel < 0 || maxLevel > 100 || minLevel > maxLevel)
+                {
+                    c = "fail;invalid_range";
+                    return "fail";
+                }
+
+                // 2) 解析超时
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                // 3) 发送 status battery 并解析回应
+                string result = RetryQuery("ble_dongle_rtt_read_batty", () =>
+                    DoQuery("status battery", timeoutMs, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok:\s*([0-9]{1,3})%");
+                        if (!m.Success)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] ble_dongle_rtt_read_batty: 回应格式错误: {resp.Trim()}");
+                            return "fail;invalid_response";
+                        }
+
+                        int batteryLevel = int.Parse(m.Groups[1].Value);
+
+                        if (batteryLevel >= minLevel && batteryLevel <= maxLevel)
+                        {
+                            localC = $"pass@{batteryLevel}%";
+                            mylib.utility_func.callbackdebuginfo($"[RTT] ble_dongle_rtt_read_batty: {batteryLevel}% 在 [{minLevel},{maxLevel}] 范围内");
+                            return "pass";
+                        }
+
+                        mylib.utility_func.callbackdebuginfo($"[RTT] ble_dongle_rtt_read_batty: {batteryLevel}% 超出范围 [{minLevel},{maxLevel}]");
+                        localC = $"fail;out_of_range:{batteryLevel}%";
+                        return "fail";
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] ble_dongle_rtt_read_batty: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>通过 RTT 读取蓝牙 HWID（48位硬件地址），存入 golb_var_default["hwid_bluetooth"]</summary>
+        /// d: "超时ms"（可选，默认 3000）
+        private string read_hwid_bluetooth(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                string result = RetryQuery("read_hwid_bluetooth", () =>
+                    DoQuery("hwid bluetooth", timeoutMs, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok:\s*(0x[0-9|a-f|A-F]{12})");
+                        if (!m.Success)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_hwid_bluetooth: 回应格式错误: {resp.Trim()}");
+                            return "fail;invalid_response";
+                        }
+
+                        string hwid = m.Groups[1].Value;
+                        tc.golb_var_default["blemac"] = hwid;
+                        mylib.utility_func.callbackdebuginfo($"[RTT] read_hwid_bluetooth: {hwid} → golb_var_default[hwid_bluetooth]");
+                        localC = hwid;
+                        return "pass";
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] read_hwid_bluetooth: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>BLE 加密狗进入测试模式：ble connect → get_connect 两步验证</summary>
+        /// 前置: golb_var_default["hwid_bluetooth"] 必须有值（由 rtt_read_hwid_bluetooth 写入）
+        /// d: "超时ms"（可选，默认 5000）
+        private string enter_test_mode_usb_dongle(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 获取蓝牙 MAC（前置步骤必须已执行 rtt_read_hwid_bluetooth）
+                string mac = null;
+                if (!tc.golb_var_default.TryGetValue("hwid_bluetooth", out object val) || val == null || string.IsNullOrWhiteSpace(val.ToString()))
+                {
+                    mylib.utility_func.callbackdebuginfo($"[RTT] enter_test_mode_usb_dongle: 全局字典中未找到 hwid_bluetooth");
+                    c = "fail;no_hwid";
+                    return "fail";
+                }
+                mac = val.ToString();
+
+                // 2) 解析超时（默认 5000ms）
+                int timeoutMs = 5000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                // 3) 两步操作 — RetryQuery 确保首次失败后重连再试一次完整流程
+                string result = RetryQuery("enter_test_mode_usb_dongle", () =>
+                {
+                    // Step 1: BLE 连接目标设备
+                    string r1 = DoQuery($"ble connect {mac}", timeoutMs, resp =>
+                    {
+                        if (resp.Contains("ok"))
+                        {
+                            localC = "ble_connected";
+                            return "pass";
+                        }
+                        return Fail(out localC, "ble_connect_failed", $"回应不含 ok: {resp.Trim()}");
+                    });
+                    if (r1 != "pass") return r1;
+
+                    // Step 2: 验证连接状态
+                    return DoQuery("get_connect", timeoutMs, resp =>
+                    {
+                        if (resp.Contains("connect"))
+                        {
+                            localC = "pass";
+                            return "pass";
+                        }
+                        return Fail(out localC, "no_connect", $"回应不含 connect: {resp.Trim()}");
+                    });
+                });
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] enter_test_mode_usb_dongle: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>通过 RTT 读取 GPIO 引脚电平，与 a(期望值) 对比</summary>
+        /// a: "期望值"（0 或 1，必填）
+        /// d: "引脚号"（必填）
+        /// c: 输出实际读取的值（"0" 或 "1"）
+        /// 例: a="1" d="5" → 读取 GPIO5，期望高电平
+        private string rtt_read_gpio_pin(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 解析引脚号
+                if (string.IsNullOrEmpty(d))
+                {
+                    c = "fail;no_pin";
+                    return "fail";
+                }
+                if (!int.TryParse(d.Trim(), out int pinNum) || pinNum < 0)
+                {
+                    c = "fail;invalid_pin";
+                    return "fail";
+                }
+
+                // 2) 解析期望值
+                if (string.IsNullOrEmpty(a))
+                {
+                    c = "fail;no_expected";
+                    return "fail";
+                }
+                string expected = a.Trim();
+                if (expected != "0" && expected != "1")
+                {
+                    c = "fail;invalid_expected";
+                    return "fail";
+                }
+
+                // 3) 发送命令并解析回应
+                string result = RetryQuery("read_gpio_pin", () =>
+                    DoQuery($"gpio read {pinNum}", 3000, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok:\s*(\d)");
+                        if (!m.Success)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_gpio_pin: 回应格式错误: {resp.Trim()}");
+                            return "fail;invalid_response";
+                        }
+
+                        string value = m.Groups[1].Value;
+                        localC = value;
+
+                        if (value == expected)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_gpio_pin: GPIO{pinNum}={value} == 期望 {expected} ✓");
+                            return "pass";
+                        }
+
+                        mylib.utility_func.callbackdebuginfo($"[RTT] read_gpio_pin: GPIO{pinNum}={value} != 期望 {expected} ✗");
+                        return "fail;mismatch";
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] read_gpio_pin: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>通过 RTT 设置 GPIO 引脚电平</summary>
+        /// d: "引脚号;电平值" — 例: "5;1" → GPIO5 输出高
+        private string rtt_write_gpio_pin(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 解析 d: "pin_num;status"
+                string[] p = SplitParam(d, 2);
+                if (p == null)
+                {
+                    c = "fail;param_error";
+                    return "fail";
+                }
+                if (!int.TryParse(p[0].Trim(), out int pinNum) || pinNum < 0)
+                {
+                    c = "fail;invalid_pin";
+                    return "fail";
+                }
+                string status = p[1].Trim();
+                if (status != "0" && status != "1")
+                {
+                    c = "fail;invalid_status";
+                    return "fail";
+                }
+
+                // 2) 发送命令
+                string result = RetryQuery("write_gpio_pin", () =>
+                    DoQuery($"gpio write {pinNum} {status}", 3000, resp =>
+                    {
+                        if (resp.Contains("OOK"))
+                        {
+                            localC = "pass";
+                            mylib.utility_func.callbackdebuginfo($"[RTT] write_gpio_pin: GPIO{pinNum} ← {status} ✓");
+                            return "pass";
+                        }
+                        return Fail(out localC, "write_failed", $"回应不含 OOK: {resp.Trim()}");
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] write_gpio_pin: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>通过 RTT 读取 BLE 加密狗 GPIO 引脚电平（与 rtt_read_gpio_pin 回应格式不同）</summary>
+        /// a: "期望值"（0 或 1，必填）
+        /// d: "引脚号"（必填）
+        /// c: 输出实际读取的值（"0" 或 "1"）
+        /// 回应格式: "ok: {pin_num} {value}"，例 "ok: 5 1"
+        private string read_gpio_pin_ble_dongle(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 解析引脚号
+                if (string.IsNullOrEmpty(d))
+                {
+                    c = "fail;no_pin";
+                    return "fail";
+                }
+                if (!int.TryParse(d.Trim(), out int pinNum) || pinNum < 0)
+                {
+                    c = "fail;invalid_pin";
+                    return "fail";
+                }
+
+                // 2) 解析期望值
+                if (string.IsNullOrEmpty(a))
+                {
+                    c = "fail;no_expected";
+                    return "fail";
+                }
+                string expected = a.Trim();
+                if (expected != "0" && expected != "1")
+                {
+                    c = "fail;invalid_expected";
+                    return "fail";
+                }
+
+                // 3) 发送命令并解析回应
+                string result = RetryQuery("read_gpio_pin_ble_dongle", () =>
+                    DoQuery($"gpio read {pinNum}", 3000, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok:\s\d{1,2}\s(\d{1})");
+                        if (!m.Success)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_gpio_pin_ble_dongle: 回应格式错误: {resp.Trim()}");
+                            return "fail;invalid_response";
+                        }
+
+                        string value = m.Groups[1].Value;
+                        localC = value;
+
+                        if (value == expected)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_gpio_pin_ble_dongle: GPIO{pinNum}={value} == 期望 {expected} ✓");
+                            return "pass";
+                        }
+
+                        mylib.utility_func.callbackdebuginfo($"[RTT] read_gpio_pin_ble_dongle: GPIO{pinNum}={value} != 期望 {expected} ✗");
+                        return "fail;mismatch";
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] read_gpio_pin_ble_dongle: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>通过 RTT 读取 USB 加密狗 RSSI（信号强度），与 a(上限) b(下限) 比较</summary>
+        /// a: "上限/hi-limit"（dBm，必填），如 "-30"
+        /// b: "下限/low-limit"（dBm，必填），如 "-80"
+        /// d: "超时ms"（可选，默认 3000）
+        /// 有效范围: b ≤ RSSI ≤ a
+        /// 例: a="-30" b="-80" → RSSI 在 -80 ~ -30 dBm 之间通过
+        private string read_rssi_from_usb_dongle(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                // 1) 解析上下限
+                if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
+                {
+                    c = "fail;param_error";
+                    return "fail";
+                }
+                if (!int.TryParse(a.Trim(), out int hiLimit) || !int.TryParse(b.Trim(), out int loLimit))
+                {
+                    c = "fail;invalid_limit";
+                    return "fail";
+                }
+                if (loLimit > hiLimit)
+                {
+                    c = "fail;invalid_range";
+                    return "fail";
+                }
+
+                // 2) 解析超时
+                int timeoutMs = 3000;
+                if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
+
+                // 3) 发送命令并解析
+                string result = RetryQuery("read_rssi_from_usb_dongle", () =>
+                    DoQuery("rread rssi", timeoutMs, resp =>
+                    {
+                        var m = Regex.Match(resp, @"ok:\s{0,1}([-|+][0-9]{1,2})");
+                        if (!m.Success)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_rssi_from_usb_dongle: 回应格式错误: {resp.Trim()}");
+                            return "fail;invalid_response";
+                        }
+
+                        int rssi = int.Parse(m.Groups[1].Value);
+                        localC = rssi.ToString();
+
+                        if (rssi >= loLimit && rssi <= hiLimit)
+                        {
+                            mylib.utility_func.callbackdebuginfo($"[RTT] read_rssi_from_usb_dongle: RSSI={rssi}dBm 在 [{loLimit},{hiLimit}] ✓");
+                            return "pass";
+                        }
+
+                        mylib.utility_func.callbackdebuginfo($"[RTT] read_rssi_from_usb_dongle: RSSI={rssi}dBm 超出范围 [{loLimit},{hiLimit}] ✗");
+                        localC = $"fail;out_of_range:{rssi}";
+                        return "fail";
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] read_rssi_from_usb_dongle: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+
+      
+
         /// <summary>将 SN + deviceid 保存到 MES_DATA/mes_data.csv（覆盖写入）</summary>
         /// 从 golb_var_default 取 input_sn 和 deviceid
         /// d: 无用，传空即可
@@ -641,11 +1303,11 @@ namespace testapp.test_cases
             try
             {
                 string sn = tc.golb_var_default.TryGetValue("input_sn", out object v1) ? v1?.ToString() : null;
-                string deviceId = tc.golb_var_default.TryGetValue("deviceid", out object v2) ? v2?.ToString() : null;
+                string hwid = tc.golb_var_default.TryGetValue("hwid_bluetooth", out object v2) ? v2?.ToString() : null;
 
-                if (string.IsNullOrWhiteSpace(sn) || string.IsNullOrWhiteSpace(deviceId))
+                if (string.IsNullOrWhiteSpace(sn) || string.IsNullOrWhiteSpace(hwid))
                 {
-                    mylib.utility_func.callbackdebuginfo($"[RTT] save_mes: 数据不完整 sn=[{sn}] deviceid=[{deviceId}]");
+                    mylib.utility_func.callbackdebuginfo($"[RTT] save_mes: 数据不完整 sn=[{sn}] deviceid=[{hwid}]");
                     c = "fail;incomplete_data";
                     return "fail";
                 }
@@ -654,7 +1316,7 @@ namespace testapp.test_cases
                 string filePath = System.IO.Path.Combine(dir, "mes_data.csv");
 
                 System.IO.Directory.CreateDirectory(dir);
-                System.IO.File.WriteAllText(filePath, $"SN,deviceid\n{sn},{deviceId}");
+                System.IO.File.WriteAllText(filePath, $"SN,deviceid\n{sn},{hwid}");
 
                 mylib.utility_func.callbackdebuginfo($"[RTT] save_mes: 已保存 {filePath}");
                 c = "pass";
@@ -733,88 +1395,90 @@ namespace testapp.test_cases
             string localC = "fail";
             try
             {
+        
+
                 string pattern = d?.Trim();
                 if (string.IsNullOrEmpty(pattern))
                 { c = "fail;no_regex"; return "fail"; }
-
+                pattern = d.Split(';')[0];
                 // 验证正则有效性
                 try { new Regex(pattern); }
                 catch { c = "fail;invalid_regex"; return "fail"; }
 
                 // 弹出扫码输入框（UI 线程）
-                string barcode = null;
+                string mac_str = null;
                 var mainForm = Application.OpenForms[0];
                 if (mainForm == null || !mainForm.IsHandleCreated)
                 { c = "fail;no_window"; return "fail"; }
 
+                // rtt_scan_barcode 跑在 Task.Run 后台线程, 必须回到 UI 线程弹模态窗,
+                // 否则会在线程池线程上创建消息泵, 弹窗行为不可靠
                 mainForm.Invoke((MethodInvoker)(() =>
                 {
-                    using (var frm = new Form())
+                    try
                     {
-                        frm.Text = "Scan Barcode";
-                        frm.Size = new Size(420, 150);
-                        frm.StartPosition = FormStartPosition.CenterParent;
-                        frm.FormBorderStyle = FormBorderStyle.FixedDialog;
-                        frm.MaximizeBox = false;
-                        frm.MinimizeBox = false;
-                        frm.TopMost = true;
+                        using (var frm = new Form())
+                        {
+                            frm.Text = "Scan BLE MAC_ADDRESS";
+                            frm.Size = new Size(420, 150);
+                            frm.StartPosition = FormStartPosition.CenterParent;
+                            frm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                            frm.MaximizeBox = false;
+                            frm.MinimizeBox = false;
+                            frm.TopMost = true;
 
-                        var lbl = new Label { Text = "Scan barcode / QR code:", Location = new Point(20, 15), Size = new Size(380, 20) };
-                        var txt = new TextBox { Location = new Point(20, 40), Size = new Size(380, 25), Font = new Font("Microsoft YaHei UI", 11) };
-                        var btnOk = new Button { Text = "OK", Location = new Point(110, 75), Size = new Size(80, 30), DialogResult = DialogResult.OK };
-                        var btnCancel = new Button { Text = "Cancel", Location = new Point(200, 75), Size = new Size(80, 30), DialogResult = DialogResult.Cancel };
+                            var lbl = new Label { Text = "Scan BLE MAC_ADDRESS:", Location = new Point(20, 15), Size = new Size(380, 20) };
+                            var txt = new TextBox { Location = new Point(20, 40), Size = new Size(380, 25), Font = new Font("Microsoft YaHei UI", 11) };
+                            var btnOk = new Button { Text = "OK", Location = new Point(110, 75), Size = new Size(80, 30), DialogResult = DialogResult.OK };
+                            var btnCancel = new Button { Text = "Cancel", Location = new Point(200, 75), Size = new Size(80, 30), DialogResult = DialogResult.Cancel };
 
-                        frm.Controls.Add(lbl);
-                        frm.Controls.Add(txt);
-                        frm.Controls.Add(btnOk);
-                        frm.Controls.Add(btnCancel);
-                        frm.AcceptButton = btnOk;
-                        frm.CancelButton = btnCancel;
+                            frm.Controls.Add(lbl);
+                            frm.Controls.Add(txt);
+                            frm.Controls.Add(btnOk);
+                            frm.Controls.Add(btnCancel);
+                            frm.AcceptButton = btnOk;
+                            frm.CancelButton = btnCancel;
 
-                        if (frm.ShowDialog() == DialogResult.OK)
-                            barcode = txt.Text.Trim();
+                            if (frm.ShowDialog() == DialogResult.OK)
+                                mac_str = txt.Text.Trim();
+                        }
                     }
+                    catch { }
                 }));
 
-                if (string.IsNullOrEmpty(barcode))
+                if (string.IsNullOrEmpty(mac_str))
                 { c = "fail;cancelled"; return "fail"; }
-
+                mac_str = "7C51" + mac_str.Replace(":", "").Replace("-", "").ToUpper();
                 // 正则验证条码
-                if (!Regex.IsMatch(barcode, pattern))
+                if (!Regex.IsMatch(mac_str, pattern))
                 {
-                    mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 条码 [{barcode}] 不匹配正则 [{pattern}]");
+                    mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 条码 [{mac_str}] 不匹配正则 [{pattern}]");
                     c = "fail;barcode_mismatch";
                     return "fail";
                 }
 
-                mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 条码验证通过 [{barcode}]");
+                mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 条码验证通过 [{mac_str}]");
 
                 // RTT 读取 UUID（蓝牙 MAC 无冒号）
-                string result = RetryQuery("scan_barcode", () =>
-                    DoQuery("read UUID", 3000, resp =>
-                    {
-                        var m = Regex.Match(resp, @"ok:\s*([0-9A-Fa-f]+)");
-                        if (!m.Success)
-                            return Fail(out localC, "uuid_invalid", $"UUID 回应格式错误: {resp.Trim()}");
+              string  ct = mylib.utility_func.run_console_pip(d.Split(';')[1], 50000, "pass",mac_str).ToString();
+              string   result = "";
+                if (ct.IndexOf(d.Split(';')[2]) >= 0)
+                {
 
-                        string uuid = m.Groups[1].Value;
+                    c = "pass";
+                    return "pass";
+                }
+                else {
 
-                        if (string.Equals(barcode, uuid, StringComparison.OrdinalIgnoreCase))
-                        {
-                            mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 匹配成功 [{barcode}]");
-                            localC = "pass";
-                            return "pass";
-                        }
-
-                        return Fail(out localC, "uuid_mismatch", $"条码=[{barcode}] UUID=[{uuid}]");
-                    }));
-
-                c = localC;
-                return result;
+                    c = "fail";
+                    return "fail";
+                }
+                   
+           
             }
             catch (Exception ex)
             {
-                mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: {ex.Message}");
+                mylib.utility_func.callbackdebuginfo($"[RTT] scan_mac: {ex.Message}");
                 c = "fail;" + ex.Message;
                 return "fail";
             }
