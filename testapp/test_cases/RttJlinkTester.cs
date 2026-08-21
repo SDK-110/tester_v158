@@ -1,5 +1,6 @@
 using DeviceLibrary;
 using NAudio.Wave;
+using Org.BouncyCastle.Tls.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -829,7 +830,7 @@ namespace testapp.test_cases
                 {
 
                     string ble_hwid = "";
-                    if (tc.golb_var_default.TryGetValue("hwid_bluetooth", out object val) == false || val == null)
+                    if (tc.golb_var_default.TryGetValue("blemac", out object val) == false || val == null)
                     {
                         c= "fail;no_hwid_bluetooth";
                         return "fail";
@@ -1303,7 +1304,7 @@ namespace testapp.test_cases
             try
             {
                 string sn = tc.golb_var_default.TryGetValue("input_sn", out object v1) ? v1?.ToString() : null;
-                string hwid = tc.golb_var_default.TryGetValue("hwid_bluetooth", out object v2) ? v2?.ToString() : null;
+                string hwid = tc.golb_var_default.TryGetValue("blemac", out object v2) ? v2?.ToString() : null;
 
                 if (string.IsNullOrWhiteSpace(sn) || string.IsNullOrWhiteSpace(hwid))
                 {
@@ -1316,8 +1317,9 @@ namespace testapp.test_cases
                 string filePath = System.IO.Path.Combine(dir, "mes_data.csv");
 
                 System.IO.Directory.CreateDirectory(dir);
-                System.IO.File.WriteAllText(filePath, $"SN,deviceid\n{sn},{hwid}");
+                //System.IO.File.WriteAllText(filePath, $"SN,deviceid\n{sn},{hwid}");
 
+                System.IO.File.WriteAllText(filePath, $"{sn},,{hwid.Replace("0X","").Replace("0x","")},,pass");
                 mylib.utility_func.callbackdebuginfo($"[RTT] save_mes: 已保存 {filePath}");
                 c = "pass";
                 return "pass";
