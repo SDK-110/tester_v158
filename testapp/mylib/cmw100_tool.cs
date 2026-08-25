@@ -726,7 +726,7 @@ namespace testapp.mylib
         static double _tx_power= double.NaN;
         static double _offset= double.NaN;
         static public  RsCmwBluetoothMeas driver = null;
-        static public void _cmw100_bluetooth_tx_pycom(String resource = "TCPIP0::127.0.0.1::inst0::INSTR",double Eattenuation=1,double freq = 2402000000)
+        static public void _cmw100_bluetooth_tx_pycom(String resource = "TCPIP0::127.0.0.1::inst0::INSTR",double Eattenuation=1,double freq = 2402000000,double _EnvelopePower= -5)
         {
            
                 try
@@ -738,7 +738,7 @@ namespace testapp.mylib
                 // CONFigure:BLUetooth:MEASurement<Instance>:RFSettings:EATTenuation
                 driver.Configure.RfSettings.Eattenuation = Eattenuation;
 
-                driver.Configure.RfSettings.EnvelopePower = 25;
+                driver.Configure.RfSettings.EnvelopePower = _EnvelopePower;
                 // CONFigure:BLUetooth:MEASurement<Instance>:RFSettings:UMARgin
                 driver.Configure.RfSettings.Umargin = 0;
                 // CONFigure:BLUetooth:MEASurement<Instance>:RFSettings:FREQuency
