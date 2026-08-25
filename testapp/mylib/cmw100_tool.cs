@@ -756,8 +756,8 @@ namespace testapp.mylib
                 {
                     driver.MultiEval.InitiateAndWait();
                     driver.MultiEval.StopAndWait();
-                    _tx_power = driver.MultiEval.Modulation.LowEnergy.Le1M.Average.Read().NominalPower;
-                    _offset = driver.MultiEval.Modulation.LowEnergy.Le1M.Average.Read().FreqAccuracy;
+                    _tx_power = driver.MultiEval.Modulation.LowEnergy.Le1M.Maximum.Read().NominalPower;
+                    _offset = driver.MultiEval.Modulation.LowEnergy.Le1M.Maximum.Read().FreqAccuracy;
 
                     if (_tx_power != Double.NaN && _offset != Double.NaN) break;
                 }
