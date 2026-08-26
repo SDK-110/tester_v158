@@ -431,7 +431,7 @@ namespace testapp
         JY_YL2  JY_YL2_INSTANCE = null;
         RttJlinkTester rttJlinkTester = null;
         testapp.test_cases.asmpt03214220_pj _asmpt03214220_pj = null;
-        mic_thd_test_project mic_test = null;
+        mic_thd_test_project mic_test_new = null;
         public chroma19701 Chroma19701t
         {
 
@@ -869,7 +869,7 @@ namespace testapp
             {
                 try
                 {
-                    mic_test = new mic_thd_test_project(this);
+                    mic_test_new = new mic_thd_test_project(this);
 
                 }
                 catch (Exception e){

@@ -109,7 +109,7 @@ namespace testapp.test_cases
                 // 格式: 基频Hz,采集时长ms,设备索引,谐波个数,FFT大小,音量下限dBFS
                 //        第3~6字段均可省略；第6字段省略=不判音量
                 if (string.IsNullOrEmpty(d)) d = "1000,2000,0,5,8192";
-                string[] p = d.Trim().Split(',');
+                string[] p = d.Trim().Replace("'","").Split(',');
                 double targetFreq = double.Parse(p[0]);
                 int durationMs = p.Length > 1 ? int.Parse(p[1]) : DefaultDurationMs;
                 int deviceIndex = p.Length > 2 ? int.Parse(p[2]) : DefaultDeviceIndex;
@@ -183,7 +183,7 @@ namespace testapp.test_cases
 
                 if (thdOk && levelOk)
                 {
-                    c = thdPct.ToString("F4");
+                    c = $"pass;thd={thdPct:F4};rms={rmsPct:F4} peak={peakPct:F4} dbfs={dbfs:F2}dBFS";
                     return "pass";
                 }
                 else
