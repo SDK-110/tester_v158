@@ -38,6 +38,7 @@ using testapp.test_cases;
 using Vila.Extensions;
 // using Windows.UI.Xaml.Controls;
 using var_sp = variable_space;
+using System.Diagnostics.CodeAnalysis;
 namespace testapp
 {
 
@@ -430,6 +431,7 @@ namespace testapp
         JY_YL2  JY_YL2_INSTANCE = null;
         RttJlinkTester rttJlinkTester = null;
         testapp.test_cases.asmpt03214220_pj _asmpt03214220_pj = null;
+        mic_thd_test_project mic_test = null;
         public chroma19701 Chroma19701t
         {
 
@@ -861,6 +863,22 @@ namespace testapp
 暂时不用*/
             #endregion
 
+
+
+            if (setup_ini_data["setport"]["mic_test"] != null)
+            {
+                try
+                {
+                    mic_test = new mic_thd_test_project(this);
+
+                }
+                catch (Exception e){
+
+                    System.Windows.Forms.MessageBox.Show("mic_sound_card error " + "\n" + e.Message);
+
+                }
+            
+            }
 
             if (setup_ini_data["setport"]["RTT_TESTER"] != null)
             {
@@ -3346,15 +3364,34 @@ namespace testapp
         int ppp = 0;
 
 
-
+      
         string test_temp(string a, string b, out string c, string d = "")
         {
+
+
+            mic_thd_test_project p = new mic_thd_test_project(this);
+
+            funcs["mic_thd_measure"]("600", "300", out c, "1000,3000,0,5,16384");
+
+            
+
+
+
+            // slan_analyzer1.SendCANFrame(333, "11 12 13 14",0);
+
+
+
+            c = "pass";
+
+            if (ppp++ % 5 == new Random().Next(1,4)) return "fail";
+            return "pass";
+            #region test历史
 
             //ivps.CarRefrigeratorPowerONTest();
 
             // mylib.utility_func.test_mysql_creat_table();
 
-            mylib.utility_func.callbackdebuginfo("tttttttttttttttttttttt");
+            // mylib.utility_func.callbackdebuginfo("tttttttttttttttttttttt");
 
 
             //var pp = new asmpt_03271042_U10_Write();
@@ -3373,23 +3410,7 @@ namespace testapp
 
             //ts.test();
 
-
-
-
-
-            // slan_analyzer1.SendCANFrame(333, "11 12 13 14",0);
-
-            mylib.utility_func.killproc("TUSB8040 EEPROM Programmer");
-
-
-            c = "pass";
-
-            if (ppp++ % 5 == new Random().Next(1,4)) return "fail";
-            return "pass";
-            #region test历史
-
-
-
+            // mylib.utility_func.killproc("TUSB8040 EEPROM Programmer");
             //try
             //{
             //    if (slan_analyzer1 == null)
