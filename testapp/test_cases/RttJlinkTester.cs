@@ -1252,13 +1252,14 @@ namespace testapp.test_cases
                     return "fail";
                 }
 
+
                 // 2) 解析超时
                 int timeoutMs = 3000;
                 if (!string.IsNullOrEmpty(d)) int.TryParse(d.Trim(), out timeoutMs);
 
                 // 3) 发送命令并解析
                 string result = RetryQuery("read_rssi_from_usb_dongle", () =>
-                    DoQuery("rread rssi", timeoutMs, resp =>
+                    DoQuery("read rssi", timeoutMs, resp =>
                     {
                         var m = Regex.Match(resp, @"ok:\s{0,1}([-|+][0-9]{1,2})");
                         if (!m.Success)
