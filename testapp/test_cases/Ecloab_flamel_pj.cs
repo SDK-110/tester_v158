@@ -69,9 +69,26 @@ namespace testapp.test_cases
             {
                 if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 var fw = board.ReadFirmwareVersion();
-                c = $"Major='{fw.Major}';Minor='{fw.Minor}';Build='{fw.Build}'";
-                utility_func.callbackdebuginfo($"[flamel] FW version: Major={fw.Major}, Minor={fw.Minor}, Build={fw.Build}");
-                return "pass";
+
+                string[] highLimits = a.Split(';');
+                string[] lowLimits = b.Split(';');
+                string[] names = { "Major", "Minor", "Build" };
+                ushort[] values = { fw.Major, fw.Minor, fw.Build };
+
+                bool allPass = true;
+                var details = new List<string>();
+                for (int i = 0; i < 3; i++)
+                {
+                    int hi = int.Parse(highLimits[i].Trim());
+                    int lo = int.Parse(lowLimits[i].Trim());
+                    bool pass = values[i] >= lo && values[i] <= hi;
+                    if (!pass) allPass = false;
+                    details.Add($"{names[i]}='{values[i]}'[{lo}-{hi}]={(pass ? "PASS" : "FAIL")}");
+                }
+
+                c = string.Join(";", details);
+                utility_func.callbackdebuginfo($"[flamel] FW version: {c}");
+                return allPass ? "pass" : "fail";
             }
             catch (Exception e)
             {
@@ -86,12 +103,23 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 var info = board.ReadBootloaderInfo();
-                var list = new List<string>();
-                foreach (var v in info) list.Add("'" + v.ToString());
-                c = string.Join(";", list);
-                utility_func.callbackdebuginfo($"[flamel] Bootloader: [{string.Join(", ", info)}]");
-                return "pass";
+                string[] expected = a.Split(';');
+
+                bool allPass = true;
+                var details = new List<string>();
+                for (int i = 0; i < info.Length; i++)
+                {
+                    int exp = int.Parse(expected[i].Trim());
+                    bool pass = info[i] == exp;
+                    if (!pass) allPass = false;
+                    details.Add($"Reg{19+i}='{info[i]}'[exp={exp}]={(pass ? "PASS" : "FAIL")}");
+                }
+
+                c = string.Join(";", details);
+                utility_func.callbackdebuginfo($"[flamel] Bootloader: {c}");
+                return allPass ? "pass" : "fail";
             }
             catch (Exception e)
             {
@@ -108,10 +136,13 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 ushort val = board.ReadDeliveryOverflowState();
-                c = "'" + val.ToString();
-                utility_func.callbackdebuginfo($"[flamel] Delivery Overflow (Reg 112): {val}");
-                return "pass";
+                int expected = int.Parse(a.Trim());
+                bool pass = val == expected;
+                c = $"'{val}'[exp={expected}]={(pass ? "PASS" : "FAIL")}";
+                utility_func.callbackdebuginfo($"[flamel] Delivery Overflow (Reg 112): {c}");
+                return pass ? "pass" : "fail";
             }
             catch (Exception e)
             {
@@ -126,10 +157,13 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 ushort val = board.ReadDeliveryEmptyState();
-                c = "'" + val.ToString();
-                utility_func.callbackdebuginfo($"[flamel] Delivery Empty (Reg 106): {val}");
-                return "pass";
+                int expected = int.Parse(a.Trim());
+                bool pass = val == expected;
+                c = $"'{val}'[exp={expected}]={(pass ? "PASS" : "FAIL")}";
+                utility_func.callbackdebuginfo($"[flamel] Delivery Empty (Reg 106): {c}");
+                return pass ? "pass" : "fail";
             }
             catch (Exception e)
             {
@@ -144,10 +178,13 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 ushort val = board.ReadRecircFullState();
-                c = "'" + val.ToString();
-                utility_func.callbackdebuginfo($"[flamel] Recirc Full (Reg 109): {val}");
-                return "pass";
+                int expected = int.Parse(a.Trim());
+                bool pass = val == expected;
+                c = $"'{val}'[exp={expected}]={(pass ? "PASS" : "FAIL")}";
+                utility_func.callbackdebuginfo($"[flamel] Recirc Full (Reg 109): {c}");
+                return pass ? "pass" : "fail";
             }
             catch (Exception e)
             {
@@ -164,10 +201,13 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 ushort val = board.ReadConductivityProbeTemp();
-                c = "'" + val.ToString();
-                utility_func.callbackdebuginfo($"[flamel] Cond Probe Temp (Reg 117): {val}");
-                return "pass";
+                int expected = int.Parse(a.Trim());
+                bool pass = val == expected;
+                c = $"'{val}'[exp={expected}]={(pass ? "PASS" : "FAIL")}";
+                utility_func.callbackdebuginfo($"[flamel] Cond Probe Temp (Reg 117): {c}");
+                return pass ? "pass" : "fail";
             }
             catch (Exception e)
             {
@@ -182,10 +222,14 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 ushort val = board.ReadConductivity();
-                c = "'" + val.ToString();
-                utility_func.callbackdebuginfo($"[flamel] Conductivity (Reg 129): {val}");
-                return "pass";
+                int hi = int.Parse(a.Trim());
+                int lo = int.Parse(b.Trim());
+                bool pass = val >= lo && val <= hi;
+                c = $"'{val}'[{lo}-{hi}]={(pass ? "PASS" : "FAIL")}";
+                utility_func.callbackdebuginfo($"[flamel] Conductivity (Reg 129): {c}");
+                return pass ? "pass" : "fail";
             }
             catch (Exception e)
             {
@@ -200,10 +244,13 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 ushort val = board.ReadProductLevel();
-                c = "'" + val.ToString();
-                utility_func.callbackdebuginfo($"[flamel] Product Level (Reg 119): {val}");
-                return "pass";
+                int expected = int.Parse(a.Trim());
+                bool pass = val == expected;
+                c = $"'{val}'[exp={expected}]={(pass ? "PASS" : "FAIL")}";
+                utility_func.callbackdebuginfo($"[flamel] Product Level (Reg 119): {c}");
+                return pass ? "pass" : "fail";
             }
             catch (Exception e)
             {
@@ -218,10 +265,13 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 BoardType bt = board.ReadBoardType();
-                c = bt.DisplayName();
-                utility_func.callbackdebuginfo($"[flamel] Board Type: {bt.DisplayName()} (Reg 141 = '{(ushort)bt}')");
-                return "pass";
+                int expected = int.Parse(a.Trim());
+                bool pass = (ushort)bt == expected;
+                c = $"'{bt.DisplayName()}'[exp={expected}]={(pass ? "PASS" : "FAIL")}";
+                utility_func.callbackdebuginfo($"[flamel] Board Type: {c}");
+                return pass ? "pass" : "fail";
             }
             catch (Exception e)
             {
