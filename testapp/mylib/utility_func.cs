@@ -2103,6 +2103,79 @@ namespace testapp.mylib
             
         }
 
+        public static string Exec(string high, string low, out string rsu, string parameter)
+        {
+            rsu = "";
+            var parts = parameter.Split(new[] { ';' }, 2);
+            string scriptPath = parts[0].Trim();
+            string pattern = parts.Length > 1 ? parts[1] : "";
+
+            if (string.IsNullOrEmpty(scriptPath))
+            {
+                rsu = "script path is empty";
+                return "fail";
+            }
+
+            mylib.utility_func.callbackdebuginfo($"[Misc] Executing: {scriptPath}");
+
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c \"{scriptPath}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8,
+                    StandardErrorEncoding = System.Text.Encoding.UTF8
+                };
+
+                using var proc = new Process { StartInfo = psi };
+                proc.Start();
+
+                string output = "";
+                while (!proc.StandardOutput.EndOfStream)
+                {
+                    string? line = proc.StandardOutput.ReadLine();
+                    output += line + Environment.NewLine;
+                    mylib.utility_func.callbackdebuginfo($"[Misc] {line}");
+                }
+
+                string err = proc.StandardError.ReadToEnd();
+                if (!string.IsNullOrEmpty(err))
+                {
+                    mylib.utility_func.callbackdebuginfo($"[Misc ERR] {err}");
+                    output += err;
+                }
+
+                proc.WaitForExit();
+
+                if (!string.IsNullOrEmpty(pattern))
+                {
+                    var match = Regex.Match(output, pattern);
+                    if (match.Success)
+                    {
+                        rsu = match.Groups[1].Success ? match.Groups[1].Value : match.Value;
+                        mylib.utility_func.callbackdebuginfo($"[Misc] Match: {rsu}");
+                        return "pass";
+                    }
+                    mylib.utility_func.callbackdebuginfo($"[Misc] No match for pattern: {pattern}");
+                    rsu = output;
+                    return "fail";
+                }
+
+                rsu = output;
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                rsu = $"exec error: {ex.Message}";
+                mylib.utility_func.callbackdebuginfo($"[Misc ERR] {ex.Message}");
+                return "fail";
+            }
+        }
         private static void Process_Exited(object sender, EventArgs e)
         {
             throw new NotImplementedException();

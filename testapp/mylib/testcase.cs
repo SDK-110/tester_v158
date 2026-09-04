@@ -446,7 +446,7 @@ namespace testapp
             cmw100addr = setup_ini_data["setproduct"]["cmw100address"];
             cmw100addr_for_lte = setup_ini_data["setport"]["cmw100address_for_lte"];
             #region  //注册case 函数
-
+            m.Add("cmd_Exec", cmd_Exec);
             m.Add("desaysv_test_api", desaysv_test_api);
             m.Add("record_buf_var_init", record_buf_var_init); //用于跨函数的缓冲变量初始化
             m.Add("testsysini", testsysini);
@@ -39381,7 +39381,16 @@ namespace testapp
 
         }
 
+        string cmd_Exec(string high, string low, out string rsu, string parameter) {
 
+           
+           string rs =  mylib.utility_func.Exec(high, low, out rsu, parameter);
+            c = rsu;
+
+            if(rs == "pass") return "pass";
+
+            return "fail";
+        }
 
 
         string alalon_get_BT_MAC(string a, string b, out string c, string d)
