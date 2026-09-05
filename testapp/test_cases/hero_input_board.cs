@@ -11,7 +11,8 @@ using testapp.mylib;
 
 namespace testapp.test_cases
 {
-    public class hero_input_board : IDefaultAction, IDisposable
+    public class 
+        hero_input_board : IDefaultAction, IDisposable
     {
         testcase_dll tc;
         string id = "hero_input_";
@@ -55,9 +56,13 @@ namespace testapp.test_cases
             tc.funcs.Add(id + "read_input_reg", read_input_reg);
             tc.funcs.Add(id + "read_input_reg_float", read_input_reg_float);
             tc.funcs.Add(id + "read_holding_reg", read_holding_reg);
+            tc.funcs.Add(id + "read_holding_reg_float", read_holding_reg_float);
             tc.funcs.Add(id + "read_coil", read_coil);
             tc.funcs.Add(id + "write_holding_reg", write_holding_reg);
+            tc.funcs.Add(id + "write_holding_reg_float", write_holding_reg_float);
+            tc.funcs.Add(id + "rtd_cal_copy", rtd_cal_copy);
             tc.funcs.Add(id + "write_coil", write_coil);
+            tc.funcs.Add(id + "program_sn_to_holding_reg", program_sn_to_holding_reg);
 
             tc.funcs.Add(id + "measure_voltage", measure_voltage);
             tc.funcs.Add(id + "measure_current", measure_current);
@@ -139,6 +144,27 @@ namespace testapp.test_cases
             }
         }
 
+        private string read_holding_reg_float(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                ushort addr = (ushort)int.Parse(get_required(p, "addr"));
+                ushort[] regs = exec_with_retry(() => master!.ReadHoldingRegistersAsync(slaveId, addr, 2).Result);
+                float value = BitConverter.ToSingle(BitConverter.GetBytes(regs[0] << 16 | regs[1]), 0);
+                c = value.ToString("F4", CultureInfo.InvariantCulture);
+                utility_func.callbackdebuginfo($"[HERO_INPUT] read_holding_reg_float addr={addr} => {value:F4}");
+                return judge_range(value, a, b);
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_INPUT] read_holding_reg_float error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
         private string read_coil(string a, string b, out string c, string d)
         {
             c = "fail";
@@ -183,6 +209,92 @@ namespace testapp.test_cases
             }
         }
 
+        /// <summary>
+        /// 向 Holding Register 写入 float 值 (2个连续寄存器)
+        /// b = 要写入的 float 值
+        /// d 参数: addr=寄存器起始地址
+        /// </summary>
+        private string write_holding_reg_float(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                ushort addr = (ushort)int.Parse(get_required(p, "addr"));
+                float writeValue = float.Parse(b, CultureInfo.InvariantCulture);
+
+                // 将 float 转换为 2 个 ushort (Modbus 大端序: 高字在前)
+                byte[] bytes = BitConverter.GetBytes(writeValue);
+                ushort regHigh = BitConverter.ToUInt16(bytes, 0);
+                ushort regLow = BitConverter.ToUInt16(bytes, 2);
+
+                exec_with_retry(() => master!.WriteMultipleRegistersAsync(slaveId, addr, new ushort[] { regHigh, regLow }));
+                Thread.Sleep(100);
+
+                // 回读验证
+                ushort[] readback = exec_with_retry(() => master!.ReadHoldingRegistersAsync(slaveId, addr, 2).Result);
+                float readValue = BitConverter.ToSingle(BitConverter.GetBytes(readback[0] << 16 | readback[1]), 0);
+                c = readValue.ToString("F4", CultureInfo.InvariantCulture);
+                utility_func.callbackdebuginfo($"[HERO_INPUT] write_holding_reg_float addr={addr}, wrote={writeValue:F4}, readback={readValue:F4}");
+                return judge_range(readValue, a, b);
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_INPUT] write_holding_reg_float error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// RTD 校准拷贝: 从 Input Register 读取 float 值, 写入 Holding Register
+        /// d 参数: src_addr=源Input Register地址; dst_addr=目标Holding Register地址
+        /// </summary>
+        private string rtd_cal_copy(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                ushort srcAddr = (ushort)int.Parse(get_required(p, "src_addr"));
+                ushort dstAddr = (ushort)int.Parse(get_required(p, "dst_addr"));
+
+                // ── Step 1: 从 Input Register 读取 float 值 ──
+                ushort[] srcRegs = exec_with_retry(() => master!.ReadInputRegistersAsync(slaveId, srcAddr, 2).Result);
+                float srcValue = BitConverter.ToSingle(BitConverter.GetBytes(srcRegs[0] << 16 | srcRegs[1]), 0);
+                utility_func.callbackdebuginfo($"[HERO_INPUT] rtd_cal_copy: read input reg[{srcAddr}] => {srcValue:F4}");
+
+                // ── Step 2: 将 float 转换为 2 个 ushort, 写入 Holding Register ──
+                byte[] bytes = BitConverter.GetBytes(srcValue);
+                ushort regHigh = BitConverter.ToUInt16(bytes, 0);
+                ushort regLow = BitConverter.ToUInt16(bytes, 2);
+
+                exec_with_retry(() => master!.WriteMultipleRegistersAsync(slaveId, dstAddr, new ushort[] { regHigh, regLow }));
+                Thread.Sleep(100);
+
+                // ── Step 3: 回读验证 ──
+                ushort[] dstRegs = exec_with_retry(() => master!.ReadHoldingRegistersAsync(slaveId, dstAddr, 2).Result);
+                float dstValue = BitConverter.ToSingle(BitConverter.GetBytes(dstRegs[0] << 16 | dstRegs[1]), 0);
+                c = dstValue.ToString("F4", CultureInfo.InvariantCulture);
+                utility_func.callbackdebuginfo($"[HERO_INPUT] rtd_cal_copy: wrote holding reg[{dstAddr}] => {dstValue:F4}");
+
+                // 验证写入值与源值一致 (允许微小浮点误差)
+                float diff = Math.Abs(srcValue - dstValue);
+                if (diff < 0.001f)
+                {
+                    return "pass";
+                }
+                c = $"fail;mismatch;src={srcValue:F4};dst={dstValue:F4}";
+                return "fail";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_INPUT] rtd_cal_copy error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
         private string write_coil(string a, string b, out string c, string d)
         {
             c = "fail";
@@ -202,6 +314,96 @@ namespace testapp.test_cases
             catch (Exception ex)
             {
                 utility_func.callbackdebuginfo($"[HERO_INPUT] write_coil error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 2c: 将 ESI 条码序列号写入 Holding Registers
+        /// Register 2 (Serial Number)   = ESI 序列号前4位数字 (递增序列号)
+        /// Register 3 (Manufacturing Date) = ESI 序列号后4位数字, 以16位日期格式写入
+        /// 16位日期编码: bits[15:9]=年(偏移2000), bits[8:5]=月(1-12), bits[4:0]=日(1-31)
+        /// 条码来源: tc.golb_var_default["input_sn"]
+        /// d 参数: sn_reg=序列号寄存器地址(默认2); date_reg=日期寄存器地址(默认3)
+        /// </summary>
+        private string program_sn_to_holding_reg(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                // ── 从全局变量获取 ESI 条码序列号 ──
+                if (tc.golb_var_default.TryGetValue("input_sn", out object val) == false || val == null)
+                {
+                    c = "fail;no_sn";
+                    utility_func.callbackdebuginfo("[HERO_INPUT] program_sn: no input_sn found");
+                    return "fail";
+                }
+
+                string sn = val.ToString().Trim();
+                utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: input_sn='{sn}'");
+
+                // 序列号至少需要 8 位数字: 前4位(序列号) + 后4位(日期)
+                if (sn.Length < 8)
+                {
+                    c = "fail;sn_too_short";
+                    utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: SN too short ({sn.Length} chars)");
+                    return "fail";
+                }
+
+                // ── 解析可选参数 ──
+                var p = parse_d(d);
+                ushort snReg = (ushort)get_int(p, "sn_reg", 2);
+                ushort dateReg = (ushort)get_int(p, "date_reg", 3);
+
+                // ── 提取前4位 → Register 2 (Serial Number) ──
+                // 前4位为递增序列号, 直接作为数值写入
+                string first4 = sn.Substring(0, 4);
+                if (!ushort.TryParse(first4, out ushort snValue))
+                {
+                    c = "fail;sn_parse_error";
+                    utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: cannot parse first4='{first4}'");
+                    return "fail";
+                }
+
+                // ── 提取后4位 → Register 3 (Manufacturing Date, 16-bit format) ──
+                // 后4位解析为 YYMM 格式 (年=后2位, 月=后2位)
+                // 打包为16位日期: (yy << 9) | (mm << 5) | day, day默认为1
+                string last4 = sn.Substring(sn.Length - 4, 4);
+                if (last4.Length < 4 || !int.TryParse(last4.Substring(0, 2), out int yy)
+                    || !int.TryParse(last4.Substring(2, 2), out int mm) || mm < 1 || mm > 12)
+                {
+                    c = "fail;date_parse_error";
+                    utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: cannot parse last4='{last4}' as YYMM");
+                    return "fail";
+                }
+                ushort dateValue = (ushort)((yy << 9) | (mm << 5) | 1);
+
+                // ── 写入 Register 2: Serial Number ──
+                exec_with_retry(() => master!.WriteSingleRegisterAsync(slaveId, snReg, snValue));
+                Thread.Sleep(100);
+                ushort readbackSn = exec_with_retry(() => master!.ReadHoldingRegistersAsync(slaveId, snReg, 1).Result[0]);
+                utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: reg[{snReg}] wrote={snValue}, readback={readbackSn}");
+
+                // ── 写入 Register 3: Manufacturing Date (16-bit packed) ──
+                exec_with_retry(() => master!.WriteSingleRegisterAsync(slaveId, dateReg, dateValue));
+                Thread.Sleep(100);
+                ushort readbackDate = exec_with_retry(() => master!.ReadHoldingRegistersAsync(slaveId, dateReg, 1).Result[0]);
+                utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: reg[{dateReg}] wrote={dateValue} (YY={yy},MM={mm}), readback={readbackDate}");
+
+                // ── 验证回读值与写入值一致 ──
+                if (readbackSn != snValue || readbackDate != dateValue)
+                {
+                    c = $"fail;mismatch;reg{snReg}={readbackSn}/{snValue};reg{dateReg}={readbackDate}/{dateValue}";
+                    return "fail";
+                }
+
+                c = $"pass;reg{snReg}={readbackSn};reg{dateReg}={readbackDate}";
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn error: {ex.Message}");
                 c = "error";
                 return "fail";
             }

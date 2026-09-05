@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using Renci.SshNet;
 using testapp.glob_set;
 using testapp.mylib;
+using System.Data;
 
 namespace testapp.test_cases
 {
@@ -22,7 +23,7 @@ namespace testapp.test_cases
         SerialPort ubootPort;
         StringBuilder ubootRx = new StringBuilder();
         object ubootLock = new object();
-        const string UbootPromptPattern = @"=>\s*$";
+        const string UbootPromptPattern = @"(=>\s*$|~\s*#\s*$|~\s*\$\s*$|\$\s*$|#\s*$|root@[\w\-\.]+:.*#\s*$)";
 
         public hero_final_assembly(testcase_dll _tc)
         {
@@ -84,6 +85,21 @@ namespace testapp.test_cases
             tc.funcs.Add(id + "product_connect", product_connect);
             tc.funcs.Add(id + "power_cycle", power_cycle);
             tc.funcs.Add(id + "get_psu_current", get_psu_current);
+
+            // ── 风扇控制 (通过 SSH 发送 GPIO 命令) ──
+            tc.funcs.Add(id + "fan_control", fan_control);
+
+            // ── USB 存储检测 (通过串口监听内核 USB 枚举消息) ──
+            tc.funcs.Add(id + "usb_storage_check", usb_storage_check);
+
+            // ── 序列号编程 (通过串口发送 eeprog 命令写入 EEPROM) ──
+            tc.funcs.Add(id + "program_serial_number", program_serial_number);
+
+            // ── 优雅关机 (通过串口发送 sync + halt) ──
+            tc.funcs.Add(id + "graceful_shutdown", graceful_shutdown);
+
+            // ── MAC 地址编程与安全锁定 (u-boot fuse) ──
+            tc.funcs.Add(id + "program_mac_and_lock", program_mac_and_lock);
         }
 
         private string ssh_exec(string a, string b, out string c, string d)
@@ -707,6 +723,633 @@ namespace testapp.test_cases
             catch (Exception ex)
             {
                 utility_func.callbackdebuginfo($"[HERO_FINAL] power_off_scan error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 风扇控制 — 通过串口向 Linux 终端发送 GPIO 命令控制风扇开关。
+        /// 串口连接的是树莓派 Linux 调试终端。
+        ///
+        /// d 参数: action=on|off (必填); gpio=<引脚号, 默认14>
+        ///         login=<是否需要登录, 默认true>; user=<用户名, 默认root>; pass=<密码, 默认EcoTest>
+        /// a/b = 无效, c = "pass" 或 "fail;reason"
+        /// </summary>
+        private string fan_control(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                string action = get_required(p, "action");
+                int gpio = get_int(p, "gpio", 14);
+                bool needLogin = get_optional(p, "login", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+                string user = get_optional(p, "user", "root");
+                string pass = get_optional(p, "pass", "EcoTest");
+                int timeout = get_int(p, "timeout", 15000);
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: serial port not open");
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
+
+                clear_uboot_rx();
+
+                // 发送换行符, 等待提示符出现
+                ubootPort.WriteLine("");
+                if (!wait_for_prompt(timeout))
+                {
+                    // 可能需要登录
+                    if (needLogin)
+                    {
+                        utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: attempting login...");
+                        ubootPort.WriteLine(user);
+                        Thread.Sleep(500);
+                        ubootPort.WriteLine(pass);
+                        Thread.Sleep(1000);
+                        clear_uboot_rx();
+                        ubootPort.WriteLine("");
+                        if (!wait_for_prompt(5000))
+                        {
+                            utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: login failed, no prompt");
+                            c = "fail;login_failed";
+                            return "fail";
+                        }
+                    }
+                    else
+                    {
+                        c = "fail;no_prompt";
+                        return "fail";
+                    }
+                }
+
+                // 导出 GPIO 引脚 (如果尚未导出)
+                clear_uboot_rx();
+                ubootPort.WriteLine(string.Format("cd /sys/class/gpio && echo {0} > export 2>/dev/null; echo {1} > gpio{0}/direction 2>/dev/null; echo done_gpio_setup", gpio, "out"));
+                if (!wait_for_prompt(5000))
+                {
+                    utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: GPIO setup timeout");
+                    c = "fail;gpio_setup_timeout";
+                    return "fail";
+                }
+                string setupOutput = get_serial_output("done_gpio_setup");
+                utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: GPIO setup done");
+
+                // 设置 GPIO 值 (1=ON, 0=OFF)
+                string val = action.Equals("on", StringComparison.OrdinalIgnoreCase) ? "1" : "0";
+                clear_uboot_rx();
+                ubootPort.WriteLine(string.Format("echo {0} > gpio{1}/value; echo fan_{2}_done", val, gpio, action));
+                if (!wait_for_prompt(5000))
+                {
+                    utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: GPIO value set timeout");
+                    c = "fail;gpio_value_timeout";
+                    return "fail";
+                }
+
+                string valOutput = get_serial_output(string.Format("fan_{0}_done", action));
+                utility_func.callbackdebuginfo(string.Format("[HERO_FINAL] fan_control: fan {0} (gpio{1}={2})", action, gpio, val));
+                c = string.Format("pass;fan_{0}", action);
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo(string.Format("[HERO_FINAL] fan_control error: {0}", ex.Message));
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 等待串口出现 Linux/u-boot 提示符
+        /// </summary>
+        private bool wait_for_prompt(int timeoutMs)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            while (DateTime.UtcNow < deadline)
+            {
+                Thread.Sleep(100);
+                lock (ubootLock)
+                {
+                    if (Regex.IsMatch(ubootRx.ToString(), UbootPromptPattern, RegexOptions.None, TimeSpan.FromSeconds(1)))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 从串口缓冲中提取指定标记之后的输出
+        /// </summary>
+        private string get_serial_output(string marker)
+        {
+            lock (ubootLock)
+            {
+                string raw = ubootRx.ToString();
+                int idx = raw.IndexOf(marker);
+                if (idx >= 0)
+                    return raw.Substring(0, idx).TrimEnd();
+                return raw.TrimEnd();
+            }
+        }
+
+        /// <summary>
+        /// USB 存储检测 — 清空串口缓冲后等待 "USB Storage" 文本出现。
+        /// 插入 USB flash drive 后 Linux 内核会输出 USB 枚举消息。
+        ///
+        /// d 参数: text=<等待文本, 默认"USB Storage">;timeout=<超时ms, 默认15000>
+        ///         use_dmesg=<是否同时通过SSH检查dmesg, 默认true>
+        /// a/b = 无效, c = "pass" 或 "fail;timeout"
+        /// </summary>
+        private string usb_storage_check(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                string text = get_optional(p, "text", "USB Storage");
+                int timeout = get_int(p, "timeout", 15000);
+                bool useDmesg = get_optional(p, "use_dmesg", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+
+                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: waiting for '{text}' (timeout={timeout}ms)");
+
+                // 清空串口缓冲, 只捕获新插入的 USB 事件
+                clear_uboot_rx();
+
+                // 同时通过串口和 SSH dmesg 检测
+                var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
+                while (DateTime.UtcNow < deadline)
+                {
+                    // 串口检测
+                    if (ubootPort != null && ubootPort.IsOpen)
+                    {
+                        lock (ubootLock)
+                        {
+                            if (ubootRx.ToString().Contains(text))
+                            {
+                                c = "pass";
+                                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: detected '{text}' via serial");
+                                return "pass";
+                            }
+                        }
+                    }
+
+                    // SSH dmesg 检测
+                    if (useDmesg && ssh_connected)
+                    {
+                        try
+                        {
+                            using var sc = ssh.CreateCommand($"dmesg | grep -i '{text}'");
+                            sc.CommandTimeout = TimeSpan.FromSeconds(3);
+                            var result = sc.Execute();
+                            if (!string.IsNullOrEmpty(result) && result.Contains(text))
+                            {
+                                c = "pass";
+                                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: detected '{text}' via dmesg");
+                                return "pass";
+                            }
+                        }
+                        catch { }
+                    }
+
+                    Thread.Sleep(300);
+                }
+
+                c = "fail;timeout";
+                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: timeout waiting for '{text}'");
+                return "fail";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 序列号编程 — 从全局变量 input_sn 获取条码, 通过串口发送 eeprog 命令写入 EEPROM。
+        /// 流程: 获取SN -> 串口登录 -> 写随机种子到0x00 -> 写SN到0x20 -> 回读验证
+        ///
+        /// d 参数: login=<是否需要登录, 默认true>; user=<用户名, 默认root>; pass=<密码, 默认EcoTest>
+        ///         i2c_bus=<i2c总线号, 默认1>; eeprom_addr=<EEPROM地址, 默认0x54>
+        /// a/b = 无效, c = "pass;SN=XXXX" 或 "fail;reason"
+        /// </summary>
+        private string program_serial_number(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                // 从全局变量获取条码
+                if (tc.golb_var_default.TryGetValue("input_sn", out object val) == false || val == null)
+                {
+                    c = "fail;no_sn";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] program_serial_number: no input_sn found");
+                    return "fail";
+                }
+
+                string sn = val.ToString().Trim();
+                if (string.IsNullOrEmpty(sn))
+                {
+                    c = "fail;empty_sn";
+                    return "fail";
+                }
+
+                utility_func.callbackdebuginfo($"[HERO_FINAL] program_serial_number: SN='{sn}'");
+
+                var p = parse_d(d);
+                bool needLogin = get_optional(p, "login", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+                string user = get_optional(p, "user", "root");
+                string pass = get_optional(p, "pass", "EcoTest");
+                string i2cBus = get_optional(p, "i2c_bus", "1");
+                string eepromAddr = get_optional(p, "eeprom_addr", "0x54");
+                int timeout = get_int(p, "timeout", 15000);
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
+
+                // 登录
+                clear_uboot_rx();
+                ubootPort.WriteLine("");
+                if (!wait_for_prompt(timeout))
+                {
+                    if (needLogin)
+                    {
+                        utility_func.callbackdebuginfo("[HERO_FINAL] program_serial_number: attempting login...");
+                        ubootPort.WriteLine(user);
+                        Thread.Sleep(500);
+                        ubootPort.WriteLine(pass);
+                        Thread.Sleep(1000);
+                        clear_uboot_rx();
+                        ubootPort.WriteLine("");
+                        if (!wait_for_prompt(5000))
+                        {
+                            c = "fail;login_failed";
+                            return "fail";
+                        }
+                    }
+                    else
+                    {
+                        c = "fail;no_prompt";
+                        return "fail";
+                    }
+                }
+
+                // Step 1: 写随机种子到 EEPROM 0x00 (255字节)
+                clear_uboot_rx();
+                ubootPort.WriteLine($"cat /dev/urandom | base64 | dd bs=1 count=255 | eeprog -f /dev/i2c-{i2cBus} {eepromAddr} -8 -w 0x00; echo seed_done");
+                if (!wait_for_prompt(10000))
+                {
+                    c = "fail;seed_write_timeout";
+                    return "fail";
+                }
+                utility_func.callbackdebuginfo("[HERO_FINAL] program_serial_number: random seed written");
+
+                // Step 2: 写序列号到 EEPROM 0x20
+                clear_uboot_rx();
+                ubootPort.WriteLine($"echo \"{sn}\" | eeprog -f /dev/i2c-{i2cBus} {eepromAddr} -8 -w 0x20; echo sn_written");
+                if (!wait_for_prompt(5000))
+                {
+                    c = "fail;sn_write_timeout";
+                    return "fail";
+                }
+                utility_func.callbackdebuginfo($"[HERO_FINAL] program_serial_number: SN '{sn}' written to 0x20");
+
+                // Step 3: 回读验证
+                clear_uboot_rx();
+                ubootPort.WriteLine($"eeprog -qf /dev/i2c-{i2cBus} -f {eepromAddr} -8 -r 0x20:12; echo readback_done");
+                if (!wait_for_prompt(5000))
+                {
+                    c = "fail;readback_timeout";
+                    return "fail";
+                }
+
+                // 提取回读输出
+                string readback = "";
+                lock (ubootLock)
+                {
+                    string raw = ubootRx.ToString();
+                    int idx = raw.IndexOf("readback_done");
+                    if (idx >= 0)
+                        readback = raw.Substring(0, idx);
+                    else
+                        readback = raw;
+                }
+
+                // 清理回读文本
+                readback = readback.Replace("\r", "\n");
+                var lines = readback.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                bool found = false;
+                foreach (var line in lines)
+                {
+                    string trimmed = line.Trim();
+                    if (trimmed.Contains(sn))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                {
+                    c = $"pass;SN={sn}";
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_serial_number: readback verified, SN='{sn}'");
+                    return "pass";
+                }
+                else
+                {
+                    c = $"fail;readback_mismatch;expected={sn}";
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_serial_number: readback mismatch, expected='{sn}', got='{readback}'");
+                    return "fail";
+                }
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] program_serial_number error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 优雅关机 — 通过串口向 Linux 发送 sync + halt 命令。
+        /// 等待系统完全停止后再断电。
+        ///
+        /// d 参数: login=<是否需要登录, 默认true>; user=<用户名, 默认root>; pass=<密码, 默认EcoTest>
+        ///         halt_timeout=<等待halt生效ms, 默认10000>
+        /// a/b = 无效, c = "pass" 或 "fail;reason"
+        /// </summary>
+        private string graceful_shutdown(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                bool needLogin = get_optional(p, "login", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+                string user = get_optional(p, "user", "root");
+                string pass = get_optional(p, "pass", "EcoTest");
+                int loginTimeout = get_int(p, "login_timeout", 15000);
+                int haltTimeout = get_int(p, "halt_timeout", 10000);
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
+
+                // 登录
+                clear_uboot_rx();
+                ubootPort.WriteLine("");
+                if (!wait_for_prompt(loginTimeout))
+                {
+                    if (needLogin)
+                    {
+                        utility_func.callbackdebuginfo("[HERO_FINAL] graceful_shutdown: attempting login...");
+                        ubootPort.WriteLine(user);
+                        Thread.Sleep(500);
+                        ubootPort.WriteLine(pass);
+                        Thread.Sleep(1000);
+                        clear_uboot_rx();
+                        ubootPort.WriteLine("");
+                        if (!wait_for_prompt(5000))
+                        {
+                            c = "fail;login_failed";
+                            return "fail";
+                        }
+                    }
+                    else
+                    {
+                        c = "fail;no_prompt";
+                        return "fail";
+                    }
+                }
+
+                // sync: 刷新文件系统缓冲
+                clear_uboot_rx();
+                ubootPort.WriteLine("sync; echo sync_done");
+                if (!wait_for_prompt(5000))
+                {
+                    c = "fail;sync_timeout";
+                    return "fail";
+                }
+                utility_func.callbackdebuginfo("[HERO_FINAL] graceful_shutdown: sync done");
+
+                // halt: 停止系统
+                clear_uboot_rx();
+                ubootPort.WriteLine("halt");
+                // halt 后系统会停止, 串口可能输出 "System halted." 或不再有提示符
+                // 等待一段时间让系统完全停止
+                Thread.Sleep(haltTimeout);
+
+                // 检查是否出现 halt 相关消息
+                string rxData = "";
+                lock (ubootLock) { rxData = ubootRx.ToString(); }
+
+                if (rxData.Contains("halt") || rxData.Contains("Halt") || rxData.Contains("stopped") || rxData.Contains("Power down"))
+                {
+                    c = "pass;system_halted";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] graceful_shutdown: system halted");
+                    return "pass";
+                }
+
+                // 即使没有检测到 halt 文本, halt 命令发出后系统应已停止
+                // 标记 SSH 断开
+                ssh_connected = false;
+                c = "pass;halt_sent";
+                utility_func.callbackdebuginfo("[HERO_FINAL] graceful_shutdown: halt sent, SSH marked disconnected");
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] graceful_shutdown error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// MAC 地址编程与安全锁定 — 从 MySQL 或手动输入获取 MAC, 中断 u-boot, 发送 fuse 命令。
+        ///
+        /// 流程:
+        ///   1. 获取 MAC 地址 (MySQL TOP1 未使用 或 手动输入)
+        ///   2. 继电器上电
+        ///   3. 中断 u-boot (发空格等待 => 提示符)
+        ///   4. fuse prog 9 0 <MAC后8位>
+        ///   5. fuse prog 9 1 0x001E
+        ///   6. 安全锁定 fuse prog -y 6/7/1 (固定值)
+        ///   7. 标记 MAC 为已使用
+        ///
+        /// d 参数: mac_source=mysql|manual (默认manual)
+        ///         mysql_server=<IP,默认127.0.0.1>;mysql_db=<库名>;mysql_user=<用户>;mysql_pass=<密码>
+        ///         mac_table=<表名,默认hbi_packing_sn_mac>
+        ///         relay_ch=<上电继电器通道,默认1>;relay_module=<继电器模块,默认sk_relay1_set>
+        ///         interrupt_timeout=<中断u-boot超时ms,默认30000>
+        /// a/b = 无效, c = "pass;MAC=XXXX" 或 "fail;reason"
+        /// </summary>
+        private string program_mac_and_lock(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string macAddress = "";
+            int macDbId = -1;
+            try
+            {
+                var p = parse_d(d);
+                string macSource = get_optional(p, "mac_source", "manual");
+                int interruptTimeout = get_int(p, "interrupt_timeout", 30000);
+                string relayCh = get_optional(p, "relay_ch", "1");
+                string relayModule = get_optional(p, "relay_module", "sk_relay1_set");
+
+                // === Step 1: 获取 MAC 地址 ===
+                if (macSource.Equals("mysql", StringComparison.OrdinalIgnoreCase))
+                {
+                    string mysqlServer = get_optional(p, "mysql_server", "127.0.0.1");
+                    string mysqlDb = get_optional(p, "mysql_db", "sg_test_db");
+                    string mysqlUser = get_optional(p, "mysql_user", "root");
+                    string mysqlPass = get_optional(p, "mysql_pass", "root");
+                    string macTable = get_optional(p, "mac_table", "hbi_packing_sn_mac");
+
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: querying MySQL {mysqlServer}/{mysqlDb}.{macTable}");
+
+                    var mysql = new Mysql(mysqlServer, mysqlDb, mysqlUser, mysqlPass);
+                    string query = $"SELECT ID, MAC FROM {macTable} WHERE used=1 ORDER BY ID ASC LIMIT 1";
+                    var dt = mysql.Query(query);
+
+                    if (dt == null || dt.Rows.Count == 0)
+                    {
+                        c = "fail;no_available_mac";
+                        utility_func.callbackdebuginfo("[HERO_FINAL] program_mac: no unused MAC in database");
+                        return "fail";
+                    }
+
+                    macDbId = Convert.ToInt32(dt.Rows[0]["ID"]);
+                    macAddress = dt.Rows[0]["MAC"].ToString().Trim().ToUpper();
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: got MAC={macAddress} (ID={macDbId})");
+                }
+                else
+                {
+                    // 手动输入: 弹窗提示扫描/输入 MAC 地址
+                    var dlgResult = HeroInputForm.Show("HERO MAC 地址输入", "请扫描或输入 MAC 地址:\n(格式: 001E06XXXXXXXX, 12位十六进制)", "");
+                    if (dlgResult != DialogResult.OK || string.IsNullOrEmpty(HeroInputForm.InputValue))
+                    {
+                        c = "fail;no_mac_input";
+                        return "fail";
+                    }
+                    string inputMac = HeroInputForm.InputValue.Trim().ToUpper().Replace(":", "").Replace("-", "").Replace(" ", "");
+                    if (inputMac.Length != 12 || !Regex.IsMatch(inputMac, @"^[0-9A-F]{12}$"))
+                    {
+                        c = "fail;invalid_mac_format";
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: invalid MAC format '{inputMac}'");
+                        return "fail";
+                    }
+                    macAddress = inputMac;
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: manual input MAC={macAddress}");
+                }
+
+                // MAC 后 8 位 (用于 fuse prog 9 0)
+                string macLast8 = macAddress.Substring(4, 8);
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
+
+                // === Step 2: 继电器上电 ===
+                string relayFunc = relayModule;
+                if (tc.funcs.ContainsKey(relayFunc))
+                {
+                    string relayOut;
+                    tc.funcs[relayFunc]($"$%s:1$", "", out relayOut, $"${relayCh}:1$");
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: relay ON (ch={relayCh})");
+                }
+                else
+                {
+                    c = "fail;relay_func_not_found";
+                    return "fail";
+                }
+
+                // === Step 3: 中断 u-boot ===
+                utility_func.callbackdebuginfo("[HERO_FINAL] program_mac: interrupting u-boot...");
+                string ubootOut;
+                if (uboot_interrupt("", "", out ubootOut, $"timeout={interruptTimeout}") != "pass")
+                {
+                    c = "fail;uboot_interrupt_failed";
+                    return "fail";
+                }
+                utility_func.callbackdebuginfo("[HERO_FINAL] program_mac: u-boot prompt ready");
+
+                // === Step 4: fuse prog 9 0 <MAC后8位> ===
+                string fuseCmd1 = $"fuse prog 9 0 0x{macLast8}";
+                string fuseOut1;
+                if (uboot_exec("", "", out fuseOut1, $"cmd={fuseCmd1};expect=;timeout=10000") != "pass")
+                {
+                    c = "fail;fuse_mac_low_failed";
+                    return "fail";
+                }
+                utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: {fuseCmd1} done");
+
+                // === Step 5: fuse prog 9 1 0x001E ===
+                string fuseCmd2 = "fuse prog 9 1 0x001E";
+                string fuseOut2;
+                if (uboot_exec("", "", out fuseOut2, $"cmd={fuseCmd2};expect=;timeout=10000") != "pass")
+                {
+                    c = "fail;fuse_mac_high_failed";
+                    return "fail";
+                }
+                utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: {fuseCmd2} done");
+
+                // === Step 6: 安全锁定 (固定值, 不可逆!) ===
+                string[] lockCmds = new string[]
+                {
+                    "fuse prog -y 6 0 0x614ADC5E",
+                    "fuse prog -y 6 1 0xFB348804",
+                    "fuse prog -y 6 2 0x4603ACD8",
+                    "fuse prog -y 6 3 0xEC4876C5",
+                    "fuse prog -y 7 0 0x4BCC2159",
+                    "fuse prog -y 7 1 0x43AD8288",
+                    "fuse prog -y 7 2 0xB380F876",
+                    "fuse prog -y 7 3 0x24A19825",
+                    "fuse prog -y 1 3 0x02000000"
+                };
+
+                for (int i = 0; i < lockCmds.Length; i++)
+                {
+                    string lockOut;
+                    if (uboot_exec("", "", out lockOut, $"cmd={lockCmds[i]};expect=;timeout=10000") != "pass")
+                    {
+                        c = $"fail;lock_cmd_{i}_failed;cmd={lockCmds[i]}";
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: LOCK FAILED at cmd {i}: {lockCmds[i]}");
+                        return "fail";
+                    }
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: lock {i + 1}/{lockCmds.Length} done: {lockCmds[i]}");
+                }
+
+                // === Step 7: 标记 MAC 为已使用 ===
+                if (macSource.Equals("mysql", StringComparison.OrdinalIgnoreCase) && macDbId > 0)
+                {
+                    string mysqlServer = get_optional(p, "mysql_server", "127.0.0.1");
+                    string mysqlDb = get_optional(p, "mysql_db", "sg_test_db");
+                    string mysqlUser = get_optional(p, "mysql_user", "root");
+                    string mysqlPass = get_optional(p, "mysql_pass", "root");
+                    string macTable = get_optional(p, "mac_table", "hbi_packing_sn_mac");
+
+                    var mysql = new Mysql(mysqlServer, mysqlDb, mysqlUser, mysqlPass);
+                    int affected = mysql.ExecNonQuery($"UPDATE {macTable} SET used=0 WHERE ID={macDbId}");
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: marked MAC ID={macDbId} as used (affected={affected})");
+                }
+
+                c = $"pass;MAC={macAddress}";
+                utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: ALL DONE, MAC={macAddress}");
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac error: {ex.Message}");
                 c = "error";
                 return "fail";
             }
