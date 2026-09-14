@@ -117,8 +117,8 @@ namespace testapp.test_cases
             try
             {
 
-                if (tc.funcs["cloor_assy"](d.Split('/')[0].Split(',')[0], d.Split('/')[0].Split(',')[1], out _, d.Split('/')[0].Split(',')[2]) == "pass" &&
-                                  tc.funcs["cloor_assy"](d.Split('/')[1].Split(',')[0], d.Split('/')[1].Split(',')[1], out _, d.Split('/')[1].Split(',')[2]) == "pass")
+                if (tc.funcs["cloor_assy_adjustable"](d.Split('/')[0].Split(',')[0], d.Split('/')[0].Split(',')[1], out _, d.Split('/')[0].Split(',')[2]) == "pass" &&
+                                  tc.funcs["cloor_assy_adjustable"](d.Split('/')[1].Split(',')[0], d.Split('/')[1].Split(',')[1], out _, d.Split('/')[1].Split(',')[2]) == "pass")
 
                 {
 
@@ -191,11 +191,12 @@ namespace testapp.test_cases
                 for (int i = 0; i < 5; i++)
                 {
                     cont = i;
-                    if (tc.funcs["cloor_assy_Min"]("10;10;10;10", "-1;-1;-1;-1", out _, d.Split('/')[0]) == "pass" ||
-                       tc.funcs["cloor_assy_Min"]("256;256;256'5000", "200;200;200;500", out _, d.Split('/')[1]) == "pass")
+                    if (tc.funcs["cloor_assy_Min"]("10;10;10;10", "-1;-1;-1;-1", out _, d.Split('/')[0]) == "pass" &&
+                       tc.funcs["cloor_assy_Min"]("10;10;10;10", "-1;-1;-1;-1", out _, d.Split('/')[1]) == "pass")
                     {
-
-                        break;
+                        c = "pass";
+                       
+                        return "pass";
                     }
                     else
                     {
