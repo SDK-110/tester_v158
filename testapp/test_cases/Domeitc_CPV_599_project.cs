@@ -477,9 +477,9 @@ namespace testapp.test_cases
             CONFIRM_PHASE:
                 // 保持当前电压 found_v，确认压缩机正常工作
                 ivps.set_on_off(0);
-                Thread.Sleep(1000);
-                ivps.set_on_off(1);
                 Thread.Sleep(2000);
+                ivps.set_on_off(1);
+                Thread.Sleep(10000);
                 List<double> recent = new List<double>();
                
                 for (int i = 0; i < confirm_sec; i++)
