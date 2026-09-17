@@ -432,6 +432,8 @@ namespace testapp
         RttJlinkTester rttJlinkTester = null;
         testapp.test_cases.asmpt03214220_pj _asmpt03214220_pj = null;
         mic_thd_test_project mic_test_new = null;
+
+        Ecloab_flamel_pj flamel_pj = null;
         public chroma19701 Chroma19701t
         {
 
@@ -863,6 +865,22 @@ namespace testapp
 暂时不用*/
             #endregion
 
+
+
+
+            if (setup_ini_data["setport"]["Ecolab_flamel_modbus_port"] != null)
+            {
+                try
+                {
+                    flamel_pj = new Ecloab_flamel_pj(this);
+                }
+                catch(Exception e) {
+
+                    System.Windows.Forms.MessageBox.Show("Ecolab_flamel_modbus_port  error " + "\n" + e.Message);
+                }
+            
+            
+            }
 
 
             if (setup_ini_data["setport"]["mic_test"] != null)
