@@ -760,14 +760,14 @@ namespace testapp.test_cases
         //  接口实现
         // ══════════════════════════════════════════════════════════════
 
-        public void InsertDefaultAction()
-        {
-            tc.dev_moren[id] = this;
-        }
+            public void InsertDefaultAction()
+            {
+                tc.dev_moren[id] = this;
+            }
 
-        public void set_default_set()
-        {
-        }
+            public void set_default_set()
+            {
+            }
 
         // ══════════════════════════════════════════════════════════════
         //  范围判定与参数解析工具
