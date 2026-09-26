@@ -55,6 +55,7 @@ namespace testapp.test_cases
         {
             tc.funcs.Add(id + "read_input_reg", read_input_reg);
             tc.funcs.Add(id + "read_input_reg_float", read_input_reg_float);
+            tc.funcs.Add(id + "read_input_reg_long", read_input_reg_long);
             tc.funcs.Add(id + "read_holding_reg", read_holding_reg);
             tc.funcs.Add(id + "read_holding_reg_float", read_holding_reg_float);
             tc.funcs.Add(id + "read_coil", read_coil);
@@ -119,6 +120,33 @@ namespace testapp.test_cases
             catch (Exception ex)
             {
                 utility_func.callbackdebuginfo($"[HERO_INPUT] read_input_reg_float error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 读取 32 位 Input Register (占 2 个连续寄存器, 高字在前: regs[0]=高16位, regs[1]=低16位)。
+        /// a = 上限, b = 下限, c = 实测值
+        /// d 参数: addr=寄存器起始地址
+        /// 读取范围 -2147483648 ~ 2147483647
+        /// </summary>
+        private string read_input_reg_long(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                ushort addr = (ushort)int.Parse(get_required(p, "addr"));
+                ushort[] regs = exec_with_retry(() => master!.ReadInputRegistersAsync(slaveId, addr, 2).Result);
+                int value = (int)((uint)regs[0] << 16 | regs[1]);
+                c = value.ToString(CultureInfo.InvariantCulture);
+                utility_func.callbackdebuginfo($"[HERO_INPUT] read_input_reg_long addr={addr} => {value}");
+                return judge_range(value, a, b);
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_INPUT] read_input_reg_long error: {ex.Message}");
                 c = "error";
                 return "fail";
             }

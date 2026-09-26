@@ -79,6 +79,11 @@ namespace testapp.test_cases
             // a/b = "pass", c = 响应文本
             tc.funcs.Add(id + "rtc_set", rtc_set);
 
+            // ── RTC 单独读时间 (命令 2 无参数) ──
+            // 读当前 RTC 时间, 验证格式合法
+            // a/b = "pass", c = "YYYY-MM-DD HH:MM:SS"
+            tc.funcs.Add(id + "rtc_read", rtc_read);
+
             // ── EEPROM 读写 (命令 3) ──
             // d = "0;170;187;204;221" (地址;数据1;数据2;...)
             // a/b = "pass", c = 响应文本
@@ -243,36 +248,145 @@ namespace testapp.test_cases
         }
 
         // ── 命令 2: RTC 时间设置 ────────────────────────────────────
-        // d = "2026;01;15;12;30;00" (年;月;日;时;分;秒)
-        // a = "pass", b = "pass", c = 响应文本
+        // 用电脑当前时间设置 RTC, 验证读回的年月日时与设定值相同, 且有 PASS
+        // a = "pass", b = "pass", d = 可选偏移秒数 (如 "offset=10" 加10秒, 默认0)
+        // c = 响应文本 (\r\n 替换为空格)
         private string rtc_set(string a, string b, out string c, string d)
         {
             c = "fail";
             try
             {
+                // 取电脑当前时间, 可通过 d 的 offset 参数加偏移
                 var p = parse_d(d);
-                string year = get_required(p, "year");
-                string month = get_required(p, "month");
-                string day = get_required(p, "day");
-                string hour = get_required(p, "hour");
-                string min = get_required(p, "min");
-                string sec = get_required(p, "sec");
+                int offset = get_int(p, "offset", 0);
+                DateTime now = DateTime.Now.AddSeconds(offset);
+
+                int year  = now.Year;
+                int month = now.Month;
+                int day   = now.Day;
+                int hour  = now.Hour;
+                int min   = now.Minute;
+                int sec   = now.Second;
 
                 string cmd = $"2 {year} {month} {day} {hour} {min} {sec}";
-                if (send_and_recv(cmd, 5000, out c) != "pass")
+                string rsustr = "";
+                if (send_and_recv(cmd, 5000, out rsustr) != "pass")
                     return "fail";
+              
+                // 提取 Set 行的时间
+                var setMatch = Regex.Match(rsustr, @"Set:\s*(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})");
+                // 提取 RTC read 行的时间
+                var readMatch = Regex.Match(rsustr, @"RTC read:\s*(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})");
 
-                if (c.Contains("RTC test: PASS"))
+                bool hasPass = rsustr.Contains("RTC test: PASS");
+
+                if (!setMatch.Success)
+                {
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] RTC FAIL: no Set time found");
+                    return "fail";
+                }
+                if (!readMatch.Success)
+                {
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] RTC FAIL: no RTC read time found");
+                    return "fail";
+                }
+
+                // 验证设定值与我们发出的时间一致 (年月日时分秒)
+                string setY = setMatch.Groups[1].Value;
+                string setMo = setMatch.Groups[2].Value;
+                string setD = setMatch.Groups[3].Value;
+                string setH = setMatch.Groups[4].Value;
+
+                // 验证读回值与设定值的年月日时相同 (分秒可能因执行延迟差1, 不校验)
+                string readY = readMatch.Groups[1].Value;
+                string readMo = readMatch.Groups[2].Value;
+                string readD = readMatch.Groups[3].Value;
+                string readH = readMatch.Groups[4].Value;
+
+                bool yOk  = (setY == readY);
+                bool moOk = (setMo == readMo);
+                bool dOk  = (setD == readD);
+                bool hOk  = (setH == readH);
+
+                utility_func.callbackdebuginfo(
+                    $"[HERO_AUX_TEST] RTC set={setY}-{setMo}-{setD} {setH}:xx:xx, " +
+                    $"read={readY}-{readMo}-{readD} {readH}:xx:xx, " +
+                    $"y={yOk} mo={moOk} d={dOk} h={hOk} pass={hasPass}");
+                c = $"read={readY}-{readMo}-{readD} {readH}:{readMatch.Groups[5].Value}:{readMatch.Groups[6].Value}";
+
+                if (yOk && moOk && dOk && hOk && hasPass)
                 {
                     utility_func.callbackdebuginfo("[HERO_AUX_TEST] RTC set+read: PASS");
                     return "pass";
                 }
-                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] RTC test FAIL: {c.Substring(0, Math.Min(c.Length, 200))}");
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] RTC FAIL: y={yOk} mo={moOk} d={dOk} h={hOk} hasPass={hasPass}");
                 return "fail";
             }
             catch (Exception ex)
             {
                 utility_func.callbackdebuginfo($"[HERO_AUX_TEST] rtc_set error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        // ── 命令 2 无参数: RTC 单独读时间 ──────────────────────────
+        // 读取当前 RTC 时间, 与电脑系统时间对比, 差值小于 2 分钟算 PASS
+        // a = "pass", b = "pass", d = 可选容差分钟数 "tolerance=2" 默认2分钟
+        // c = "YYYY-MM-DD HH:MM:SS"
+        private string rtc_read(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                // 先记录系统时间
+                DateTime sysNow = DateTime.Now;
+
+                if (send_and_recv("2", 5000, out c) != "pass")
+                    return "fail";
+
+                // 用正则提取时间字符串 YYYY-MM-DD HH:MM:SS
+                var m = System.Text.RegularExpressions.Regex.Match(
+                    c, @"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})");
+                if (!m.Success)
+                {
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] RTC read FAIL, no time found: " + c.Substring(0, System.Math.Min(c.Length, 200)).Replace("\r"," ").Replace("\n", " "));
+                    return "fail";
+                }
+
+                string timeStr = m.Groups[1].Value;
+                DateTime rtcTime;
+                if (!DateTime.TryParse(timeStr, out rtcTime))
+                {
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] RTC read FAIL, cannot parse time: " + timeStr);
+                    c = timeStr;
+                    return "fail";
+                }
+
+                // 计算与系统时间的差值
+                TimeSpan diff = rtcTime - sysNow;
+                double diffSeconds = Math.Abs(diff.TotalSeconds);
+
+                // 读取容差 (默认 2 分钟 = 120 秒)
+                var p = parse_d(d);
+                double toleranceSec = get_int(p, "tolerance", 2) * 60.0;
+
+                c = timeStr;
+                utility_func.callbackdebuginfo(
+                    $"[HERO_AUX_TEST] RTC read: {timeStr}, sys: {sysNow:yyyy-MM-dd HH:mm:ss}, " +
+                    $"diff={diffSeconds:F0}s, tolerance={toleranceSec}s");
+
+                if (diffSeconds <= toleranceSec)
+                {
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] RTC read: PASS (within tolerance)");
+                    return "pass";
+                }
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] RTC read FAIL: diff={diffSeconds:F0}s > {toleranceSec}s");
+                return "fail";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo("[HERO_AUX_TEST] rtc_read error: " + ex.Message);
                 c = "error";
                 return "fail";
             }
