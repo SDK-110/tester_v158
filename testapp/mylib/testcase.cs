@@ -434,6 +434,7 @@ namespace testapp
         mic_thd_test_project mic_test_new = null;
 
         Ecloab_flamel_pj flamel_pj = null;
+        hero_input_board hero_Input_Board = null;
         public chroma19701 Chroma19701t
         {
 
@@ -880,6 +881,20 @@ namespace testapp
                 }
             
             
+            }
+            if (setup_ini_data["setport"]["hero_input_board_modbus_port"] != null)
+            {
+                try
+                {
+                    hero_Input_Board = new  hero_input_board(this);
+                }
+                catch (Exception e)
+                {
+
+                    System.Windows.Forms.MessageBox.Show("hero_input_board_modbus_port  error " + "\n" + e.Message);
+                }
+
+
             }
 
 
