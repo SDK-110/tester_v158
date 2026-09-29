@@ -199,7 +199,7 @@ namespace testapp.test_cases
             catch (Exception ex) { utility_func.callbackdebuginfo($"[HERO_FINAL] serial_wait_text error: {ex.Message}"); c = "error"; return "fail"; }
         }
 
-        private string uboot_interrupt(string a, string b, out string c, string d)
+        private string  uboot_interrupt(string a, string b, out string c, string d)
         {
             c = "fail";
             try

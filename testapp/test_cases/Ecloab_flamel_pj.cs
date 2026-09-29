@@ -21,8 +21,8 @@ namespace testapp.test_cases
             try
             {
                 var ini = glob_ini_instance.getInstance().getSetupIniData;
-                string port = ini["setport"]["Eelcoab_modbus_port"];
-                int baud = int.Parse(ini["setport"]["Eelcoab_modbus_baudrate"]);
+                string port = ini["setport"]["Ecolab_flamel_modbus_port"];
+                int baud = int.Parse(ini["setport"]["Ecolab_flamel_modbus_baudrate"]);
 
                 serialPort = new SerialPortProvider(port, baud);
                 serialPort.Open();
