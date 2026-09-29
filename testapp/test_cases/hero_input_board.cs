@@ -112,7 +112,8 @@ namespace testapp.test_cases
                 var p = parse_d(d);
                 ushort addr = (ushort)int.Parse(get_required(p, "addr"));
                 ushort[] regs = exec_with_retry(() => master!.ReadInputRegistersAsync(slaveId, addr, 2).Result);
-                float value = BitConverter.ToSingle(BitConverter.GetBytes(regs[0] << 16 | regs[1]), 0);
+                // 设备字节序为 CDAB: regs[0]=低16位, regs[1]=高16位
+                float value = BitConverter.ToSingle(BitConverter.GetBytes(regs[1] << 16 | regs[0]), 0);
                 c = value.ToString("F4", CultureInfo.InvariantCulture);
                 utility_func.callbackdebuginfo($"[HERO_INPUT] read_input_reg_float addr={addr} => {value:F4}");
                 return judge_range(value, a, b);
@@ -139,9 +140,9 @@ namespace testapp.test_cases
                 var p = parse_d(d);
                 ushort addr = (ushort)int.Parse(get_required(p, "addr"));
                 ushort[] regs = exec_with_retry(() => master!.ReadInputRegistersAsync(slaveId, addr, 2).Result);
-                int value = (int)((uint)regs[0] << 16 | regs[1]);
-                c = value.ToString(CultureInfo.InvariantCulture);
-                utility_func.callbackdebuginfo($"[HERO_INPUT] read_input_reg_long addr={addr} => {value}");
+                int value = (int)((uint)regs[1] << 16 | regs[0]);
+                c = "0x" + ((uint)value).ToString("X8", CultureInfo.InvariantCulture);
+                utility_func.callbackdebuginfo($"[HERO_INPUT] read_input_reg_long addr={addr} => {c} ({value})");
                 return judge_range(value, a, b);
             }
             catch (Exception ex)
@@ -180,7 +181,8 @@ namespace testapp.test_cases
                 var p = parse_d(d);
                 ushort addr = (ushort)int.Parse(get_required(p, "addr"));
                 ushort[] regs = exec_with_retry(() => master!.ReadHoldingRegistersAsync(slaveId, addr, 2).Result);
-                float value = BitConverter.ToSingle(BitConverter.GetBytes(regs[0] << 16 | regs[1]), 0);
+                // 设备字节序为 CDAB: regs[0]=低16位, regs[1]=高16位
+                float value = BitConverter.ToSingle(BitConverter.GetBytes(regs[1] << 16 | regs[0]), 0);
                 c = value.ToString("F4", CultureInfo.InvariantCulture);
                 utility_func.callbackdebuginfo($"[HERO_INPUT] read_holding_reg_float addr={addr} => {value:F4}");
                 return judge_range(value, a, b);
@@ -251,17 +253,17 @@ namespace testapp.test_cases
                 ushort addr = (ushort)int.Parse(get_required(p, "addr"));
                 float writeValue = float.Parse(b, CultureInfo.InvariantCulture);
 
-                // 将 float 转换为 2 个 ushort (Modbus 大端序: 高字在前)
+                // 将 float 转换为 2 个 ushort (设备字节序 CDAB: 低字在前)
                 byte[] bytes = BitConverter.GetBytes(writeValue);
-                ushort regHigh = BitConverter.ToUInt16(bytes, 0);
-                ushort regLow = BitConverter.ToUInt16(bytes, 2);
+                ushort word0 = BitConverter.ToUInt16(bytes, 0);   // 低 16 位, 先发
+                ushort word1 = BitConverter.ToUInt16(bytes, 2);   // 高 16 位, 后发
 
-                exec_with_retry(() => master!.WriteMultipleRegistersAsync(slaveId, addr, new ushort[] { regHigh, regLow }));
+                exec_with_retry(() => master!.WriteMultipleRegistersAsync(slaveId, addr, new ushort[] { word0, word1 }));
                 Thread.Sleep(100);
 
                 // 回读验证
                 ushort[] readback = exec_with_retry(() => master!.ReadHoldingRegistersAsync(slaveId, addr, 2).Result);
-                float readValue = BitConverter.ToSingle(BitConverter.GetBytes(readback[0] << 16 | readback[1]), 0);
+                float readValue = BitConverter.ToSingle(BitConverter.GetBytes(readback[1] << 16 | readback[0]), 0);
                 c = readValue.ToString("F4", CultureInfo.InvariantCulture);
                 utility_func.callbackdebuginfo($"[HERO_INPUT] write_holding_reg_float addr={addr}, wrote={writeValue:F4}, readback={readValue:F4}");
                 return judge_range(readValue, a, b);
@@ -289,20 +291,20 @@ namespace testapp.test_cases
 
                 // ── Step 1: 从 Input Register 读取 float 值 ──
                 ushort[] srcRegs = exec_with_retry(() => master!.ReadInputRegistersAsync(slaveId, srcAddr, 2).Result);
-                float srcValue = BitConverter.ToSingle(BitConverter.GetBytes(srcRegs[0] << 16 | srcRegs[1]), 0);
+                float srcValue = BitConverter.ToSingle(BitConverter.GetBytes(srcRegs[1] << 16 | srcRegs[0]), 0);
                 utility_func.callbackdebuginfo($"[HERO_INPUT] rtd_cal_copy: read input reg[{srcAddr}] => {srcValue:F4}");
 
-                // ── Step 2: 将 float 转换为 2 个 ushort, 写入 Holding Register ──
+                // ── Step 2: 将 float 转换为 2 个 ushort, 写入 Holding Register (CDAB: 低字在前) ──
                 byte[] bytes = BitConverter.GetBytes(srcValue);
-                ushort regHigh = BitConverter.ToUInt16(bytes, 0);
-                ushort regLow = BitConverter.ToUInt16(bytes, 2);
+                ushort word0 = BitConverter.ToUInt16(bytes, 0);   // 低 16 位, 先发
+                ushort word1 = BitConverter.ToUInt16(bytes, 2);   // 高 16 位, 后发
 
-                exec_with_retry(() => master!.WriteMultipleRegistersAsync(slaveId, dstAddr, new ushort[] { regHigh, regLow }));
+                exec_with_retry(() => master!.WriteMultipleRegistersAsync(slaveId, dstAddr, new ushort[] { word0, word1 }));
                 Thread.Sleep(100);
 
                 // ── Step 3: 回读验证 ──
                 ushort[] dstRegs = exec_with_retry(() => master!.ReadHoldingRegistersAsync(slaveId, dstAddr, 2).Result);
-                float dstValue = BitConverter.ToSingle(BitConverter.GetBytes(dstRegs[0] << 16 | dstRegs[1]), 0);
+                float dstValue = BitConverter.ToSingle(BitConverter.GetBytes(dstRegs[1] << 16 | dstRegs[0]), 0);
                 c = dstValue.ToString("F4", CultureInfo.InvariantCulture);
                 utility_func.callbackdebuginfo($"[HERO_INPUT] rtd_cal_copy: wrote holding reg[{dstAddr}] => {dstValue:F4}");
 
