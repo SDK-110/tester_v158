@@ -28,8 +28,8 @@ namespace testapp.test_cases
             try
             {
                 var ini = glob_ini_instance.getInstance().getSetupIniData;
-                string port = ini["setport"]["hero_modbus_port"];
-                int baud = int.Parse(ini["setport"]["hero_modbus_baudrate"] ?? "115200");
+                string port = ini["setport"]["hero_input_board_modbus_port"];
+                int baud = int.Parse(ini["setport"]["hero_input_board_modbus_baudrate"] ?? "115200");
                 slaveId = byte.Parse(ini["setport"]["hero_modbus_slave_id"] ?? "40");
 
                 modbusPort = new SerialPort(port, baud, Parity.None, 8, StopBits.One);
