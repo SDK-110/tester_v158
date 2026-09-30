@@ -122,6 +122,14 @@ namespace testapp.test_cases
             // a/b = "pass", c = "found=N:COM3,COM5; tested=M; pass=COM3<->COM5; fail=..."
             tc.funcs.Add(id + "serial_pair_test", serial_pair_test);
 
+            // ── 4 路 RS485 串口回显服务 (原路返回) ──
+            // 按特征找到正好 4 个串口, 以 115200 8N1 打开; 每口一条线程:
+            // 收满一行(CRLF 结尾) → 等总线静默(turnaround_ms) → 整帧写回本口; 并抑制自身回显。
+            // duration 到期自动安全销毁, Dispose 时也会停止。对端 4 个串口由其它函数创建。
+            // d = "name=Prolific;vid=067B;pid=2303;duration=30000;turnaround_ms=5;frame_end=\r\n;echo_guard_ms=20"
+            // a/b = "pass", c = "opened=4:COM3,COM5,COM7,COM9; baud=115200; frame=end:\r\n; turnaround=5ms; ttl=30000ms; stop_at=15:04:05"
+            tc.funcs.Add(id + "serial_echo_start", serial_echo_start);
+
             tc.golb_var_default["hero_aux_slave_id"] = "1";
         }
 
@@ -728,6 +736,97 @@ namespace testapp.test_cases
             }
         }
 
+        /// <summary>
+        /// 按特征发现正好 4 个串口并以 115200 8N1 打开, 启动 RS485 回显服务。
+        /// 数据为字符串、以回车换行(CRLF)结尾: 收满一行 → 等总线静默(turnaround_ms)
+        /// → 整帧原路回写本口(含 CRLF), 不做"收到即回发"。
+        /// 服务在后台线程运行, duration 到期自动安全销毁; 本对象 Dispose 时也会停止。
+        ///
+        /// d 参数:
+        ///   name=名称模糊匹配;vid=USB VID;pid=USB PID;baud=波特率(默认115200)
+        ///   duration=存活ms(默认30000)
+        ///   turnaround_ms=转向延时ms(默认5) — 整帧回发前等总线静默
+        ///   frame_end=帧结束符(默认 \r\n; 字符串协议保持默认即可; none=退回空闲判帧)
+        ///   frame_len=N 定长帧(默认0, 设置后优先于 frame_end)
+        ///   echo_guard_ms=自身回显抑制窗口ms(默认20, 0=关)
+        ///   max_echo_kb=单口回显总量上限KB(默认0=不限)
+        /// 注意: 参数字符串以 ';' 和 '=' 分隔, 结束符含这两字符须写成 \x3B / \x3D。
+        ///
+        /// 判定: 发现数量正好 4 且 4 口全部打开成功 → pass
+        /// c: 成功 "opened=4:COM3,...; baud=115200; frame=len:8; turnaround=5ms; ttl=30000ms; stop_at=HH:mm:ss"
+        ///    失败 "found=N:COMx,...; need=4" 或 "open_fail=COMx:原因"
+        /// </summary>
+        private string serial_echo_start(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+
+                var opt = new SerialEchoOptions();
+                opt.Baud = get_int(p, "baud", 115200);
+                opt.TtlMs = get_int(p, "duration", 30000);
+                opt.TurnaroundMs = get_int(p, "turnaround_ms", 5);
+                opt.FrameLen = get_int(p, "frame_len", 0);
+
+                // 数据是字符串, 默认以回车换行(CRLF)作帧结束符: 收满一行整帧回发;
+                // frame_end=none 退回空闲判帧(不推荐)
+                string frameEnd = get_optional(p, "frame_end", "\\r\\n");
+                opt.FrameEnd = frameEnd.Equals("none", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : SerialEchoOptions.ParseBytes(frameEnd);
+                opt.EchoGuardMs = get_int(p, "echo_guard_ms", 20);
+                opt.MaxEchoKb = get_int(p, "max_echo_kb", 0);
+
+                // Step 1: 发现串口 (去重 + 按 COM 号数值排序, 避免 COM10 排在 COM3 前)
+                var ports = SerialPortDiscovery.FindPorts(get_optional(p, "name", ""),
+                                                          get_optional(p, "vid", ""),
+                                                          get_optional(p, "pid", ""));
+
+                var portNames = new List<string>();
+                foreach (var portInfo in ports)
+                    if (!portNames.Contains(portInfo.ComName)) portNames.Add(portInfo.ComName);
+                portNames.Sort((x, y) => com_index(x).CompareTo(com_index(y)));
+
+                if (portNames.Count != 4)
+                {
+                    c = "found=" + portNames.Count + ":" + string.Join(";", portNames) + "; need=4";
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_echo_start: " + c);
+                    return "fail";
+                }
+
+                utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_echo_start: found 4 ports: " + string.Join(";", portNames));
+
+                // Step 2: 打开 4 口并启动回显后台服务
+                string detail;
+                var svc = SerialEchoService.Start(portNames, opt, out detail);
+
+                c = detail;
+                if (svc == null || !svc.IsRunning)
+                {
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_echo_start: " + c);
+                    return "fail";
+                }
+
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_echo_start error: " + ex.Message);
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>取端口名中的数字部分用于排序, 如 "COM10" → 10</summary>
+        private static int com_index(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return int.MaxValue;
+            var m = Regex.Match(name, @"\d+");
+            int n;
+            return m.Success && int.TryParse(m.Value, out n) ? n : int.MaxValue;
+        }
+
         // ══════════════════════════════════════════════════════════════
         //  接口实现
         // ══════════════════════════════════════════════════════════════
@@ -783,6 +882,11 @@ namespace testapp.test_cases
         {
             try
             {
+                // 回显服务必须随本对象一起安全销毁, 否则会留下后台线程占着 4 个 COM 口
+                var svc = SerialEchoService.Current;
+                if (svc != null && svc.IsRunning)
+                    svc.Stop("dispose");
+
                 if (port != null)
                 {
                     if (port.IsOpen) port.Close();
