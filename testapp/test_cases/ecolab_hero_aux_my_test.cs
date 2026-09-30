@@ -130,6 +130,13 @@ namespace testapp.test_cases
             // a/b = "pass", c = "opened=4:COM3,COM5,COM7,COM9; baud=115200; frame=end:\r\n; turnaround=5ms; ttl=30000ms; stop_at=15:04:05"
             tc.funcs.Add(id + "serial_echo_start", serial_echo_start);
 
+            // ── 单口回环发送 (周期发字符串, 等对端 485 回复) ──
+            // 收到第一帧回复即 pass; 发送线程继续跑到 duration(默认3s), 便于随后检查 TX/RX LED。
+            // 需等第一次回复才返回, 最长阻塞 wait_ms; 可对多个口分别调用(按端口名并发注册)。
+            // d = "port=COM7;data=HERO_AUX_PING;duration=3000;interval_ms=500;reply_timeout_ms=1000"
+            // a/b = "pass", c = "port=COM7; sent=1; replies=1; rx=12B; first_reply=93ms: HERO_AUX_PING\r\n"
+            tc.funcs.Add(id + "serial_loopback_send", serial_loopback_send);
+
             tc.golb_var_default["hero_aux_slave_id"] = "1";
         }
 
@@ -818,6 +825,84 @@ namespace testapp.test_cases
             }
         }
 
+        /// <summary>
+        /// 单口回环发送: 在指定串口上周期发送字符串并等对端 485 回复。
+        /// 收到第一帧完整回复即判 pass, 但发送/接收线程继续跑到 duration 毫秒,
+        /// 便于下一步对 TX/RX LED 进行检测。
+        ///
+        /// d 参数:
+        ///   port=COM7 (必填) — 要发送的串口
+        ///   data=发送内容(默认 HERO_AUX_PING, 结束符自动追加, 不要在 data 里再写)
+        ///   baud=波特率(默认115200)
+        ///   duration=总运行ms(默认3000) — 发/收持续这么久
+        ///   interval_ms=两次发送间隔(默认500)
+        ///   reply_timeout_ms=单次等回复超时(默认1000)
+        ///   local_echo_ms=发送后丢弃本地回显窗口ms(默认10)
+        ///   wait_ms=判 pass/fail 的等待窗口(默认=duration)
+        ///   frame_end=帧结束符(默认 \r\n; 字符串协议保持默认即可; none=收到任意字节即算回复)
+        ///
+        /// 判定: wait_ms 内收到至少一帧完整回复 → pass
+        /// c: pass "port=COM7; sent=1; replies=1; rx=12B; first_reply=93ms: HERO_AUX_PING\r\n"
+        ///    fail "port=COM7; sent=6; replies=0; timeouts=6; rx=0B"
+        /// 注意: 本函数要等第一次回复才返回, 最长阻塞 wait_ms; 后台线程仍会继续跑到 duration。
+        /// </summary>
+        private string serial_loopback_send(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                string portName = get_optional(p, "port", "");
+                if (string.IsNullOrEmpty(portName))
+                {
+                    c = "missing_port";
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_loopback_send: missing port");
+                    return "fail";
+                }
+
+                var opt = new SerialLoopbackOptions();
+                opt.Baud = get_int(p, "baud", 115200);
+                opt.Data = get_optional(p, "data", "HERO_AUX_PING");
+                opt.DurationMs = get_int(p, "duration", 3000);
+                opt.IntervalMs = get_int(p, "interval_ms", 500);
+                opt.ReplyTimeoutMs = get_int(p, "reply_timeout_ms", 1000);
+                opt.LocalEchoMs = get_int(p, "local_echo_ms", 10);
+                opt.WaitMs = get_int(p, "wait_ms", 0);
+
+                string frameEnd = get_optional(p, "frame_end", "\\r\\n");
+                opt.FrameEnd = frameEnd.Equals("none", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : SerialEchoOptions.ParseBytes(frameEnd);
+
+                string detail;
+                var svc = SerialLoopbackSender.Start(portName, opt, out detail);
+                if (svc == null || !svc.IsRunning)
+                {
+                    c = detail;
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_loopback_send: " + c);
+                    return "fail";
+                }
+
+                int wait = opt.WaitMs > 0 ? opt.WaitMs : opt.DurationMs;
+                if (svc.WaitFirstReply(wait))
+                {
+                    c = svc.Summary();
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_loopback_send pass: " + c);
+                    return "pass";
+                }
+
+                c = svc.Summary();
+                utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_loopback_send fail: " + c);
+                return "fail";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_loopback_send error: " + ex.Message);
+                c = "error";
+                return "fail";
+            }
+        }
+
         /// <summary>取端口名中的数字部分用于排序, 如 "COM10" → 10</summary>
         private static int com_index(string name)
         {
@@ -886,6 +971,9 @@ namespace testapp.test_cases
                 var svc = SerialEchoService.Current;
                 if (svc != null && svc.IsRunning)
                     svc.Stop("dispose");
+
+                // 回环发送线程同理
+                SerialLoopbackSender.StopAll("dispose");
 
                 if (port != null)
                 {

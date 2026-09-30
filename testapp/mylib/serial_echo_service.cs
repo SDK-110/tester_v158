@@ -191,8 +191,8 @@ namespace testapp.mylib
                     var opened = new List<string>();
                     lock (svc._sync) foreach (var x in svc._workers) opened.Add(x.Status.Port);
 
-                    detail = "open_fail=" + name + ":" + ex.Message +
-                             "; opened=" + opened.Count + ":" + string.Join(";", opened);
+                    detail = CsvSafe("open_fail=" + name + ":" + ex.Message +
+                                     "; opened=" + opened.Count + ":" + string.Join(";", opened));
                     utility_func.callbackdebuginfo("[SerialEcho] " + detail);
                     try { if (w.Port != null) { if (w.Port.IsOpen) w.Port.Close(); w.Port.Dispose(); } } catch { }
                     svc.CloseAll();
@@ -437,7 +437,7 @@ namespace testapp.mylib
 
             lock (_lock) { if (_current == this) _current = null; }
 
-            string res = "stopped=" + reason + "; rx=" + rx + "; tx=" + tx + "; frames=" + frames;
+            string res = CsvSafe("stopped=" + reason + "; rx=" + rx + "; tx=" + tx + "; frames=" + frames);
             utility_func.callbackdebuginfo("[SerialEcho] " + res + "; " + Status());
             return res;
         }
@@ -469,12 +469,12 @@ namespace testapp.mylib
             }
             if (opt == null) return "no_port";
 
-            return "opened=" + names.Count + ":" + string.Join(";", names) +
+            return CsvSafe("opened=" + names.Count + ":" + string.Join(";", names) +
                    "; baud=" + opt.Baud +
                    "; frame=" + opt.FrameDesc() +
                    "; turnaround=" + opt.TurnaroundMs + "ms" +
                    "; ttl=" + _ttlMs + "ms" +
-                   "; stop_at=" + _deadlineUtc.ToLocalTime().ToString("HH:mm:ss");
+                   "; stop_at=" + _deadlineUtc.ToLocalTime().ToString("HH:mm:ss"));
         }
 
         /// <summary>各口状态: "COM3:open rx=1024 tx=1024 frames=8; COM5:..."</summary>
@@ -489,7 +489,18 @@ namespace testapp.mylib
                     sb.Append(w.Status.ToString());
                 }
             }
-            return sb.Length > 0 ? sb.ToString() : "no_port";
+            return CsvSafe(sb.Length > 0 ? sb.ToString() : "no_port");
+        }
+
+        /// <summary>
+        /// 结果字符串清洗(CSV 安全): 逗号 → ';', CR/LF/Tab → 字面转义 \r \n \t。
+        /// 结果存 CSV: 逗号会被当成列分隔符导致列错位, CR/LF 会把一条记录断成多行。
+        /// 所有拼好的最终结果串都过一遍本函数(异常消息/串口回复是这两类字符的来源)。
+        /// </summary>
+        public static string CsvSafe(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace(",", ";").Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t");
         }
 
         /// <summary>
