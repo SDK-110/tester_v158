@@ -432,8 +432,8 @@ namespace testapp
         RttJlinkTester rttJlinkTester = null;
         testapp.test_cases.asmpt03214220_pj _asmpt03214220_pj = null;
         mic_thd_test_project mic_test_new = null;
-
-        Ecloab_flamel_pj flamel_pj = null;
+        ecolab_hero_aux_my_test hero_aux_board = null;
+       Ecloab_flamel_pj flamel_pj = null;
         hero_input_board hero_Input_Board = null;
         public chroma19701 Chroma19701t
         {
@@ -868,6 +868,20 @@ namespace testapp
 
 
 
+            if (setup_ini_data["setport"]["ecolab_hero_aux_serial_port"] != null)
+            {
+                try
+                {
+                    hero_aux_board = new  ecolab_hero_aux_my_test(this);
+                }
+                catch (Exception e)
+                {
+
+                    System.Windows.Forms.MessageBox.Show("ecolab_hero_aux_serial_port  error " + "\n" + e.Message);
+                }
+
+
+            }
 
             if (setup_ini_data["setport"]["Ecolab_flamel_modbus_port"] != null)
             {
