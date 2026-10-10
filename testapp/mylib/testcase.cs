@@ -435,6 +435,7 @@ namespace testapp
         ecolab_hero_aux_my_test hero_aux_board = null;
        Ecloab_flamel_pj flamel_pj = null;
         hero_input_board hero_Input_Board = null;
+        hero_final_assembly hero_final_fg = null;
         public chroma19701 Chroma19701t
         {
 
@@ -867,6 +868,21 @@ namespace testapp
             #endregion
 
 
+          
+        if (setup_ini_data["setport"]["hero_uboot_serial_port"] != null)
+            {
+                try
+                {
+                    hero_final_fg = new  hero_final_assembly(this);
+                }
+                catch (Exception e)
+                {
+
+                    System.Windows.Forms.MessageBox.Show("hero_uboot_serial_port  error " + "\n" + e.Message);
+                }
+
+
+            }
 
             if (setup_ini_data["setport"]["ecolab_hero_aux_serial_port"] != null)
             {

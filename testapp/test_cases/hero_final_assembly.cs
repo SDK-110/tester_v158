@@ -11,6 +11,7 @@ using Renci.SshNet;
 using testapp.glob_set;
 using testapp.mylib;
 using System.Data;
+using Vila.Win32;
 
 namespace testapp.test_cases
 {
@@ -31,6 +32,7 @@ namespace testapp.test_cases
             try
             {
                 var ini = glob_ini_instance.getInstance().getSetupIniData;
+                /*===================
                 string host = ini["setport"]["hero_ssh_host"];
                 int port = int.Parse(ini["setport"]["hero_ssh_port"] ?? "22");
                 string user = ini["setport"]["hero_ssh_user"] ?? "root";
@@ -40,7 +42,7 @@ namespace testapp.test_cases
                 ssh.Connect();
                 ssh_connected = true;
                 utility_func.callbackdebuginfo($"[HERO_FINAL] SSH connected to {host}:{port}");
-
+                ====================*/
                 string sport = ini["setport"]["hero_uboot_serial_port"];
                 int sbaud = int.Parse(ini["setport"]["hero_uboot_serial_baudrate"] ?? "115200");
                 ubootPort = new SerialPort(sport, sbaud, Parity.None, 8, StopBits.One);
@@ -1258,7 +1260,7 @@ namespace testapp.test_cases
                     c = "fail;serial_not_open";
                     return "fail";
                 }
-
+                goto abc;
                 // === Step 2: 继电器上电 ===
                 string relayFunc = relayModule;
                 if (tc.funcs.ContainsKey(relayFunc))
@@ -1272,7 +1274,7 @@ namespace testapp.test_cases
                     c = "fail;relay_func_not_found";
                     return "fail";
                 }
-
+               abc:
                 // === Step 3: 中断 u-boot ===
                 utility_func.callbackdebuginfo("[HERO_FINAL] program_mac: interrupting u-boot...");
                 string ubootOut;
