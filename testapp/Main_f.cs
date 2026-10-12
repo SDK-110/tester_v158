@@ -159,6 +159,13 @@ namespace testapp
         Worksheet myworksheet1;
         private bool glob_is_cancel;
         private int key_down_flog;
+        /*多條碼掃描狀態*/
+        private List<bar_rule> bar_rules = new List<bar_rule>();
+        private int bar_index = 0;
+        private List<string> bar_scanned = new List<string>();
+        private string bar_rules_sig = null;
+        private bool bar_label2_color_read = false;
+        private Color bar_label2_color = Color.Black;
 
         public Main_f()
         {
@@ -385,12 +392,13 @@ namespace testapp
                         if (inidata["setbarcode"]["barenable"] == "true")
                         {
 
-                            MatchCollection reg = new Regex(inidata["setbarcode"]["barreg"]).Matches(this.textBox1.Text);
-
-                            //  MessageBox.Show("Test-->" + reg.Count + "-->" + this.textBox1.Text);
-                            //  return;
-                            // if (dt["setbarcode"]["barlen"] == this.textBox1.Text.Length.ToString() && dt["setbarcode"]["barenable"] == "true")
-                            if (reg.Count > 0 && inidata["setbarcode"]["barenable"] == "true")
+                            /*多條碼：規則不符 / 重複 / 沒掃滿，都不啟動測試*/
+                            string bar_err = "";
+                            if (barcode_try_accept(this.textBox1.Text, out bar_err) == false)
+                            {
+                                barcode_show_err(bar_err);
+                                break;
+                            }
 
                             {
                                 // button2.PerformClick();
@@ -404,12 +412,6 @@ namespace testapp
                                 label3.Text = "running test1";
                                 label3.BackColor = Color.GreenYellow;
                                 backgroundWorker1.RunWorkerAsync();
-                            }
-                            // else if (dt["setbarcode"]["barlen"] != this.textBox1.Text.Length.ToString() && dt["setbarcode"]["barenable"] == "true")
-                            else if (!(reg.Count > 0 && inidata["setbarcode"]["barenable"] == "true"))
-                            {
-
-                                // MessageBox.Show("条码规则不对");
                             }
 
                         }
@@ -501,13 +503,28 @@ namespace testapp
 
                                   
 
-                                    MatchCollection reg = new Regex(inidata["setbarcode"]["barreg"]).Matches(this.textBox1.Text);
+                                    /*多條碼：規則不符 / 重複 / 沒掃滿，都不啟動測試*/
+                                    bool bar_ok = false;
+                                    string bar_err = "";
+                                    if (inidata["setbarcode"]["barenable"] == "true")
+                                    {
+                                        bar_ok = barcode_try_accept(this.textBox1.Text, out bar_err);
+                                    }
 
-                                    //  MessageBox.Show("Test-->" + reg.Count + "-->" + this.textBox1.Text);
-                                    //  return;
-                                    // if (dt["setbarcode"]["barlen"] == this.textBox1.Text.Length.ToString() && dt["setbarcode"]["barenable"] == "true")
-                                    if (reg.Count > 0 && inidata["setbarcode"]["barenable"] == "true")
-
+                                    if (inidata["setbarcode"]["barenable"] != "true")
+                                    {
+                                        /*無條碼機種：沿用原 PLC 直接啟動流程（不帶 SN）*/
+                                        this.timestart = 1;
+                                        this.textBox3.Text = DateTime.Now.ToString("HH:mm:ss:ffff") + ""; ;
+                                        ts1 = new TimeSpan(DateTime.Now.Ticks);
+                                        this.textBox4.Text = "";
+                                        this.textBox5.Text = "";
+                                        label3.Text = "running test0";
+                                        label3.BackColor = Color.GreenYellow;
+                                        viewloader.table_load_into_viewer();
+                                        backgroundWorker1.RunWorkerAsync();
+                                    }
+                                    else if (bar_ok)
                                     {
                                         // button2.PerformClick();
                                         testcase_lib.input_sn = this.textBox1.Text;
@@ -521,19 +538,9 @@ namespace testapp
                                         label3.BackColor = Color.GreenYellow;
                                         backgroundWorker1.RunWorkerAsync();
                                     }
-                                    // else if (dt["setbarcode"]["barlen"] != this.textBox1.Text.Length.ToString() && dt["setbarcode"]["barenable"] == "true")
-                                    else if (!(reg.Count > 0 && inidata["setbarcode"]["barenable"] == "true"))
+                                    else
                                     {
-
-                                        this.timestart = 1;
-                                        this.textBox3.Text = DateTime.Now.ToString("HH:mm:ss:ffff") + ""; ;
-                                        ts1 = new TimeSpan(DateTime.Now.Ticks);
-                                        this.textBox4.Text = "";
-                                        this.textBox5.Text = "";
-                                        label3.Text = "running test0";
-                                        label3.BackColor = Color.GreenYellow;
-                                        viewloader.table_load_into_viewer();
-                                        backgroundWorker1.RunWorkerAsync();
+                                        barcode_show_err(bar_err);
                                     }
 
 
@@ -711,6 +718,7 @@ namespace testapp
             // rep1.ClearCell(8, 2, 8, 300);
             //SendMessage(ptrWnd, WM_SENDA, IntPtr.Zero, DateTime.Now.ToString("yyyy-MM-dd hh-mm-ss"));
             this.textBox1.Text = "";
+            barcode_reset();      /*多條碼：無條碼啟動時清掉上一輪掃描狀態*/
             this.timestart = 1;
             this.textBox3.Text = DateTime.Now.ToString("HH:mm:ss:ffff") + ""; ;
             ts1 = new TimeSpan(DateTime.Now.Ticks);
@@ -951,6 +959,7 @@ namespace testapp
                     this.sgw_record_sn = this.textBox1.Text;
                     this.textBox1.Text = "";
                     this.textBox1.Focus();
+                    barcode_reset();      /*多條碼：新一輪重新掃*/
                 }
 
                 return;
@@ -1156,6 +1165,7 @@ namespace testapp
                 this.sgw_record_sn = this.textBox1.Text;
                 this.textBox1.Text = "";
                 this.textBox1.Focus();
+                barcode_reset();      /*多條碼：新一輪重新掃*/
             }
             if ((string)resultt == "pass")
             {
@@ -1644,12 +1654,13 @@ private void Form1_KeyDown(object sender, KeyEventArgs e)
                 if (inidata["setbarcode"]["barenable"] == "true")
                 {
 
-                    MatchCollection reg = new Regex(inidata["setbarcode"]["barreg"]).Matches(this.textBox1.Text);
-
-                    //  MessageBox.Show("Test-->" + reg.Count + "-->" + this.textBox1.Text);
-                    //  return;
-                    // if (dt["setbarcode"]["barlen"] == this.textBox1.Text.Length.ToString() && dt["setbarcode"]["barenable"] == "true")
-                        if (reg.Count == 0) return;
+                    /*多條碼：規則不符 / 重複 / 沒掃滿，都不啟動測試*/
+                    string bar_err = "";
+                    if (barcode_try_accept(this.textBox1.Text, out bar_err) == false)
+                    {
+                        barcode_show_err(bar_err);
+                        return;
+                    }
                         testcase_lib.input_sn = this.textBox1.Text;
                         textBox1.Enabled = false;
                         this.timestart = 1;
@@ -2018,19 +2029,171 @@ private void 同时清除白夜班数据ToolStripMenuItem_Click(object sender, E
 
 
 
+#region /*-------------多條碼掃描 MULTI BARCODE------------*/
+private class bar_rule
+{
+    public string name = "";
+    public string reg = "";
+}
+
+/// <summary>
+/// 按 [setbarcode] 配置重建規則表。配置沒變則直接返回，保留當前掃描進度。
+/// count 存在時讀 barreg1..N/name1..N（多條碼）；否則兼容舊配置，只用 barreg（單條碼）。
+/// </summary>
+private void barcode_rules_sync()
+{
+    var sec = inidata["setbarcode"];
+    string sig = "";
+    if (sec != null)
+    {
+        sig = (sec["barenable"] ?? "") + "|" + (sec["count"] ?? "") + "|" + (sec["barreg"] ?? "");
+        int n = 0;
+        int.TryParse(sec["count"], out n);
+        for (int i = 1; i <= n; i++) sig += "|" + (sec["barreg" + i] ?? "") + "~" + (sec["name" + i] ?? "");
+    }
+    if (bar_rules_sig == sig && bar_rules.Count > 0) return;
+    bar_rules_sig = sig;
+    bar_rules.Clear();
+
+    int count = 0;
+    if (sec != null) int.TryParse(sec["count"], out count);
+    for (int i = 1; i <= count; i++)
+    {
+        string r = (sec["barreg" + i] ?? "").Trim();
+        if (r.Length == 0) continue;
+        bar_rule br = new bar_rule();
+        br.reg = r;
+        br.name = (sec["name" + i] ?? "").Trim();
+        if (br.name.Length == 0) br.name = "barcode" + (bar_rules.Count + 1);
+        bar_rules.Add(br);
+    }
+    if (bar_rules.Count == 0 && sec != null && (sec["barreg"] ?? "").Trim().Length > 0)
+    {
+        bar_rule br = new bar_rule();
+        br.reg = sec["barreg"].Trim();
+        br.name = "input_sn";
+        bar_rules.Add(br);
+    }
+    barcode_reset();
+}
+
+private bool barcode_is_english()
+{
+    return inidata["language"] != null && inidata["language"]["english"] == "1";
+}
+
+/// <summary>刷 label2：err 非空顯示紅色錯誤，否則顯示第幾條/共幾條的提示</summary>
+private void barcode_prompt(string err)
+{
+    if (bar_label2_color_read == false)
+    {
+        bar_label2_color = label2.ForeColor;
+        bar_label2_color_read = true;
+    }
+    if (err != null && err.Length > 0)
+    {
+        label2.ForeColor = Color.Red;
+        label2.Text = err;
+        return;
+    }
+    label2.ForeColor = bar_label2_color;
+    bool eng = barcode_is_english();
+    if (bar_rules.Count <= 1 || bar_index >= bar_rules.Count)
+    {
+        label2.Text = eng ? "please scan barcode :" : "条码扫入：";
+        return;
+    }
+    label2.Text = eng
+        ? string.Format("please scan barcode ({0}/{1}) {2} :", bar_index + 1, bar_rules.Count, bar_rules[bar_index].name)
+        : string.Format("条码扫入 ({0}/{1}) {2}：", bar_index + 1, bar_rules.Count, bar_rules[bar_index].name);
+}
+
+private void barcode_reset()
+{
+    bar_index = 0;
+    bar_scanned.Clear();
+    barcode_prompt("");
+}
+
+/// <summary>
+/// 逐條接收條碼：按“當前第 bar_index 條”的規則校驗，並拒絕重複條碼。
+/// 全部掃滿 → 寫入測試變數並返回 true（允許啟動測試）；否則返回 false，err 為提示信息。
+/// </summary>
+private bool barcode_try_accept(string text, out string err)
+{
+    err = "";
+    barcode_rules_sync();
+    if (bar_rules.Count == 0) return true;      // 沒配規則，維持原行為
+    if (bar_index >= bar_rules.Count) return true;  // 本輪已掃滿
+
+    text = (text ?? "").Trim();
+    if (text.Length == 0) { barcode_prompt(""); return false; }   // 空輸入不報錯，只刷新提示
+
+    bar_rule rule = bar_rules[bar_index];
+    if (new Regex(rule.reg).Matches(text).Count == 0)
+    {
+        err = barcode_is_english()
+            ? string.Format("barcode {0}/{1} ({2}) not match rule", bar_index + 1, bar_rules.Count, rule.name)
+            : string.Format("第{0}/{1}条 ({2}) 条码不符合规则", bar_index + 1, bar_rules.Count, rule.name);
+        this.textBox1.Text = "";
+        return false;
+    }
+    if (bar_scanned.Contains(text))
+    {
+        err = barcode_is_english()
+            ? string.Format("duplicate barcode ({0})", rule.name)
+            : string.Format("条码重复 ({0})", rule.name);
+        this.textBox1.Text = "";
+        return false;
+    }
+
+    bar_scanned.Add(text);
+    bar_index++;
+    if (bar_index < bar_rules.Count)
+    {
+        this.textBox1.Text = "";        // 清空，等下一條
+        barcode_prompt("");
+        return false;
+    }
+    barcode_commit();                   // 掃滿：寫入測試變數
+    return true;
+}
+
+/// <summary>掃滿後寫入測試變數：第1條為 SN（向後兼容），其餘按 nameN 存入全局變數</summary>
+private void barcode_commit()
+{
+    for (int i = 0; i < bar_rules.Count && i < bar_scanned.Count; i++)
+    {
+        string v = bar_scanned[i];
+        if (i == 0) testcase_lib.input_sn = v;
+        testcase_lib.golb_var_default[bar_rules[i].name] = v;
+    }
+    // 保留舊行為：textBox1 內留著 SN，CSV / sgw_record_sn 等仍取到第1條
+    if (bar_scanned.Count > 0) this.textBox1.Text = bar_scanned[0];
+    barcode_prompt("");
+}
+
+private void barcode_show_err(string err)
+{
+    if (err != null && err.Length > 0) barcode_prompt(err);
+}
+#endregion
+
 private void textBox1_KeyDown(object sender, KeyEventArgs e)
 {
     if (inidata["statu"]["plc_auto"] != null) return;
     if (e.KeyCode == Keys.Enter || e.KeyData==Keys.F4) {
 
-                MatchCollection reg = new Regex(inidata["setbarcode"]["barreg"]).Matches(this.textBox1.Text);
-            
-                //  MessageBox.Show("Test-->" + reg.Count + "-->" + this.textBox1.Text);
-                //  return;
-                // if (dt["setbarcode"]["barlen"] == this.textBox1.Text.Length.ToString() && dt["setbarcode"]["barenable"] == "true")
-        if (reg.Count>0 && inidata["setbarcode"]["barenable"] == "true")
+        if (inidata["setbarcode"]["barenable"] == "true")
+        {
+            /*多條碼：規則不符 / 重複 / 沒掃滿，都不啟動測試*/
+            string bar_err = "";
+            if (barcode_try_accept(this.textBox1.Text, out bar_err) == false)
+            {
+                barcode_show_err(bar_err);
+                return;
+            }
 
-          {
             // button2.PerformClick();
             testcase_lib.input_sn = this.textBox1.Text;
             textBox1.Enabled = false;
@@ -2044,14 +2207,6 @@ private void textBox1_KeyDown(object sender, KeyEventArgs e)
           viewloader.table_load_into_viewer();
           backgroundWorker1.RunWorkerAsync();
         }
-                // else if (dt["setbarcode"]["barlen"] != this.textBox1.Text.Length.ToString() && dt["setbarcode"]["barenable"] == "true")
-        else if (!(reg.Count > 0 && inidata["setbarcode"]["barenable"] == "true"))
-        {
-
-           // MessageBox.Show("条码规则不对");
-        }
-
-
     }
 }
 
@@ -2335,6 +2490,8 @@ private void 汉语ToolStripMenuItem_Click(object sender, EventArgs e)
             {
                 viewloader.tester_proj[i].tf_handler = update_dataview;
             }
+
+            barcode_rules_sync();     /*多條碼：加載 [setbarcode] 規則並刷提示*/
 
             if (inidata["setbarcode"]["barenable"] == "true")
             {

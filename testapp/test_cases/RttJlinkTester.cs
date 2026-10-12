@@ -84,6 +84,7 @@ namespace testapp.test_cases
             tc.funcs[id + "write_deviceid"]      = rtt_write_deviceid;
             tc.funcs[id + "dongle_read_sn"]      = rtt_dongle_read_sn;
             tc.funcs[id + "dongle_connect"]      = rtt_dongle_connect;
+            tc.funcs[id + "write_barcode"]       = rtt_write_barcode;
         }
 
 
@@ -1486,7 +1487,70 @@ namespace testapp.test_cases
                 return "fail";
             }
         }
+        private string rtt_write_barcode(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
 
+                string[] seg = (d ?? "").Split(';');
+                if (seg.Length < 3)
+                { c = "fail;bad_param"; return "fail"; }
+
+                string pattern = seg[0].Trim();
+                if (string.IsNullOrEmpty(pattern))
+                { c = "fail;no_regex"; return "fail"; }
+                // 验证正则有效性
+                try { new Regex(pattern); }
+                catch { c = "fail;invalid_regex"; return "fail"; }
+
+                // 从全局变量取 MAC（条码扫描时按 setup.ini [setbarcode] 的 nameN 写入）
+                if (tc.golb_var_default.TryGetValue("MAC", out object mac_val) == false || mac_val == null)
+                {
+                    mylib.utility_func.callbackdebuginfo("[RTT] write_barcode: 全局变量中没有 MAC（检查 setup.ini [setbarcode] 的 nameN 是否为 MAC）");
+                    c = "fail;no_mac";
+                    return "fail";
+                }
+                string mac_str = mac_val.ToString().Trim();
+                if (string.IsNullOrEmpty(mac_str))
+                { c = "fail;no_mac"; return "fail"; }
+                mac_str = "7C51" + mac_str.Replace(":", "").Replace("-", "").ToUpper();
+                // 正则验证条码
+                if (!Regex.IsMatch(mac_str, pattern))
+                {
+                    mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 条码 [{mac_str}] 不匹配正则 [{pattern}]");
+                    c = "fail;barcode_mismatch";
+                    return "fail";
+                }
+
+                mylib.utility_func.callbackdebuginfo($"[RTT] scan_barcode: 条码验证通过 [{mac_str}]");
+
+                // RTT 读取 UUID（蓝牙 MAC 无冒号）
+                string ct = mylib.utility_func.run_console_pip(seg[1], 50000, "pass", mac_str).ToString();
+                string result = "";
+                if (ct.IndexOf(seg[2]) >= 0)
+                {
+
+                    c = "pass";
+                    return "pass";
+                }
+                else
+                {
+
+                    c = "fail";
+                    return "fail";
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] write_barcode: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
         // ============================================================
         // 内部工具
         // ============================================================
