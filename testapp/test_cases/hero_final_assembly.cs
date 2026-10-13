@@ -97,8 +97,14 @@ namespace testapp.test_cases
             // ── 序列号编程 (通过串口发送 eeprog 命令写入 EEPROM) ──
             tc.funcs.Add(id + "program_serial_number", program_serial_number);
 
+            // ── 序列号 / MAC / 软件版本回读 (通过串口执行取数命令并解析) ──
+            tc.funcs.Add(id + "read_sn_mac_version", read_sn_mac_version);
+
             // ── 优雅关机 (通过串口发送 sync + halt) ──
             tc.funcs.Add(id + "graceful_shutdown", graceful_shutdown);
+
+            // ── 执行桌面 VerifyAndDocumentFields.ps1, 追加记录到 Beloit HERO 日志 (工位机 PowerShell) ──
+            tc.funcs.Add(id + "run_verify_document", run_verify_document);
 
             // ── MAC 地址编程与安全锁定 (u-boot fuse) ──
             tc.funcs.Add(id + "program_mac_and_lock", program_mac_and_lock);
@@ -843,6 +849,61 @@ namespace testapp.test_cases
         }
 
         /// <summary>
+        /// 主动催出 shell 提示符 (不登录)。
+        ///
+        /// 提示符不是设备主动发出的: shell 只在自己回到"读取输入"状态时才打印 PS1,
+        /// 而它只在读到行结束符后才会重新回到该状态。因此外部唯一能触发的手段,
+        /// 就是主动发一个回车给它。做法是 write-then-poll:
+        /// 在超时窗口内周期性发回车, 每次发完立刻检测提示符, 而不是发一次然后干等。
+        /// 连续多轮无响应时补发一次 Ctrl-C (0x03), 用于清掉半截残留输入或挂住的前台进程。
+        ///
+        /// 注意: 本方法只用于"进入交互之前"。命令发出之后的等待必须用 wait_for_prompt,
+        ///       此时再发回车会滞留到命令结束后被 shell 读走, 污染回显。
+        /// </summary>
+        private bool wake_shell_prompt(int timeoutMs)
+        {
+            const int sliceMs = 300;   // 每轮"发 -> 检测"的间隔
+            const int maxCtrlC = 4;    // Ctrl-C 最多补发次数, 避免长时间刷屏/反复打断设备
+            clear_uboot_rx();
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            int attempt = 0;
+            int ctrlCSent = 0;
+            while (DateTime.UtcNow < deadline)
+            {
+                // 主动制造一次行结束事件, 让 shell 回显并打印新的提示符
+                ubootPort.Write("\r");
+
+                // 发出后小步轮询, 一旦出现提示符立即返回
+                var sliceEnd = DateTime.UtcNow.AddMilliseconds(sliceMs);
+                while (DateTime.UtcNow < sliceEnd && DateTime.UtcNow < deadline)
+                {
+                    Thread.Sleep(50);
+                    lock (ubootLock)
+                    {
+                        if (Regex.IsMatch(ubootRx.ToString(), UbootPromptPattern, RegexOptions.None, TimeSpan.FromSeconds(1)))
+                            return true;
+                    }
+                }
+
+                attempt++;
+                if (attempt % 3 == 0 && ctrlCSent < maxCtrlC)
+                {
+                    // 连发 3 次回车仍无提示符, 多半卡在残留输入或前台进程上
+                    ctrlCSent++;
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] wake_shell_prompt: no prompt after {attempt} CR, sending Ctrl-C ({ctrlCSent}/{maxCtrlC})");
+                    ubootPort.Write("\u0003");
+                }
+            }
+
+            lock (ubootLock)
+            {
+                utility_func.callbackdebuginfo("[HERO_FINAL] wake_shell_prompt: timeout, tail=" +
+                    clean_uboot_output(ubootRx.ToString(), ""));
+            }
+            return false;
+        }
+
+        /// <summary>
         /// 从串口缓冲中提取指定标记之后的输出
         /// </summary>
         private string get_serial_output(string marker)
@@ -1073,6 +1134,222 @@ namespace testapp.test_cases
             catch (Exception ex)
             {
                 utility_func.callbackdebuginfo($"[HERO_FINAL] program_serial_number error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 读取序列号 / MAC / 软件版本 — 通过串口在树莓派 Linux 上执行取数命令,
+        /// 把 SN、MAC、软件版本汇总到 /tmp/SERIALMACVERSION.txt 后回读解析。
+        ///
+        /// 流程: 等待 shell 提示符(不登录) -> 执行取数命令 -> 回读并解析 3 个逗号字段
+        ///
+        /// d 参数: i2c_bus=<i2c总线号, 默认1>; eeprom_addr=<EEPROM地址, 默认0x54>
+        ///         timeout=<等待提示符/命令完成超时ms, 默认15000>
+        /// a/b = 无效, c = "SN=xxx;MAC=xxxxxxxxxxxx;VER=x.y.z" 或 "fail;reason"
+        /// 说明: MAC 以 12 位无冒号十六进制返回 (最终文件里的形态)。
+        /// </summary>
+        private string read_sn_mac_version(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            const string smvBegin = "SMV_BEGIN";
+            const string smvEnd = "SMV_END";
+            try
+            {
+                var p = parse_d(d);
+                string i2cBus = get_optional(p, "i2c_bus", "1");
+                string eepromAddr = get_optional(p, "eeprom_addr", "0x54");
+                int timeout = get_int(p, "timeout", 15000);
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    c = "fail;serial_not_open";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] read_sn_mac_version: serial not open");
+                    return "fail";
+                }
+
+                // Step 1: 主动催出 shell 提示符 (不登录)
+                // 周期性发回车并同时检测提示符; 不是发一次然后干等整个超时
+                if (!wake_shell_prompt(timeout))
+                {
+                    c = "fail;no_prompt";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] read_sn_mac_version: no shell prompt");
+                    return "fail";
+                }
+
+                // Step 2: 执行取数命令, 用 BEGIN/END 标记包住最终结果
+                clear_uboot_rx();
+                ubootPort.WriteLine(
+                    "( eeprog -qf /dev/i2c-" + i2cBus + " -f " + eepromAddr + " -8 -r 0x20:12 ) > /tmp/SERIALMACVERSION1.txt; " +
+                    "ifconfig eth0 | grep -oE '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}' >> /tmp/SERIALMACVERSION1.txt; " +
+                    "rpm -qi packagegroup-ecolab-nalco-app | grep \"Version\" | grep -oE '([0-9].[0-9].[0-9])' >> /tmp/SERIALMACVERSION1.txt; " +
+                    "tr -d ':' < /tmp/SERIALMACVERSION1.txt | paste -sd, > /tmp/SERIALMACVERSION.txt; " +
+                    "echo " + smvBegin + "; cat /tmp/SERIALMACVERSION.txt; echo " + smvEnd);
+                if (!wait_for_prompt(timeout))
+                {
+                    c = "fail;cmd_timeout";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] read_sn_mac_version: command timeout");
+                    return "fail";
+                }
+
+                // Step 3: 从串口缓冲中取出标记之间的结果 (取最后一次出现, 避开回显的命令行)
+                string raw;
+                lock (ubootLock) { raw = ubootRx.ToString(); }
+                raw = raw.Replace("\r", "\n");
+
+                string line = "";
+                int bIdx = raw.LastIndexOf(smvBegin, StringComparison.Ordinal);
+                if (bIdx >= 0)
+                {
+                    int eIdx = raw.IndexOf(smvEnd, bIdx + smvBegin.Length, StringComparison.Ordinal);
+                    if (eIdx > bIdx)
+                        line = raw.Substring(bIdx + smvBegin.Length, eIdx - bIdx - smvBegin.Length);
+                }
+                line = line.Replace("\n", "").Trim();
+
+                if (string.IsNullOrEmpty(line))
+                {
+                    c = "fail;no_result";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] read_sn_mac_version: no result captured");
+                    return "fail";
+                }
+
+                // Step 4: 解析 SN,MAC,VER
+                string[] fields = line.Split(',');
+                if (fields.Length != 3)
+                {
+                    c = "fail;parse_error;raw=" + line;
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] read_sn_mac_version: unexpected field count {fields.Length}: {line}");
+                    return "fail";
+                }
+
+                string sn = fields[0].Trim();
+                string mac = fields[1].Trim().ToUpperInvariant();
+                string ver = fields[2].Trim();
+
+                if (sn.Length == 0 || mac.Length == 0 || ver.Length == 0)
+                {
+                    c = "fail;empty_field;raw=" + line;
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] read_sn_mac_version: empty field: {line}");
+                    return "fail";
+                }
+
+                c = $"SN={sn};MAC={mac};VER={ver}";
+                utility_func.callbackdebuginfo($"[HERO_FINAL] read_sn_mac_version: SN={sn}, MAC={mac}, VER={ver}");
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] read_sn_mac_version error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 10c — 运行工位机桌面上的 VerifyAndDocumentFields.ps1（PowerShell）,
+        /// 把本机 SN/MAC/版本记录追加到 Beloit 的 HERO 日志 (X: 盘 CSV)。
+        ///
+        /// 脚本须由操作员预先从 X:\globalops\SHARED\Ecolab Software\Hero Spartan\ 拷贝到桌面;
+        /// 本步骤只检查脚本存在性, 不自动拷贝 (客户 SOP: downloaded onto the desktop and trusted)。
+        ///
+        /// d 参数: script=<脚本完整路径, 默认 C:\users\DCS\desktop\Hero Spartan\VerifyAndDocumentFields.ps1>
+        ///         args=<传给脚本的额外参数, 可空>; timeout=<超时ms, 默认60000>
+        /// a/b = 无效, c = "pass" 或 "fail;reason"
+        /// 判定: 进程退出码 == 0 且输出中出现 [OK] 关键字 才 pass;
+        ///       任何失败均按客户 SOP 打出 "ERROR! CONTACT QUALITY IMMEDIATELY"。
+        /// 实时性: 逐行读取脚本输出, 每行立刻 callbackdebuginfo 刷到 debug 窗体。
+        /// </summary>
+        private string run_verify_document(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                string script = get_optional(p, "script",
+                    @"C:\users\DCS\desktop\Hero Spartan\VerifyAndDocumentFields.ps1");
+                string extraArgs = get_optional(p, "args", "");
+                int timeout = get_int(p, "timeout", 60000);
+
+                // Step 1: 检查脚本存在性 (由操作员预先从 X: 盘拷贝, 程序不代拷)
+                if (!System.IO.File.Exists(script))
+                {
+                    c = "fail;script_missing";
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] run_verify_document: script not found: {script}");
+                    utility_func.callbackdebuginfo("ERROR! CONTACT QUALITY IMMEDIATELY");
+                    return "fail";
+                }
+
+                utility_func.callbackdebuginfo($"[HERO_FINAL] run_verify_document: run {script}");
+
+                // Step 2: cmd /c powershell ... 2>&1 —— stderr 合并进 stdout, 单流逐行读 (IpecmdRunner 同款模式)
+                string cmdLine = "powershell -NoProfile -ExecutionPolicy Bypass -File \"" + script + "\"" +
+                                 (extraArgs.Length > 0 ? " " + extraArgs : "") + " 2>&1";
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = "/c \"" + cmdLine + "\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                };
+
+                bool okKeyword = false;
+                string lastLine = "";
+
+                using (var process = new Process { StartInfo = psi })
+                {
+                    process.Start();
+                    var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
+                    System.Threading.Tasks.Task<string> readTask = process.StandardOutput.ReadLineAsync();
+
+                    while (true)
+                    {
+                        // 逐行异步读: 每等到一行立刻刷 debug 窗体, 同时保留超时响应能力
+                        if (readTask.Wait(200))
+                        {
+                            string line = readTask.Result;
+                            if (line == null) break;               // stdout 已结束
+                            lastLine = line;
+                            utility_func.callbackdebuginfo(line);
+                            if (line.IndexOf("[OK]", StringComparison.OrdinalIgnoreCase) >= 0)
+                                okKeyword = true;
+                            readTask = process.StandardOutput.ReadLineAsync();
+                        }
+
+                        if (DateTime.UtcNow > deadline)
+                        {
+                            try { process.Kill(); } catch { }
+                            process.WaitForExit(3000);
+                            utility_func.callbackdebuginfo("[HERO_FINAL] run_verify_document: timeout, process killed");
+                            utility_func.callbackdebuginfo("ERROR! CONTACT QUALITY IMMEDIATELY");
+                            c = "fail;timeout";
+                            return "fail";
+                        }
+                    }
+
+                    process.WaitForExit(5000);
+                    int exitCode = process.ExitCode;
+
+                    // Step 3: 双判 —— 退出码 + [OK] 关键字
+                    if (exitCode == 0 && okKeyword)
+                    {
+                        c = "pass";
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] run_verify_document: pass (exit=0, [OK] found, tail={lastLine})");
+                        return "pass";
+                    }
+
+                    utility_func.callbackdebuginfo("ERROR! CONTACT QUALITY IMMEDIATELY");
+                    c = "fail;exit_code=" + exitCode + (okKeyword ? "" : ";no_ok_keyword");
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] run_verify_document: fail (exit={exitCode}, okKeyword={okKeyword})");
+                    return "fail";
+                }
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] run_verify_document error: {ex.Message}");
+                utility_func.callbackdebuginfo("ERROR! CONTACT QUALITY IMMEDIATELY");
                 c = "error";
                 return "fail";
             }
