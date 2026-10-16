@@ -1,8 +1,7 @@
-using AntdUI;
+﻿using AntdUI;
 using IniParser.Model;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
 using PCHMI;
-using SprojFileBrowser;
 using System;
 using System.ComponentModel;
 using System.Drawing;
@@ -38,6 +37,8 @@ namespace test_antdui
         private string _operatorNo = "";
         private TestLoggerForm _logForm;
         private DebugControlForm _debugForm;
+        /// <summary>本轮测试是否走到过 OnTestCompleted（正常跑完）。用于判断 finally 里要不要兜底复位界面。</summary>
+        private bool _testCompleted;
         private RichTextBox _logTextBox;
         private CheckBox _chkAutoScroll;
 
@@ -72,15 +73,65 @@ namespace test_antdui
 
         public MainForm()
         {
+            // 深色主题必须在控件创建前设定：等整棵控件树建好再切主题会触发全量重绘，拖慢启动
+            AntdUI.Config.IsDark = true;
+            AntdUI.Style.SetPrimary(Palette.Accent);
+
+            // 【关键】改写 AntdUI 暗色主题自带的"中性灰"色卡（#141414/#1D1D1D/#3A414B…）。
+            // 不改这里，凡是 AntdUI 默认绘制的地方都会是灰的 —— Panel 的默认底、Table 表头、
+            // 表格边框、Input 底 —— 与我们的海军蓝系配色割裂，也会让卡片圆角缺口露出灰底。
+            // 必须在 IsDark = true 之后调用，Set 才会写进"暗色"这份色卡。
+            AntdUI.Style.Set(AntdUI.Colour.BgBase, Palette.Bg);                 // 窗体底
+            AntdUI.Style.Set(AntdUI.Colour.BgLayout, Palette.Bg);               // 布局底
+            AntdUI.Style.Set(AntdUI.Colour.BgContainer, Palette.Card);          // 容器/卡片底
+            AntdUI.Style.Set(AntdUI.Colour.BgElevated, Palette.Card);           // 浮层底
+            AntdUI.Style.Set(AntdUI.Colour.Split, Palette.Divider);             // 分隔线
+            AntdUI.Style.Set(AntdUI.Colour.BorderColor, Palette.Divider);       // 边框
+            AntdUI.Style.Set(AntdUI.Colour.Fill, Palette.Input);                // 输入框/填充底
+            AntdUI.Style.Set(AntdUI.Colour.FillSecondary, Palette.Input);
+            AntdUI.Style.Set(AntdUI.Colour.HoverBg, Palette.Track);             // hover 底
+            AntdUI.Style.Set(AntdUI.Colour.TextBase, Palette.TextPrimary);      // 主文字
+            AntdUI.Style.Set(AntdUI.Colour.Text, Palette.TextPrimary);
+            AntdUI.Style.Set(AntdUI.Colour.TextSecondary, Palette.TextSecondary); // 次文字
+            AntdUI.Style.Set(AntdUI.Colour.TextTertiary, Palette.TextMuted);    // 弱文字
+            AntdUI.Style.Set(AntdUI.Colour.Success, Palette.Pass);
+            AntdUI.Style.Set(AntdUI.Colour.Error, Palette.Fail);
+            AntdUI.Style.Set(AntdUI.Colour.Warning, Palette.Warning);
+
             InitializeComponent();
+
+            // KPI 卡片行自适应：原为硬编码绝对坐标，总宽超出面板、且最右卡 Dock=Right 会压住前一卡。
+            // 挂上重排后随窗体宽度变化自动适配。
+            _statsPanel.SizeChanged += (s, e) => LayoutKpiCards();
+            LayoutKpiCards();
+
+            // 图表高度按窗体高度自动分配（原来写死在 Designer 里，窗口越高图表越显扁）
+            SizeChanged += (s, e) => LayoutChartHeight();
+            LayoutChartHeight();
           
 
             // 图表暗色主题
-            _chartPanel.GridColor = Color.FromArgb(60, 60, 60);
-            _chartPanel.AxisColor = Color.FromArgb(60, 60, 60);
+            _chartPanel.GridColor = Palette.Divider;
+            _chartPanel.AxisColor = Palette.Divider;
             _chartPanel.YMax = null;        // 自动缩放Y轴
             _chartPanel.YMin = 0;
-            _chartPanel.ShowLegend = false; // 图例占用~70px，当前高度115px不够，禁用后数据区才有空间
+            // 柱状图：PASS/FAIL 两个数据集按小时分组并列，观感对齐参考界面
+            _chartPanel.ChartType = TChartType.Bar;
+            // 高度已由 LayoutChartHeight() 按窗体高度自动分配，图例放得下了
+            _chartPanel.ShowLegend = true;
+            // 图例底色/边框在 Designer 里是 null（取主题默认 -> 灰），改成透明，
+            // 让图例直接落在图表底色上；图例小方块的颜色由数据集上的 LegendBoxFillColor 决定。
+            _chartPanel.LegendBackColor = Color.Transparent;
+            _chartPanel.LegendBorderColor = Color.Transparent;
+
+            // 【紧凑化】AntdUI.Chart 在竖直方向吃掉大量空间：实测 190px 控件里绘图区只剩 23px。
+            // 用独立探针(chartprobe)逐项量过 —— 图例 -34px、标题 -28px、Padding -16px。
+            // 图例默认 TopRight 会独占一条横带；改成 MiddleRight 让它落到绘图区右侧空白处，
+            // 绘图区 23px -> 71px（3 倍）。Padding 默认 20、LegendPadding 默认 10，一并归零。
+            _chartPanel.Padding = 0;
+            _chartPanel.LegendPadding = 0;
+            _chartPanel.LegendPosition = ContentAlignment.MiddleRight;
+
             _chartPanel.ShowXAxisLabels = true;
             _chartPanel.XAxisLabelFormat = "{0}:00";
             _chartPanel.ShowYAxisLabels = true;
@@ -107,7 +158,6 @@ namespace test_antdui
             CreateLogForm2();
             LoadConfig();
             AutoLoadTemplate();
-            AntdUI.Config.IsDark = true;
 
             inidata = glob_ini_instance.getInstance().getSetupIniData;
             iniread = glob_ini_instance.getInstance().fileIni;
@@ -122,6 +172,138 @@ namespace test_antdui
             _statsTimer.Start();
 
             UpdateClock();
+        }
+
+        // ═══ KPI 卡片行自适应布局 ════════════════════════
+
+        private const int KpiPad = 12;   // 卡片行左右留白
+        private const int KpiGap = 12;   // 卡片间距
+
+        /// <summary>
+        /// 按面板实际宽度重排 KPI 卡片行。
+        ///
+        /// 为什么需要：设计期这四张卡是硬编码绝对坐标，总宽 396+406+246+356 = 1404，
+        /// 而 _statsPanel 可用宽度只有 1370-24 = 1346 —— 即使在设计尺寸下也放不下；
+        /// 且 panel_Project_name 用 Dock=Right，窗体一变窄就左移压住 _cardOperator
+        /// （实测窗体 1370 宽时重叠约 88px）。另外四张卡高度还不一致（三张 100、右侧 84）。
+        /// 这里统一：高度取满面板、宽度按原设计比例等分、间距固定。
+        /// </summary>
+        private void LayoutKpiCards()
+        {
+            if (_statsPanel == null || _statsPanel.IsDisposed) return;
+
+            var cards = new Control[] { _cardTotal, _cardHourly, _cardOperator, panel_Project_name };
+            // 原设计期宽度，仅作为"相对宽窄"的权重，不再决定绝对尺寸
+            float[] weights = { 396f, 406f, 246f, 356f };
+
+            int panelW = _statsPanel.ClientSize.Width;
+            int panelH = _statsPanel.ClientSize.Height;
+            int n = cards.Length;
+            int avail = panelW - KpiPad * 2 - KpiGap * (n - 1);
+            if (avail <= 0 || panelH <= 0) return;
+
+            float sum = 0f;
+            for (int i = 0; i < n; i++) sum += weights[i];
+
+            int x = KpiPad;
+            int used = 0;
+            for (int i = 0; i < n; i++)
+            {
+                // 最后一格吃余量，避免逐格取整累积出几像素的缝
+                int w = (i == n - 1)
+                    ? Math.Max(avail - used, 1)
+                    : (int)Math.Round(avail * weights[i] / sum);
+                used += w;
+                cards[i].SetBounds(x, 0, w, panelH);
+                x += w + KpiGap;
+            }
+
+            LayoutMetricCard(_lblTotalTitle,
+                new Control[] { _lblTotalCount, _lblTotalPass, _lblTotalFail, _lblTotalYield },
+                new Control[] { _lblTotalSubTotal, _lblTotalSubPass, _lblTotalSubFail, _lblTotalSubYield },
+                _barTotalBg);
+
+            LayoutMetricCard(_lblHourTitle,
+                new Control[] { _lblHourCount, _lblHourPass, _lblHourFail, _lblHourYield },
+                new Control[] { _lblHourSubTotal, _lblHourSubPass, _lblHourSubFail, _lblHourSubYield },
+                _barHourBg);
+        }
+
+        /// <summary>
+        /// 重排一张"四指标"卡片的内容：标题 / 大数字 / 小字说明 / 进度条。
+        ///
+        /// 1) 竖直方向重新分带，消除设计期"大数字 30..59"与"小字 52..68"重叠 7px 的问题；
+        /// 2) 把小字提到 z-order 最前 —— 设计器的 Controls.Add 顺序让小字排在最靠后，
+        ///    会被大数字的不透明控件矩形盖住上半截，这就是"数字下面的字被遮挡"。
+        /// </summary>
+        private void LayoutMetricCard(Control title, Control[] numbers, Control[] subs, Control bar)
+        {
+            Control card = bar.Parent;          // _barTotalBg / _barHourBg 挂在卡片上
+            if (card == null) return;
+            int inner = Math.Max(card.ClientSize.Width - KpiPad * 2, 1);
+
+            // 竖直分带（卡片高 100）：8 / 31 / 63 / 86，互不重叠
+            if (title != null) title.Top = 8;
+            foreach (var c in numbers) c.Top = 31;
+            foreach (var c in subs) c.Top = 63;
+            bar.Top = 86;
+
+            // 四个指标列等分
+            for (int i = 0; i < 4; i++)
+            {
+                int cx = KpiPad + (int)((long)inner * i / 4);
+                if (i < numbers.Length) numbers[i].Left = cx;
+                if (i < subs.Length) subs[i].Left = cx;
+            }
+
+            bar.Left = KpiPad;
+            bar.Width = inner;                  // 进度条宽度自适应后，pass/fail 填充会跟着变
+
+            // z-order：先抬小字，再抬进度条（两者空间上不重叠，顺序仅为确定性）
+            foreach (var c in subs) c.BringToFront();
+            bar.BringToFront();
+        }
+
+        // ═══ 图表高度自适应 ══════════════════════════════
+
+        // 图表高度 = 窗体客户区高度 × ChartHeightRatio，再夹到 [Min, Max]。
+        //
+        // 用独立探针(chartprobe)量过：绘图区高 ≈ 控件高 × 0.63（标题+图例+Padding 都已在
+        // 构造函数里紧凑化，见 _chartPanel.Padding / LegendPosition 那几行）。实测曲线：
+        //     控件 120 -> 绘图区  75px      控件 200 -> 121px
+        //     控件 160 -> 绘图区  89px      控件 240 -> 153px
+        //     控件 180 -> 绘图区 105px      控件 280 -> 185px
+        // 所以 150~190 的控件已能给出 88~115px 的绘图区 —— 够用且不占地方。
+        //
+        // ⚠ 下限不要再往下调：控件低于 ~110 时绘图区会趋近于 0，表现为"看不到柱状图"
+        //   （控件的标题/X轴标签/内边距是固定开销）。0.11 那版就是这么翻车的。
+        private const float ChartHeightRatio = 0.16f;
+        private const int   ChartMinHeight   = 150;
+        private const int   ChartMaxHeight   = 190;
+        private const int   TableMinHeight   = 180;   // 表格保底（约 4 行 + 表头）
+
+        /// <summary>
+        /// 按窗体高度自动分配 _chartPanel 的高度。
+        /// 它 Dock=Top、_table Dock=Fill，所以在这里改高度会自动让 _table 让出/收回空间。
+        /// 原来高度写死在 Designer（115，后改 190），窗口越大图表越显扁。
+        /// </summary>
+        private void LayoutChartHeight()
+        {
+            if (_chartPanel == null || _chartPanel.IsDisposed) return;
+            int h = ClientSize.Height;
+            if (h <= 0) return;
+
+            // 停靠面板实际占掉的高度（不写死，面板高度以后可能改）
+            int occupied = _statsPanel.Height + _statusBar.Height + _bottomPanel.Height + _barcodePanel.Height;
+            int avail = h - occupied;                       // 图表 + 表格 可分配的总高
+
+            int target = (int)(h * ChartHeightRatio);
+            int cap = Math.Max(avail - TableMinHeight, ChartMinHeight);   // 别把表格挤没了
+            target = Math.Min(Math.Min(target, cap), ChartMaxHeight);
+            target = Math.Max(target, ChartMinHeight);
+
+            if (_chartPanel.Height != target)
+                _chartPanel.Height = target;
         }
 
         // ═══ Stats Update ════════════════════════════════
@@ -248,15 +430,16 @@ namespace test_antdui
 
             _chartPanel.ClearDatasets();
 
-            var failDs = new ChartDataset("FAIL", Color.FromArgb(239, 83, 80))
+            // ChartDataset(label, fillColor) 第二个参数就是填充色，柱状图直接用这个
+            var failDs = new ChartDataset("FAIL", Palette.Fail)
             {
-                BorderColor = Color.FromArgb(239, 83, 80),
-                BorderWidth = 3
+                BorderWidth = 0,                  // 折线时代是 3px 描边，柱状下会变成粗边框
+                LegendBoxFillColor = Palette.Fail // 图例小方块，不设会取主题默认的灰
             };
-            var passDs = new ChartDataset("PASS", Color.FromArgb(102, 187, 106))
+            var passDs = new ChartDataset("PASS", Palette.Pass)
             {
-                BorderColor = Color.FromArgb(102, 187, 106),
-                BorderWidth = 3
+                BorderWidth = 0,
+                LegendBoxFillColor = Palette.Pass
             };
 
             for (int i = 0; i < 24; i++)
@@ -301,7 +484,7 @@ namespace test_antdui
                 {
                     _sn = barcode;
                    // AntdUI.Message.success(this, AppStrings.Get("sn_entered", barcode));
-                    AddLog(AppStrings.Get("barcode_scanned", barcode), Color.FromArgb(79, 195, 247));
+                    AddLog(AppStrings.Get("barcode_scanned", barcode), Palette.AccentSoft);
 
                     _barcodeInput.Enabled = false;
                     _btnStart.PerformClick();
@@ -503,18 +686,26 @@ namespace test_antdui
 
         private void SetupTable()
         {
+            // 每列必须显式给 Width。AutoSizeColumnsMode=Fill 且不给宽度时, AntdUI 会按
+            // **单元格内容**计算列宽 —— 测试中 MeasuredValue/StateBadge/Duration 一变,
+            // 整行所有列就横向重排, 表现为"表格里的字符串一直位移"(实测: 改一个单元格,
+            // 其他列区域差异 1671px; 给定宽度后降到 137px)。Width 是字符串, 支持百分比。
             _table.Columns = new ColumnCollection
             {
-                new Column("Id", AppStrings.Get("col_id")),
-                new Column("Name", AppStrings.Get("col_name")),
-                new Column("LowLimit", AppStrings.Get("col_low")).SetColAlign(),
-                new Column("HighLimit", AppStrings.Get("col_high")).SetColAlign(),
-                new Column("MeasuredValue", AppStrings.Get("col_value")).SetColAlign(),
-                new Column("StateBadge", AppStrings.Get("col_result")).SetColAlign(),
-                new Column("Duration", AppStrings.Get("col_duration")).SetColAlign(),
+                new Column("Id", AppStrings.Get("col_id")) { Width = "6%" },
+                new Column("Name", AppStrings.Get("col_name")) { Width = "30%" },
+                new Column("LowLimit", AppStrings.Get("col_low")) { Width = "10%" }.SetColAlign(),
+                new Column("HighLimit", AppStrings.Get("col_high")) { Width = "10%" }.SetColAlign(),
+                new Column("MeasuredValue", AppStrings.Get("col_value")) { Width = "15%" }.SetColAlign(),
+                new Column("StateBadge", AppStrings.Get("col_result")) { Width = "18%" }.SetColAlign(),
+                new Column("Duration", AppStrings.Get("col_duration")) { Width = "11%" }.SetColAlign(),
             };
-            _table.RowSelectedBg = Color.FromArgb(24, 144, 255);
-            _table.RowSelectedFore = Color.White;
+            _table.RowSelectedBg = Palette.Accent;
+            _table.RowSelectedFore = Palette.TextPrimary;
+            // 表头/边框：不改会沿用 AntdUI 暗色主题的中性灰（实测表头 #1D1D1D、分隔线 #3A414B）
+            _table.ColumnBack = Palette.Header;
+            _table.ColumnFore = Palette.TextSecondary;
+            _table.BorderColor = Palette.Divider;
         }
 
         private void InitializeTestEngine()
@@ -666,14 +857,14 @@ namespace test_antdui
 
         private void OnEngineLogMessage(object sender, LogEventArgs e)
         {
-            Color logColor = Color.White;
+            Color logColor = Palette.TextPrimary;
             string msg = e.Message.ToUpper();
             if (msg.Contains("FAIL") || msg.Contains("ERROR"))
-                logColor = Color.FromArgb(245, 34, 45);
+                logColor = Palette.Fail;
             else if (msg.Contains("PASS"))
-                logColor = Color.FromArgb(82, 196, 26);
+                logColor = Palette.Pass;
             else if (msg.Contains("WARN"))
-                logColor = Color.FromArgb(250, 173, 20);
+                logColor = Palette.WarnSoft;
 
             AddLog(e.Message, logColor);
         }
@@ -689,8 +880,10 @@ namespace test_antdui
             if (e.Item != null)
             {
                 e.Item.StateBadge = new CellBadge(TState.Default, AppStrings.Get("state_running"));
-                e.Item.BackColor = Color.FromArgb(24, 144, 255);
-                _table.Refresh();           // 轻量重绘，不动行结构
+                e.Item.BackColor = Palette.Accent;
+                // 不再需要 _table.Refresh()：TestItem 已实现 INotifyPropertyChanged，
+                // 上面两行赋值会自动只重绘受影响的单元格（实测差异 240px vs 整表重绘 3078px）。
+                // 留着 Refresh() 反而会整表重绘 —— 那正是"每项抖一下"的来源。
                 _table.SelectedIndex = e.Index + 1;
                 _table.ScrollLine(e.Index + 1);
                 _table.Focus();
@@ -725,17 +918,17 @@ namespace test_antdui
                 if (e.Item.State == TestState.Pass)
                 {
                     badgeState = TState.Success;
-                    backColor = Color.FromArgb(43, 84, 44);
+                    backColor = Palette.PassDim;
                 }
                 else if (e.Item.State == TestState.Fail)
                 {
                     badgeState = TState.Error;
-                    backColor = Color.FromArgb(84, 29, 29);
+                    backColor = Palette.FailDim;
                 }
                 else if (e.Item.State == TestState.Skipped)
                 {
                     badgeState = TState.Warn;
-                    backColor = Color.FromArgb(60, 60, 60);
+                    backColor = Palette.Divider;
                 }
                 else
                 {
@@ -745,7 +938,7 @@ namespace test_antdui
                 e.Item.StateBadge = new CellBadge(badgeState, displayText);
                 e.Item.BackColor = backColor;
 
-                _table.Refresh();           // 轻量重绘
+                // 同上：单元格改由 INPC 自动刷新，不需要整表 Refresh()
                 _table.ScrollLine(e.Index + 1);
                 _table.SelectedIndex = e.Index + 1;
                 _table.Focus();
@@ -756,6 +949,9 @@ namespace test_antdui
 
         private void OnTestCompleted(object sender, TestEngineEventArgs e)
         {
+            // 先置位：即便下面因跨线程要 BeginInvoke 延迟执行，也算"已完成"，
+            // 避免 _btnStart_Click 的 finally 重复复位界面。
+            _testCompleted = true;
             if (InvokeRequired)
             {
                 BeginInvoke(new Action(() => OnTestCompleted(sender, e)));
@@ -792,8 +988,8 @@ namespace test_antdui
             _barcodeInput.Enabled = true;
             if (allPass)
             {
-                AddLog($"+++ SN {_sn} PASS +++", Color.FromArgb(82, 196, 26));
-                AddLog(AppStrings.Get("log_all_pass"), Color.FromArgb(82, 196, 26));
+                AddLog($"+++ SN {_sn} PASS +++", Palette.Pass);
+                AddLog(AppStrings.Get("log_all_pass"), Palette.Pass);
                 iconState.State = TType.Success;
                 tBadge7.State = TState.Success;
                 _tracker.RecordPass();
@@ -802,8 +998,8 @@ namespace test_antdui
             }
             else
             {
-                AddLog($"--- SN {_sn} FAIL ({failCount}) ---", Color.FromArgb(245, 34, 45));
-                AddLog(AppStrings.Get("log_fail", failCount), Color.FromArgb(245, 34, 45));
+                AddLog($"--- SN {_sn} FAIL ({failCount}) ---", Palette.Fail);
+                AddLog(AppStrings.Get("log_fail", failCount), Palette.Fail);
                 iconState.State = TType.Error;
                 tBadge7.State = TState.Error;
                 _tracker.RecordFail();
@@ -865,13 +1061,13 @@ namespace test_antdui
                 if (!log_append.Checked) TestLoggerForm.Instance.ClearLog();
             TestLoggerForm.SetLogPrefix(_sn);
             AddLog(AppStrings.Get("log_test_start"));
-            AddLog($">>> SN: {_sn} <<<", Color.FromArgb(79, 195, 247));
+            AddLog($">>> SN: {_sn} <<<", Palette.AccentSoft);
             iconState.State = TType.Warn;
             tBadge7.State = TState.Processing;
             SetAlertWarning(AppStrings.Get("alert_testing_sn", _sn));
             if (_project.Items.Count == 0)
             {
-                AddLog(AppStrings.Get("log_no_template"), Color.Red);
+                AddLog(AppStrings.Get("log_no_template"), Palette.Fail);
                 MessageBox.Show(AppStrings.Get("dlg_no_template"), AppStrings.Get("dlg_confirm"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -880,28 +1076,37 @@ namespace test_antdui
             _btnStart.Loading = true;
             progress3.Value = 0;
 
-            _project.ResetAllBadges();
-            _table.Refresh();           // 仅重绘，不需重建 DataSource
-
-            AddLog(AppStrings.Get("log_items", _project.Items.Count));
-
-            bool initOk = await _engine.RunInitAsync();
-            if (!initOk)
+            _testCompleted = false;
+            try
             {
-                AddLog(AppStrings.Get("log_init_fail"), Color.Red);
-                _btnStart.Enabled = true;
-                _btnStart.Loading = false;
-                return;
+                _project.ResetAllBadges();
+                _table.Refresh();           // 仅重绘，不需重建 DataSource
+
+                AddLog(AppStrings.Get("log_items", _project.Items.Count));
+
+                bool initOk = await _engine.RunInitAsync();
+                if (!initOk)
+                {
+                    AddLog(AppStrings.Get("log_init_fail"), Palette.Fail);
+                    return;
+                }
+
+                AddLog(AppStrings.Get("log_test_steps"));
+                await _engine.RunAsync();
+                await _engine.RunCleanupAsync();
+                AddLog(AppStrings.Get("log_test_complete"));
+
+                // 测试总耗时（含初始化与清理）
+                var elapsed = DateTime.Now - _testStartTime;
+                AddLog($"总耗时: {elapsed:hh\\:mm\\:ss\\.fff}", Palette.WarnSoft);
             }
-
-            AddLog(AppStrings.Get("log_test_steps"));
-            await _engine.RunAsync();
-            await _engine.RunCleanupAsync();
-            AddLog(AppStrings.Get("log_test_complete"));
-
-            // 测试总耗时（含初始化与清理）
-            var elapsed = DateTime.Now - _testStartTime;
-            AddLog($"总耗时: {elapsed:hh\\:mm\\:ss\\.fff}", Color.FromArgb(250, 173, 20));
+            finally
+            {
+                // TestEngine 只在"正常跑完"时触发 TestCompleted；取消（调试单步中途强行停止）、
+                // 初始化失败、异常这三条路径都不会触发，界面会永远停在禁用状态。
+                // 这里兜底复位，避免主窗体闭塞后无法恢复。
+                if (!_testCompleted) RestoreUiAfterAbort();
+            }
         }
 
         private void _btnLoad_Click(object sender, EventArgs e)
@@ -912,7 +1117,8 @@ namespace test_antdui
                 dialog.Title = AppStrings.Get("dlg_load_title");
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    label3.Text = Path.GetFileNameWithoutExtension(dialog.FileName);
+                    // 不在这里设 label3 —— 交给 LoadFromExcel() 统一按"实际解析出的工程名"设置，
+                    // 否则手动加载后显示文件名、重启后显示 sproj 的 B1 工程名，两不一致。
                     LoadFromExcel(dialog.FileName);
                 }
             }
@@ -961,12 +1167,18 @@ namespace test_antdui
                 }
                 _currentExcelPath = filePath;
                 TestConfigManager.UpdateLastExcelPath(filePath);
+
+                // 工程名统一取自实际解析出的 config.ProjectName（sproj 格式取 B1 单元格，普通 xlsx 取文件名）。
+                // 这样无论手动加载、自动加载还是重启，label3 显示的都与实际加载的工程一致。
+                string projName = TestConfigManager.Instance.ProjectName;
+                label3.Text = Path.GetFileNameWithoutExtension(
+                    string.IsNullOrEmpty(projName) ? filePath : projName);
                 RefreshTableData();
                 AddLog(AppStrings.Get("log_template_loaded", Path.GetFileName(filePath)));
             }
             catch (Exception ex)
             {
-                AddLog(AppStrings.Get("dlg_load_fail", ex.Message), Color.Red);
+                AddLog(AppStrings.Get("dlg_load_fail", ex.Message), Palette.Fail);
                 MessageBox.Show(AppStrings.Get("dlg_load_fail", ex.Message), AppStrings.Get("dlg_error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -1000,6 +1212,31 @@ namespace test_antdui
             }
         }
 
+        /// <summary>
+        /// 测试中断后的界面兜底复位。
+        ///
+        /// 为什么需要：恢复主窗体可用状态的代码原本只在 OnTestCompleted 里，
+        /// 而 TestEngine.RunAsync 只在"正常跑完"时才触发 TestCompleted 事件 ——
+        /// 取消（调试单步中途强行停止）、初始化失败、异常这三条路径都走不到，
+        /// 于是 _btnStart 一直停在 Enabled=false + Loading=true、_barcodeInput 也一直禁用，
+        /// 主窗体彻底闭塞、无法恢复。
+        ///
+        /// 注意这里只复位"界面可用性"，不碰统计与报告 —— 中断的这轮不应计入
+        /// _tracker 也不应生成报告，那是 OnTestCompleted 正常路径才做的事。
+        /// </summary>
+        private void RestoreUiAfterAbort()
+        {
+            _btnStart.Enabled = true;
+            _btnStart.Loading = false;
+            _barcodeInput.Enabled = true;
+            iconState.State = TType.None;
+            tBadge7.State = TState.Default;
+            SetAlertWarning(AppStrings.Get("alert_ready"));
+            if (_debugForm != null && !_debugForm.IsDisposed)
+                _debugForm.ResetState();
+            AddLog("测试已中断（未走完整流程），界面已复位", Palette.WarnSoft);
+        }
+
         private void SaveReportIfNeeded(bool allPass)
         {
             var config = TestConfigManager.Instance;
@@ -1024,11 +1261,11 @@ namespace test_antdui
                 string endTime = DateTime.Now.ToString("HH:mm:ss:ffff");
                 TestReportSaver.SaveToCsv(_project, sn, operatorNo, lineNumber, workStation, startTime, endTime, allPass);
 
-                AddLog(AppStrings.Get("log_report_saved"), Color.FromArgb(82, 196, 26));
+                AddLog(AppStrings.Get("log_report_saved"), Palette.Pass);
             }
             catch (Exception ex)
             {
-                AddLog(AppStrings.Get("log_report_fail", ex.Message), Color.Red);
+                AddLog(AppStrings.Get("log_report_fail", ex.Message), Palette.Fail);
             }
         }
 
@@ -1042,7 +1279,9 @@ namespace test_antdui
             _alertStatus.Icon = TType.Info;
             _alertStatus.TextTitle = AppStrings.Get("alert_ready");
             _alertStatus.Text = AppStrings.Get("alert_ready_sn", _sn);
-            label3.Text = Path.GetFileNameWithoutExtension(SprojFileBrowser.ProjectLoader.Instance.GetProjectNames()[0]);
+            // label3（工程名）已在 LoadConfig() 里由 config.ProjectName 设好，此处不要覆盖。
+            // 原代码用 ProjectLoader.GetProjectNames()[0] 覆盖 —— 那是旧版遗留源，新版从不更新，
+            // 显示的是旧版最后一次打开的工程，与实际加载的工程不一致。
             _statsPanel.Invalidate();
             _barcodeInput.Focus();
             menu1.Collapsed = true;
@@ -1112,7 +1351,7 @@ namespace test_antdui
                 _diMonitor.ScanError += OnDiError;
                 _diMonitor.Start();
 
-                AddLog($"DI monitor started on {port}", Color.FromArgb(79, 195, 247));
+                AddLog($"DI monitor started on {port}", Palette.AccentSoft);
             }
             catch { }
         }
@@ -1124,7 +1363,7 @@ namespace test_antdui
                 BeginInvoke(new Action(() => OnDiRising(channel)));
                 return;
             }
-            AddLog($"DI#{channel} ↑ (0→1)", Color.FromArgb(82, 196, 26));
+            AddLog($"DI#{channel} ↑ (0→1)", Palette.Pass);
             // TODO: add custom action per channel, e.g.:
             // switch (channel) {
             //     case 0: _btnStart.PerformClick(); break;
@@ -1139,7 +1378,7 @@ namespace test_antdui
                 BeginInvoke(new Action(() => OnDiFalling(channel)));
                 return;
             }
-            AddLog($"DI#{channel} ↓ (1→0)", Color.FromArgb(245, 34, 45));
+            AddLog($"DI#{channel} ↓ (1→0)", Palette.Fail);
         }
 
         private void OnDiError(string message)
@@ -1149,7 +1388,7 @@ namespace test_antdui
                 BeginInvoke(new Action(() => OnDiError(message)));
                 return;
             }
-            AddLog($"DI error: {message}", Color.Red);
+            AddLog($"DI error: {message}", Palette.Fail);
         }
 
         private void PwdInput_TextChanged(object sender, EventArgs e)
@@ -1273,11 +1512,11 @@ namespace test_antdui
                 {
                     try
                     {
-                        string path = SprojFileBrowser.ProjectLoader.Instance.GetProjectNames()[0];
-                        if (System.IO.File.Exists(path))
+                        string path = TestConfigManager.CurrentProjectPath;
+                        if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
                         {
                             LoadFromExcel(path);
-                            AddLog("Test cases reloaded from sproj", Color.FromArgb(82, 196, 26));
+                            AddLog("Test cases reloaded from sproj", Palette.Pass);
                         }
                     }
                     catch { }

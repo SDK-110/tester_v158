@@ -1,4 +1,4 @@
-namespace test_antdui
+﻿namespace test_antdui
 {
     partial class MainForm
     {
@@ -396,6 +396,9 @@ namespace test_antdui
             _statsPanel.ForeColor = System.Drawing.Color.Transparent;
             _statsPanel.Location = new System.Drawing.Point(52, 40);
             _statsPanel.Name = "_statsPanel";
+            // KPI 卡片容器必须显式设底色: 不设会画 AntdUI 默认灰底(#141414),
+            // 卡片之间会出现灰带, 圆角缺口也会露出灰底
+            _statsPanel.Back = Palette.Bg;
             _statsPanel.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
             _statsPanel.Size = new System.Drawing.Size(1370, 100);
             _statsPanel.TabIndex = 12;
@@ -404,9 +407,14 @@ namespace test_antdui
             // 
             panel_Project_name.Controls.Add(label3);
             panel_Project_name.Controls.Add(label4);
-            panel_Project_name.Dock = System.Windows.Forms.DockStyle.Right;
+            // Dock=Right 已移除: KPI 卡片行改由 MainForm.LayoutKpiCards() 统一按面板宽度重排,
+            // 否则窗体变窄时它会左移压住 _cardOperator
             panel_Project_name.Location = new System.Drawing.Point(1002, 8);
             panel_Project_name.Name = "panel_Project_name";
+            panel_Project_name.Back = Palette.Card;
+            panel_Project_name.BorderColor = Palette.Divider;
+            panel_Project_name.BorderWidth = 1;
+            panel_Project_name.Radius = 12;
             panel_Project_name.Size = new System.Drawing.Size(356, 84);
             panel_Project_name.TabIndex = 3;
             // 
@@ -414,7 +422,7 @@ namespace test_antdui
             // 
             label3.AutoSizeMode = AntdUI.TAutoSize.Auto;
             label3.Font = new System.Drawing.Font("Microsoft YaHei UI", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            label3.ForeColor = System.Drawing.Color.White;
+            label3.ForeColor = Palette.TextPrimary;
             label3.Location = new System.Drawing.Point(14, 30);
             label3.Name = "label3";
             label3.Size = new System.Drawing.Size(126, 27);
@@ -425,7 +433,7 @@ namespace test_antdui
             // 
             label4.AutoSizeMode = AntdUI.TAutoSize.Auto;
             label4.Font = new System.Drawing.Font("Microsoft YaHei UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            label4.ForeColor = System.Drawing.Color.FromArgb(136, 153, 170);
+            label4.ForeColor = Palette.TextSecondary;
             label4.Location = new System.Drawing.Point(12, 6);
             label4.Name = "label4";
             label4.Size = new System.Drawing.Size(46, 21);
@@ -440,6 +448,10 @@ namespace test_antdui
             _cardOperator.Controls.Add(_lblOpTitle);
             _cardOperator.Location = new System.Drawing.Point(844, 0);
             _cardOperator.Name = "_cardOperator";
+            _cardOperator.Back = Palette.Card;
+            _cardOperator.BorderColor = Palette.Divider;
+            _cardOperator.BorderWidth = 1;
+            _cardOperator.Radius = 12;
             _cardOperator.Size = new System.Drawing.Size(246, 100);
             _cardOperator.TabIndex = 2;
             // 
@@ -447,7 +459,7 @@ namespace test_antdui
             // 
             _lblOpTime.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblOpTime.Font = new System.Drawing.Font("Microsoft YaHei UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblOpTime.ForeColor = System.Drawing.Color.FromArgb(79, 195, 247);
+            _lblOpTime.ForeColor = Palette.AccentSoft;
             _lblOpTime.Location = new System.Drawing.Point(80, 52);
             _lblOpTime.Name = "_lblOpTime";
             _lblOpTime.Size = new System.Drawing.Size(63, 19);
@@ -458,7 +470,7 @@ namespace test_antdui
             // 
             _lblOpShift.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblOpShift.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblOpShift.ForeColor = System.Drawing.Color.FromArgb(255, 167, 38);
+            _lblOpShift.ForeColor = Palette.Warning;
             _lblOpShift.Location = new System.Drawing.Point(14, 52);
             _lblOpShift.Name = "_lblOpShift";
             _lblOpShift.Size = new System.Drawing.Size(25, 17);
@@ -469,7 +481,7 @@ namespace test_antdui
             // 
             _lblOpId.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblOpId.Font = new System.Drawing.Font("Microsoft YaHei UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblOpId.ForeColor = System.Drawing.Color.White;
+            _lblOpId.ForeColor = Palette.TextPrimary;
             _lblOpId.Location = new System.Drawing.Point(14, 30);
             _lblOpId.Name = "_lblOpId";
             _lblOpId.Size = new System.Drawing.Size(88, 19);
@@ -480,7 +492,7 @@ namespace test_antdui
             // 
             _lblOpTitle.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblOpTitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblOpTitle.ForeColor = System.Drawing.Color.FromArgb(136, 153, 170);
+            _lblOpTitle.ForeColor = Palette.TextSecondary;
             _lblOpTitle.Location = new System.Drawing.Point(12, 6);
             _lblOpTitle.Name = "_lblOpTitle";
             _lblOpTitle.Size = new System.Drawing.Size(70, 21);
@@ -501,12 +513,16 @@ namespace test_antdui
             _cardHourly.Controls.Add(_lblHourSubYield);
             _cardHourly.Location = new System.Drawing.Point(432, 0);
             _cardHourly.Name = "_cardHourly";
+            _cardHourly.Back = Palette.Card;
+            _cardHourly.BorderColor = Palette.Divider;
+            _cardHourly.BorderWidth = 1;
+            _cardHourly.Radius = 12;
             _cardHourly.Size = new System.Drawing.Size(406, 100);
             _cardHourly.TabIndex = 1;
             // 
             // _barHourBg
             // 
-            _barHourBg.Back = System.Drawing.Color.FromArgb(40, 40, 68);
+            _barHourBg.Back = Palette.Track;
             _barHourBg.Controls.Add(_barHourPass);
             _barHourBg.Controls.Add(_barHourFail);
             _barHourBg.Location = new System.Drawing.Point(10, 79);
@@ -516,7 +532,7 @@ namespace test_antdui
             // 
             // _barHourPass
             // 
-            _barHourPass.Back = System.Drawing.Color.FromArgb(102, 187, 106);
+            _barHourPass.Back = Palette.Pass;
             _barHourPass.Location = new System.Drawing.Point(0, 0);
             _barHourPass.Name = "_barHourPass";
             _barHourPass.Size = new System.Drawing.Size(0, 4);
@@ -524,7 +540,7 @@ namespace test_antdui
             // 
             // _barHourFail
             // 
-            _barHourFail.Back = System.Drawing.Color.FromArgb(239, 83, 80);
+            _barHourFail.Back = Palette.Fail;
             _barHourFail.Location = new System.Drawing.Point(0, 0);
             _barHourFail.Name = "_barHourFail";
             _barHourFail.Size = new System.Drawing.Size(0, 4);
@@ -534,7 +550,7 @@ namespace test_antdui
             // 
             _lblHourYield.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourYield.Font = new System.Drawing.Font("Microsoft YaHei UI", 15F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourYield.ForeColor = System.Drawing.Color.FromArgb(79, 195, 247);
+            _lblHourYield.ForeColor = Palette.AccentSoft;
             _lblHourYield.Location = new System.Drawing.Point(295, 30);
             _lblHourYield.Name = "_lblHourYield";
             _lblHourYield.Size = new System.Drawing.Size(31, 26);
@@ -545,7 +561,7 @@ namespace test_antdui
             // 
             _lblHourFail.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourFail.Font = new System.Drawing.Font("Microsoft YaHei UI", 17F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourFail.ForeColor = System.Drawing.Color.FromArgb(239, 83, 80);
+            _lblHourFail.ForeColor = Palette.Fail;
             _lblHourFail.Location = new System.Drawing.Point(200, 30);
             _lblHourFail.Name = "_lblHourFail";
             _lblHourFail.Size = new System.Drawing.Size(14, 29);
@@ -556,7 +572,7 @@ namespace test_antdui
             // 
             _lblHourPass.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourPass.Font = new System.Drawing.Font("Microsoft YaHei UI", 17F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourPass.ForeColor = System.Drawing.Color.FromArgb(102, 187, 106);
+            _lblHourPass.ForeColor = Palette.Pass;
             _lblHourPass.Location = new System.Drawing.Point(105, 30);
             _lblHourPass.Name = "_lblHourPass";
             _lblHourPass.Size = new System.Drawing.Size(14, 29);
@@ -567,7 +583,7 @@ namespace test_antdui
             // 
             _lblHourCount.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourCount.Font = new System.Drawing.Font("Microsoft YaHei UI", 17F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourCount.ForeColor = System.Drawing.Color.FromArgb(79, 195, 247);
+            _lblHourCount.ForeColor = Palette.AccentSoft;
             _lblHourCount.Location = new System.Drawing.Point(10, 30);
             _lblHourCount.Name = "_lblHourCount";
             _lblHourCount.Size = new System.Drawing.Size(14, 29);
@@ -578,7 +594,7 @@ namespace test_antdui
             // 
             _lblHourTitle.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourTitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourTitle.ForeColor = System.Drawing.Color.FromArgb(136, 153, 170);
+            _lblHourTitle.ForeColor = Palette.TextSecondary;
             _lblHourTitle.Location = new System.Drawing.Point(12, 6);
             _lblHourTitle.Name = "_lblHourTitle";
             _lblHourTitle.Size = new System.Drawing.Size(81, 21);
@@ -589,7 +605,7 @@ namespace test_antdui
             // 
             _lblHourSubTotal.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourSubTotal.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourSubTotal.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblHourSubTotal.ForeColor = Palette.TextMuted;
             _lblHourSubTotal.Location = new System.Drawing.Point(10, 52);
             _lblHourSubTotal.Name = "_lblHourSubTotal";
             _lblHourSubTotal.Size = new System.Drawing.Size(29, 16);
@@ -600,7 +616,7 @@ namespace test_antdui
             // 
             _lblHourSubPass.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourSubPass.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourSubPass.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblHourSubPass.ForeColor = Palette.TextMuted;
             _lblHourSubPass.Location = new System.Drawing.Point(105, 52);
             _lblHourSubPass.Name = "_lblHourSubPass";
             _lblHourSubPass.Size = new System.Drawing.Size(30, 16);
@@ -611,7 +627,7 @@ namespace test_antdui
             // 
             _lblHourSubFail.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourSubFail.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourSubFail.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblHourSubFail.ForeColor = Palette.TextMuted;
             _lblHourSubFail.Location = new System.Drawing.Point(200, 52);
             _lblHourSubFail.Name = "_lblHourSubFail";
             _lblHourSubFail.Size = new System.Drawing.Size(25, 16);
@@ -622,7 +638,7 @@ namespace test_antdui
             // 
             _lblHourSubYield.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblHourSubYield.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblHourSubYield.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblHourSubYield.ForeColor = Palette.TextMuted;
             _lblHourSubYield.Location = new System.Drawing.Point(295, 52);
             _lblHourSubYield.Name = "_lblHourSubYield";
             _lblHourSubYield.Size = new System.Drawing.Size(29, 16);
@@ -643,12 +659,16 @@ namespace test_antdui
             _cardTotal.Controls.Add(_lblTotalSubYield);
             _cardTotal.Location = new System.Drawing.Point(0, 0);
             _cardTotal.Name = "_cardTotal";
+            _cardTotal.Back = Palette.Card;
+            _cardTotal.BorderColor = Palette.Divider;
+            _cardTotal.BorderWidth = 1;
+            _cardTotal.Radius = 12;
             _cardTotal.Size = new System.Drawing.Size(396, 100);
             _cardTotal.TabIndex = 0;
             // 
             // _barTotalBg
             // 
-            _barTotalBg.Back = System.Drawing.Color.FromArgb(40, 40, 68);
+            _barTotalBg.Back = Palette.Track;
             _barTotalBg.Controls.Add(_barTotalPass);
             _barTotalBg.Location = new System.Drawing.Point(10, 79);
             _barTotalBg.Name = "_barTotalBg";
@@ -657,7 +677,7 @@ namespace test_antdui
             // 
             // _barTotalPass
             // 
-            _barTotalPass.Back = System.Drawing.Color.FromArgb(102, 187, 106);
+            _barTotalPass.Back = Palette.Pass;
             _barTotalPass.Location = new System.Drawing.Point(0, 0);
             _barTotalPass.Name = "_barTotalPass";
             _barTotalPass.Size = new System.Drawing.Size(0, 4);
@@ -667,7 +687,7 @@ namespace test_antdui
             // 
             _lblTotalYield.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalYield.Font = new System.Drawing.Font("Microsoft YaHei UI", 15F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalYield.ForeColor = System.Drawing.Color.FromArgb(79, 195, 247);
+            _lblTotalYield.ForeColor = Palette.AccentSoft;
             _lblTotalYield.Location = new System.Drawing.Point(295, 30);
             _lblTotalYield.Name = "_lblTotalYield";
             _lblTotalYield.Size = new System.Drawing.Size(31, 26);
@@ -678,7 +698,7 @@ namespace test_antdui
             // 
             _lblTotalFail.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalFail.Font = new System.Drawing.Font("Microsoft YaHei UI", 17F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalFail.ForeColor = System.Drawing.Color.FromArgb(239, 83, 80);
+            _lblTotalFail.ForeColor = Palette.Fail;
             _lblTotalFail.Location = new System.Drawing.Point(200, 30);
             _lblTotalFail.Name = "_lblTotalFail";
             _lblTotalFail.Size = new System.Drawing.Size(14, 29);
@@ -689,7 +709,7 @@ namespace test_antdui
             // 
             _lblTotalPass.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalPass.Font = new System.Drawing.Font("Microsoft YaHei UI", 17F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalPass.ForeColor = System.Drawing.Color.FromArgb(102, 187, 106);
+            _lblTotalPass.ForeColor = Palette.Pass;
             _lblTotalPass.Location = new System.Drawing.Point(105, 30);
             _lblTotalPass.Name = "_lblTotalPass";
             _lblTotalPass.Size = new System.Drawing.Size(14, 29);
@@ -700,7 +720,7 @@ namespace test_antdui
             // 
             _lblTotalCount.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalCount.Font = new System.Drawing.Font("Microsoft YaHei UI", 17F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalCount.ForeColor = System.Drawing.Color.FromArgb(79, 195, 247);
+            _lblTotalCount.ForeColor = Palette.AccentSoft;
             _lblTotalCount.Location = new System.Drawing.Point(10, 30);
             _lblTotalCount.Name = "_lblTotalCount";
             _lblTotalCount.Size = new System.Drawing.Size(14, 29);
@@ -711,7 +731,7 @@ namespace test_antdui
             // 
             _lblTotalTitle.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalTitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalTitle.ForeColor = System.Drawing.Color.FromArgb(136, 153, 170);
+            _lblTotalTitle.ForeColor = Palette.TextSecondary;
             _lblTotalTitle.Location = new System.Drawing.Point(12, 6);
             _lblTotalTitle.Name = "_lblTotalTitle";
             _lblTotalTitle.Size = new System.Drawing.Size(81, 21);
@@ -722,7 +742,7 @@ namespace test_antdui
             // 
             _lblTotalSubTotal.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalSubTotal.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalSubTotal.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblTotalSubTotal.ForeColor = Palette.TextMuted;
             _lblTotalSubTotal.Location = new System.Drawing.Point(10, 52);
             _lblTotalSubTotal.Name = "_lblTotalSubTotal";
             _lblTotalSubTotal.Size = new System.Drawing.Size(29, 16);
@@ -733,7 +753,7 @@ namespace test_antdui
             // 
             _lblTotalSubPass.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalSubPass.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalSubPass.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblTotalSubPass.ForeColor = Palette.TextMuted;
             _lblTotalSubPass.Location = new System.Drawing.Point(105, 52);
             _lblTotalSubPass.Name = "_lblTotalSubPass";
             _lblTotalSubPass.Size = new System.Drawing.Size(30, 16);
@@ -744,7 +764,7 @@ namespace test_antdui
             // 
             _lblTotalSubFail.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalSubFail.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalSubFail.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblTotalSubFail.ForeColor = Palette.TextMuted;
             _lblTotalSubFail.Location = new System.Drawing.Point(200, 52);
             _lblTotalSubFail.Name = "_lblTotalSubFail";
             _lblTotalSubFail.Size = new System.Drawing.Size(25, 16);
@@ -755,7 +775,7 @@ namespace test_antdui
             // 
             _lblTotalSubYield.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblTotalSubYield.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 134);
-            _lblTotalSubYield.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblTotalSubYield.ForeColor = Palette.TextMuted;
             _lblTotalSubYield.Location = new System.Drawing.Point(295, 52);
             _lblTotalSubYield.Name = "_lblTotalSubYield";
             _lblTotalSubYield.Size = new System.Drawing.Size(29, 16);
@@ -774,7 +794,7 @@ namespace test_antdui
             _chartPanel.Margin = new System.Windows.Forms.Padding(10);
             _chartPanel.Name = "_chartPanel";
             _chartPanel.PieColors = null;
-            _chartPanel.Size = new System.Drawing.Size(1370, 115);
+            _chartPanel.Size = new System.Drawing.Size(1370, 190);
             _chartPanel.TabIndex = 11;
             _chartPanel.Title = "Today's Production  (click hour for details)";
             _chartPanel.TitleColor = null;
@@ -796,6 +816,10 @@ namespace test_antdui
             _barcodePanel.ForeColor = System.Drawing.Color.Transparent;
             _barcodePanel.Location = new System.Drawing.Point(52, 574);
             _barcodePanel.Name = "_barcodePanel";
+            _barcodePanel.Back = Palette.CardDark;
+            _barcodePanel.BorderColor = Palette.Divider;
+            _barcodePanel.BorderWidth = 1;
+            _barcodePanel.Radius = 10;
             _barcodePanel.Padding = new System.Windows.Forms.Padding(10, 6, 10, 6);
             _barcodePanel.Size = new System.Drawing.Size(1370, 46);
             _barcodePanel.TabIndex = 13;
@@ -816,7 +840,7 @@ namespace test_antdui
             // _lblBarcodeStatus
             // 
             _lblBarcodeStatus.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
-            _lblBarcodeStatus.ForeColor = System.Drawing.Color.FromArgb(136, 153, 170);
+            _lblBarcodeStatus.ForeColor = Palette.TextSecondary;
             _lblBarcodeStatus.Location = new System.Drawing.Point(436, 8);
             _lblBarcodeStatus.Name = "_lblBarcodeStatus";
             _lblBarcodeStatus.Size = new System.Drawing.Size(288, 31);
@@ -827,7 +851,7 @@ namespace test_antdui
             // _lblScannerStatus
             // 
             _lblScannerStatus.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
-            _lblScannerStatus.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblScannerStatus.ForeColor = Palette.TextMuted;
             _lblScannerStatus.Location = new System.Drawing.Point(730, 8);
             _lblScannerStatus.Name = "_lblScannerStatus";
             _lblScannerStatus.Size = new System.Drawing.Size(150, 31);
@@ -842,6 +866,10 @@ namespace test_antdui
             _statusBar.ForeColor = System.Drawing.Color.Transparent;
             _statusBar.Location = new System.Drawing.Point(52, 745);
             _statusBar.Name = "_statusBar";
+            _statusBar.Back = Palette.CardDark;
+            _statusBar.BorderColor = Palette.Divider;
+            _statusBar.BorderWidth = 1;
+            _statusBar.Radius = 6;
             _statusBar.Padding = new System.Windows.Forms.Padding(16, 2, 16, 2);
             _statusBar.Size = new System.Drawing.Size(1370, 28);
             _statusBar.TabIndex = 15;
@@ -850,7 +878,7 @@ namespace test_antdui
             // 
             _lblStatusLeft.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblStatusLeft.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
-            _lblStatusLeft.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblStatusLeft.ForeColor = Palette.TextMuted;
             _lblStatusLeft.Location = new System.Drawing.Point(16, 5);
             _lblStatusLeft.Name = "_lblStatusLeft";
             _lblStatusLeft.Size = new System.Drawing.Size(47, 16);
@@ -861,7 +889,7 @@ namespace test_antdui
             // 
             _lblStatusRight.AutoSizeMode = AntdUI.TAutoSize.Auto;
             _lblStatusRight.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
-            _lblStatusRight.ForeColor = System.Drawing.Color.FromArgb(102, 119, 136);
+            _lblStatusRight.ForeColor = Palette.TextMuted;
             _lblStatusRight.Location = new System.Drawing.Point(1200, 5);
             _lblStatusRight.Name = "_lblStatusRight";
             _lblStatusRight.Size = new System.Drawing.Size(0, 16);
@@ -887,6 +915,10 @@ namespace test_antdui
             _bottomPanel.ForeColor = System.Drawing.Color.Transparent;
             _bottomPanel.Location = new System.Drawing.Point(52, 620);
             _bottomPanel.Name = "_bottomPanel";
+            _bottomPanel.Back = Palette.CardDark;
+            _bottomPanel.BorderColor = Palette.Divider;
+            _bottomPanel.BorderWidth = 1;
+            _bottomPanel.Radius = 12;
             _bottomPanel.Size = new System.Drawing.Size(1370, 125);
             _bottomPanel.TabIndex = 14;
             // 
@@ -904,7 +936,7 @@ namespace test_antdui
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(8F, 19F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
+            BackColor = Palette.Bg;
             ClientSize = new System.Drawing.Size(1422, 773);
             Controls.Add(_table);
             Controls.Add(_chartPanel);
@@ -915,7 +947,7 @@ namespace test_antdui
             Controls.Add(menu1);
             Controls.Add(windowBar);
             Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            ForeColor = System.Drawing.Color.White;
+            ForeColor = Palette.TextPrimary;
             Name = "MainForm";
             Shown += MainForm_Shown;
             windowBar.ResumeLayout(false);
