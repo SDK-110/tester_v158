@@ -11,11 +11,13 @@ namespace test_antdui
         {
             get
             {
+                // 优先当前工程；没有则退回固定默认文件。
+                // 原实现取 ProjectLoader.GetProjectNames()[0] —— 旧版遗留源，新版从不更新它。
                 try
                 {
-                    var names = SprojFileBrowser.ProjectLoader.Instance.GetProjectNames();
-                    if (names != null && names.Count > 0 && File.Exists(names[0]))
-                        return names[0];
+                    var current = TestConfigManager.CurrentProjectPath;
+                    if (!string.IsNullOrEmpty(current) && File.Exists(current))
+                        return current;
                 }
                 catch { }
                 return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TH2818TEST.sproj");

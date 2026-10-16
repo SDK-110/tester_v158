@@ -162,6 +162,20 @@ namespace test_antdui
             Save();
         }
 
+        /// <summary>
+        /// 当前正在测试的工程文件路径 —— 本应用的唯一权威来源。
+        /// 由 ExcelTestLoader.LoadFromExcel() 通过 UpdateLastExcelPath() 写入，与实际加载保持同步。
+        ///
+        /// 不要再用旧版的 SprojFileBrowser.ProjectLoader.Instance.GetProjectNames()[0]：
+        /// testerNew 从不调用它的 AddProject()（全项目唯一写入点在旧版 Main_f.cs:2243），
+        /// 于是它的值会永远停在旧版最后一次打开的工程，导致
+        /// "界面显示 / 编辑器打开的工程 ≠ 实际加载的工程"。
+        /// </summary>
+        public static string CurrentProjectPath
+        {
+            get { return _instance.LastExcelPath; }
+        }
+
         public static void UpdateOrderNo(string orderNo)
         {
             _instance.LastOrderNo = orderNo;

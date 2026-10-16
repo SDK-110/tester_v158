@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using unvell.ReoGrid;
 using unvell.ReoGrid.Events;
-using SprojFileBrowser;
 
 namespace test_antdui
 {
@@ -29,7 +28,11 @@ namespace test_antdui
             InitializeComponent();
             this.tabPage1.Parent = null;
 
-            reoGridControl1.Load(ProjectLoader.Instance.GetProjectNames()[0], unvell.ReoGrid.IO.FileFormat.Excel2007);
+            // 打开"当前正在测试的工程"（唯一权威来源），不再用旧版遗留的 ProjectLoader
+            string projectPath = TestConfigManager.CurrentProjectPath;
+            if (!string.IsNullOrEmpty(projectPath) && System.IO.File.Exists(projectPath))
+                reoGridControl1.Load(projectPath, unvell.ReoGrid.IO.FileFormat.Excel2007);
+
             m_sheet = reoGridControl1.Worksheets[0];
             reoGridControl1.CurrentWorksheet = m_sheet;
             m_sheet.CellMouseDown += sheet_CellMouseDown;
@@ -82,9 +85,16 @@ namespace test_antdui
 
         private void button3_Click(object sender, EventArgs e)
         {
+            string projectPath = TestConfigManager.CurrentProjectPath;
+            if (string.IsNullOrEmpty(projectPath))
+            {
+                MessageBox.Show("当前没有加载工程，无法保存", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             button3.Text = "加载中....";
             button3.Enabled = false;
-            reoGridControl1.Save(ProjectLoader.Instance.GetProjectNames()[0], unvell.ReoGrid.IO.FileFormat.Excel2007);
+            reoGridControl1.Save(projectPath, unvell.ReoGrid.IO.FileFormat.Excel2007);
 
             new Task(() =>
             {
