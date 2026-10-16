@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 
 namespace test_antdui
@@ -26,8 +26,8 @@ namespace test_antdui
             // Shift
             lblShiftValue.Text = _tracker.CurrentShift;
             lblShiftValue.ForeColor = _tracker.IsDayShift
-                ? System.Drawing.Color.FromArgb(255, 167, 38)
-                : System.Drawing.Color.FromArgb(79, 195, 247);
+                ? Palette.Warning
+                : Palette.AccentSoft;
 
             // Stats
             UpdateStatsDisplay();
@@ -64,8 +64,8 @@ namespace test_antdui
             _tracker.ToggleShift();
             lblShiftValue.Text = _tracker.CurrentShift;
             lblShiftValue.ForeColor = _tracker.IsDayShift
-                ? System.Drawing.Color.FromArgb(255, 167, 38)
-                : System.Drawing.Color.FromArgb(79, 195, 247);
+                ? Palette.Warning
+                : Palette.AccentSoft;
             AntdUI.Message.success(this, $"Switched to {_tracker.CurrentShift}");
         }
 

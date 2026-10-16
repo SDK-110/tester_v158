@@ -1,4 +1,4 @@
-using AntdUI;
+﻿using AntdUI;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -75,7 +75,7 @@ namespace test_antdui
 
             // 跟随主题
             if (AntdUI.Config.IsDark)
-                BackColor = Color.FromArgb(24, 24, 24);
+                BackColor = Palette.Bg;
         }
 
         private TestEngine GetEngineFromMainForm()
@@ -101,7 +101,7 @@ namespace test_antdui
                 Dock = DockStyle.Left,
                 Width = 52,
                 Collapsed = true,
-                BackColor = Color.FromArgb(0, 21, 41),
+                BackColor = Palette.Card,
                 AutoSize = false
             };
 
@@ -130,7 +130,7 @@ namespace test_antdui
             {
                 Text = "当前模式：正常执行",
                 Font = new Font("Microsoft YaHei UI", 11, FontStyle.Bold),
-                ForeColor = Color.FromArgb(24, 144, 255),
+                ForeColor = Palette.Accent,
                 Location = new Point(16, 16),
                 AutoSize = true
             };
@@ -156,7 +156,7 @@ namespace test_antdui
                 Text = "状态：等待操作...",
                 Location = new Point(32, lblStatusTitle.Bottom + 8),
                 AutoSize = true,
-                ForeColor = Color.FromArgb(200, 200, 200)
+                ForeColor = Palette.TextSecondary
             };
             _contentPanel.Controls.Add(_lblStatus);
 
@@ -165,7 +165,7 @@ namespace test_antdui
                 Text = "当前项：---",
                 Location = new Point(32, _lblStatus.Bottom + 6),
                 AutoSize = true,
-                ForeColor = Color.FromArgb(200, 200, 200)
+                ForeColor = Palette.TextSecondary
             };
             _contentPanel.Controls.Add(_lblCurrentItem);
 
@@ -175,7 +175,7 @@ namespace test_antdui
                 Text = "目标行：",
                 Location = new Point(32, _lblCurrentItem.Bottom + 8),
                 AutoSize = true,
-                ForeColor = Color.FromArgb(200, 200, 200)
+                ForeColor = Palette.TextSecondary
             };
             _contentPanel.Controls.Add(_lblTargetLabel);
 
@@ -195,7 +195,7 @@ namespace test_antdui
                 Text = "(输入行号后点菜单\"运行到指定行\")",
                 Location = new Point(168, _lblCurrentItem.Bottom + 8),
                 AutoSize = true,
-                ForeColor = Color.FromArgb(140, 140, 140),
+                ForeColor = Palette.TextMuted,
                 Font = new Font("Microsoft YaHei UI", 9)
             };
             _contentPanel.Controls.Add(lblTargetHint);
@@ -266,7 +266,7 @@ namespace test_antdui
                 Text = "快捷键:  F10 单步  |  Ctrl+F10 运行到指定行  |  F5 继续  |  Shift+F5 停止",
                 Location = new Point(16, _btnStop.Bottom + 20),
                 AutoSize = true,
-                ForeColor = Color.FromArgb(120, 120, 120),
+                ForeColor = Palette.TextMuted,
                 Font = new Font("Microsoft YaHei UI", 9)
             };
             _contentPanel.Controls.Add(shortcutHint);

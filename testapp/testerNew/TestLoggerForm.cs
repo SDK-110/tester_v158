@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Drawing;
@@ -148,7 +148,7 @@ namespace test_antdui
             {
                 Message = message,
                 Timestamp = DateTime.Now,
-                Color = color ?? Color.White
+                Color = color ?? Palette.TextPrimary
             };
             _logQueue.Enqueue(entry);
 

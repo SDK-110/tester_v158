@@ -1,4 +1,4 @@
-namespace test_antdui
+﻿namespace test_antdui
 {
     partial class ConfigForm
     {
@@ -59,7 +59,7 @@ namespace test_antdui
             // 
             // tabBarcode
             // 
-            this.tabBarcode.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.tabBarcode.BackColor = Palette.Bg;
             this.tabBarcode.Controls.Add(this.lblBarcodeRegex);
             this.tabBarcode.Controls.Add(this.txtBarcodeRegex);
             this.tabBarcode.Controls.Add(this.chkBarcodeEnabled);
@@ -76,7 +76,7 @@ namespace test_antdui
             // 
             this.lblBarcodeRegex.AutoSize = true;
             this.lblBarcodeRegex.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            this.lblBarcodeRegex.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(136)))), ((int)(((byte)(153)))), ((int)(((byte)(170)))));
+            this.lblBarcodeRegex.ForeColor = Palette.TextSecondary;
             this.lblBarcodeRegex.Location = new System.Drawing.Point(24, 30);
             this.lblBarcodeRegex.Name = "lblBarcodeRegex";
             this.lblBarcodeRegex.Size = new System.Drawing.Size(112, 20);
@@ -108,7 +108,7 @@ namespace test_antdui
             // 
             this.lblBarcodeHint.AutoSize = true;
             this.lblBarcodeHint.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
-            this.lblBarcodeHint.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(110)))), ((int)(((byte)(120)))));
+            this.lblBarcodeHint.ForeColor = Palette.TextMuted;
             this.lblBarcodeHint.Location = new System.Drawing.Point(24, 148);
             this.lblBarcodeHint.Name = "lblBarcodeHint";
             this.lblBarcodeHint.Size = new System.Drawing.Size(350, 34);
@@ -129,7 +129,7 @@ namespace test_antdui
             // 
             // tabShift
             // 
-            this.tabShift.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.tabShift.BackColor = Palette.Bg;
             this.tabShift.Controls.Add(this.lblShift);
             this.tabShift.Controls.Add(this.lblShiftValue);
             this.tabShift.Controls.Add(this.lblShiftTime);
@@ -145,7 +145,7 @@ namespace test_antdui
             // 
             this.lblShift.AutoSize = true;
             this.lblShift.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            this.lblShift.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(136)))), ((int)(((byte)(153)))), ((int)(((byte)(170)))));
+            this.lblShift.ForeColor = Palette.TextSecondary;
             this.lblShift.Location = new System.Drawing.Point(24, 30);
             this.lblShift.Name = "lblShift";
             this.lblShift.Size = new System.Drawing.Size(97, 20);
@@ -156,7 +156,7 @@ namespace test_antdui
             // 
             this.lblShiftValue.AutoSize = true;
             this.lblShiftValue.Font = new System.Drawing.Font("Microsoft YaHei UI", 24F, System.Drawing.FontStyle.Bold);
-            this.lblShiftValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(167)))), ((int)(((byte)(38)))));
+            this.lblShiftValue.ForeColor = Palette.Warning;
             this.lblShiftValue.Location = new System.Drawing.Point(24, 56);
             this.lblShiftValue.Name = "lblShiftValue";
             this.lblShiftValue.Size = new System.Drawing.Size(82, 42);
@@ -167,7 +167,7 @@ namespace test_antdui
             // 
             this.lblShiftTime.AutoSize = true;
             this.lblShiftTime.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            this.lblShiftTime.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(110)))), ((int)(((byte)(120)))));
+            this.lblShiftTime.ForeColor = Palette.TextMuted;
             this.lblShiftTime.Location = new System.Drawing.Point(24, 100);
             this.lblShiftTime.Name = "lblShiftTime";
             this.lblShiftTime.Size = new System.Drawing.Size(259, 20);
@@ -186,7 +186,7 @@ namespace test_antdui
             // 
             // tabProduction
             // 
-            this.tabProduction.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.tabProduction.BackColor = Palette.Bg;
             this.tabProduction.Controls.Add(this.lblProdTitle);
             this.tabProduction.Controls.Add(this.lblTotalStats);
             this.tabProduction.Controls.Add(this.lblHourlyStats);
@@ -203,7 +203,7 @@ namespace test_antdui
             // 
             this.lblProdTitle.AutoSize = true;
             this.lblProdTitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            this.lblProdTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(136)))), ((int)(((byte)(153)))), ((int)(((byte)(170)))));
+            this.lblProdTitle.ForeColor = Palette.TextSecondary;
             this.lblProdTitle.Location = new System.Drawing.Point(24, 30);
             this.lblProdTitle.Name = "lblProdTitle";
             this.lblProdTitle.Size = new System.Drawing.Size(123, 20);
@@ -214,7 +214,7 @@ namespace test_antdui
             // 
             this.lblTotalStats.AutoSize = true;
             this.lblTotalStats.Font = new System.Drawing.Font("Microsoft YaHei UI", 11F);
-            this.lblTotalStats.ForeColor = System.Drawing.Color.White;
+            this.lblTotalStats.ForeColor = Palette.TextPrimary;
             this.lblTotalStats.Location = new System.Drawing.Point(24, 56);
             this.lblTotalStats.Name = "lblTotalStats";
             this.lblTotalStats.Size = new System.Drawing.Size(268, 20);
@@ -225,7 +225,7 @@ namespace test_antdui
             // 
             this.lblHourlyStats.AutoSize = true;
             this.lblHourlyStats.Font = new System.Drawing.Font("Microsoft YaHei UI", 11F);
-            this.lblHourlyStats.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(79)))), ((int)(((byte)(195)))), ((int)(((byte)(247)))));
+            this.lblHourlyStats.ForeColor = Palette.AccentSoft;
             this.lblHourlyStats.Location = new System.Drawing.Point(24, 82);
             this.lblHourlyStats.Name = "lblHourlyStats";
             this.lblHourlyStats.Size = new System.Drawing.Size(301, 20);
@@ -255,7 +255,7 @@ namespace test_antdui
             // 
             // tabEmployee
             // 
-            this.tabEmployee.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.tabEmployee.BackColor = Palette.Bg;
             this.tabEmployee.Controls.Add(this.lblEmpId);
             this.tabEmployee.Controls.Add(this.txtEmployeeId);
             this.tabEmployee.Controls.Add(this.btnSaveEmployee);
@@ -270,7 +270,7 @@ namespace test_antdui
             // 
             this.lblEmpId.AutoSize = true;
             this.lblEmpId.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            this.lblEmpId.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(136)))), ((int)(((byte)(153)))), ((int)(((byte)(170)))));
+            this.lblEmpId.ForeColor = Palette.TextSecondary;
             this.lblEmpId.Location = new System.Drawing.Point(24, 30);
             this.lblEmpId.Name = "lblEmpId";
             this.lblEmpId.Size = new System.Drawing.Size(97, 20);
@@ -301,7 +301,9 @@ namespace test_antdui
             // pageHeader1
             // 
             this.pageHeader1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pageHeader1.ForeColor = System.Drawing.Color.Transparent;
+            // 原为 Transparent: 会把标题栏的关闭/返回按钮画成透明 —— 看不见但命中区域还在,
+            // 表现为"关闭按钮不显示却功能正常"。改成可见前景色, 与窗体 ForeColor 一致。
+            this.pageHeader1.ForeColor = Palette.TextPrimary;
             this.pageHeader1.Location = new System.Drawing.Point(0, 0);
             this.pageHeader1.Name = "pageHeader1";
             this.pageHeader1.ShowBack = true;
@@ -314,12 +316,12 @@ namespace test_antdui
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 19F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.BackColor = Palette.Bg;
             this.ClientSize = new System.Drawing.Size(600, 400);
             this.Controls.Add(this.pageHeader1);
             this.Controls.Add(this.tabConfig);
             this.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            this.ForeColor = System.Drawing.Color.White;
+            this.ForeColor = Palette.TextPrimary;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.MaximizeBox = false;
             this.MinimizeBox = false;

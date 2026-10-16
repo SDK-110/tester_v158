@@ -1,4 +1,4 @@
-namespace test_antdui
+﻿namespace test_antdui
 {
     partial class LoginForm
     {
@@ -25,7 +25,7 @@ namespace test_antdui
             // 
             this.lblTitle.AutoSize = true;
             this.lblTitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 16F, System.Drawing.FontStyle.Bold);
-            this.lblTitle.ForeColor = System.Drawing.Color.White;
+            this.lblTitle.ForeColor = Palette.TextPrimary;
             this.lblTitle.Location = new System.Drawing.Point(83, 62);
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Size = new System.Drawing.Size(192, 30);
@@ -36,7 +36,7 @@ namespace test_antdui
             // 
             this.lblSubtitle.AutoSize = true;
             this.lblSubtitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            this.lblSubtitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(136)))), ((int)(((byte)(153)))), ((int)(((byte)(170)))));
+            this.lblSubtitle.ForeColor = Palette.TextSecondary;
             this.lblSubtitle.Location = new System.Drawing.Point(84, 104);
             this.lblSubtitle.Name = "lblSubtitle";
             this.lblSubtitle.Size = new System.Drawing.Size(204, 20);
@@ -91,7 +91,7 @@ namespace test_antdui
             // 
             // LoginForm
             // 
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.BackColor = Palette.Bg;
             this.ClientSize = new System.Drawing.Size(368, 360);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnLogin);
@@ -101,7 +101,7 @@ namespace test_antdui
             this.Controls.Add(this.lblTitle);
             this.DisableTheme = true;
             this.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            this.ForeColor = System.Drawing.Color.White;
+            this.ForeColor = Palette.TextPrimary;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;

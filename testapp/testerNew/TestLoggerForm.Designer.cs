@@ -1,4 +1,4 @@
-namespace test_antdui
+﻿namespace test_antdui
 {
     partial class TestLoggerForm
     {
@@ -39,10 +39,10 @@ namespace test_antdui
             this._richTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this._richTextBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this._richTextBox.BackColor = Palette.Bg;
             this._richTextBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this._richTextBox.Font = new System.Drawing.Font("Consolas", 9F);
-            this._richTextBox.ForeColor = System.Drawing.Color.White;
+            this._richTextBox.ForeColor = Palette.TextPrimary;
             this._richTextBox.Location = new System.Drawing.Point(0, 0);
             this._richTextBox.Name = "_richTextBox";
             this._richTextBox.ReadOnly = true;
@@ -121,7 +121,7 @@ namespace test_antdui
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(40)))), ((int)(((byte)(40)))), ((int)(((byte)(40)))));
+            this.BackColor = Palette.Bg;
             this.ClientSize = new System.Drawing.Size(439, 326);
             this.Controls.Add(this.pageHeader1);
             this.Controls.Add(this._richTextBox);
