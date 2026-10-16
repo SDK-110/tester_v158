@@ -19,8 +19,8 @@ namespace testapp.test_cases
     ///   1                  - 扫描 I2C 器件 (AT24Cxx + DS3231)
     ///   2 YYYY MM DD HH MM SS - 设置 RTC 时间并读回验证
     ///   3 ADDR d1 d2 ...   - 写 EEPROM 并读回校验 (最多32字节)
-    ///   4                  - 查询看门狗 WDO 状态
-    ///   5 {0|1}            - 0=停止喂狗  1=恢复喂狗
+    ///   4                  - 查询看门狗超时标记: 1=等待超时, 0=超时已发生
+    ///   5 {0|1}            - 0=停止喂狗(进入等待超时)  1=恢复喂狗
     ///   6                  - 触摸屏单次读取 (X/Y/Z, 10s 超时)
     ///   7 {0|1}            - 0=关闭触摸自动上报  1=开启
     ///
@@ -89,13 +89,13 @@ namespace testapp.test_cases
             // a/b = "pass", c = 响应文本
             tc.funcs.Add(id + "eeprom_write", eeprom_write);
 
-            // ── 看门狗 WDO 查询 (命令 4) ──
-            // 验证 WDO = HIGH (OK)
-            // a/b = "pass", c = 响应文本
+            // ── 看门狗超时标记查询 (命令 4) ──
+            // 1=等待超时中, 0=超时已发生; 支持轮询等待
+            // a/b = "pass", d = "expect=0;poll=70000;interval=2000", c = 响应文本
             tc.funcs.Add(id + "wdt_query", wdt_query);
 
             // ── 喂狗控制 (命令 5) ──
-            // d = "0" (停止) 或 "1" (恢复)
+            // d = "0" (停止喂狗, 进入等待超时) 或 "1" (恢复喂狗)
             // a/b = "pass", c = 响应文本
             tc.funcs.Add(id + "wdt_feed", wdt_feed);
 
@@ -439,23 +439,56 @@ namespace testapp.test_cases
             }
         }
 
-        // ── 命令 4: 看门狗 WDO 查询 ────────────────────────────────
-        // 验证 WDO = HIGH (OK)
-        // a = "pass", b = "pass", c = 响应文本
+        // ── 命令 4: 看门狗超时标记查询 ────────────────────────────────
+        // 单片机停喂约 50s 后 WDO 出现约 1s 低脉冲, EXTI 中断捕获(脉宽>=200ms)后标记清 0。
+        // 本函数为纯查询/轮询, 不阻塞单片机侧; 停喂后可穿插其它测试再回来查询。
+        // d = "expect=0;poll=70000;interval=2000"
+        //   expect   = 期望标记: 0=超时已发生(默认), 1=等待超时中
+        //   poll     = 轮询总时长ms(默认0=只查一次; 等50s超时建议给 70000)
+        //   interval = 轮询间隔ms(默认2000, 最小500)
+        // a = "pass", b = "pass", c = 最后一次响应文本(含 Pulse delay/Pulse width)
         private string wdt_query(string a, string b, out string c, string d)
         {
             c = "fail";
             try
             {
-                if (send_and_recv("4", 10000, out c) != "pass")
-                    return "fail";
+                var p = parse_d(d);
+                int expect = get_int(p, "expect", 0);
+                int pollMs = get_int(p, "poll", 0);
+                int intervalMs = get_int(p, "interval", 2000);
+                if (intervalMs < 500) intervalMs = 500;
 
-                if (c.Contains("WDO = HIGH") && c.Contains("OK"))
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                string resp = "";
+                int flag = -1;
+
+                while (true)
                 {
-                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] WDT query: WDO=HIGH, OK");
-                    return "pass";
+                    if (send_and_recv("4", 5000, out resp) != "pass")
+                        return "fail";
+
+                    // 单片机输出: "Timeout flag: 0 (timeout occurred)" 或 "...: 1 (waiting...)"
+                    var m = Regex.Match(resp, @"Timeout flag:\s*([01])");
+                    if (m.Success)
+                        flag = int.Parse(m.Groups[1].Value);
+
+                    if (flag == expect)
+                    {
+                        c = resp;
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] WDT query: flag={flag} == expect={expect}, PASS");
+                        return "pass";
+                    }
+
+                    // 未达到期望: 未给轮询时间或已超时则结束
+                    if (sw.ElapsedMilliseconds >= pollMs)
+                        break;
+
+                    int remain = pollMs - (int)sw.ElapsedMilliseconds;
+                    Thread.Sleep(Math.Min(intervalMs, remain));
                 }
-                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] WDT query: WDO not HIGH or not OK: {c.Substring(0, Math.Min(c.Length, 200))}");
+
+                c = resp;
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] WDT query FAIL: flag={flag}, expect={expect}, polled={sw.ElapsedMilliseconds}ms");
                 return "fail";
             }
             catch (Exception ex)
@@ -467,7 +500,8 @@ namespace testapp.test_cases
         }
 
         // ── 命令 5: 喂狗控制 ────────────────────────────────────────
-        // d = "0" (停止喂狗) 或 "1" (恢复喂狗)
+        // d = "0" (停止喂狗, 进入等待超时, 约50s后 WDO 产生超时脉冲)
+        //    或 "1" (恢复喂狗)
         // a = "pass", b = "pass", c = 响应文本
         private string wdt_feed(string a, string b, out string c, string d)
         {
@@ -487,7 +521,7 @@ namespace testapp.test_cases
 
                 if (action == "0" && c.Contains("STOPPED"))
                 {
-                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] WDT feeding STOPPED");
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] WDT feeding STOPPED (waiting for timeout pulse)");
                     return "pass";
                 }
                 if (action == "1" && c.Contains("STARTED"))
