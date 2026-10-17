@@ -198,6 +198,9 @@ namespace test_antdui
         public bool ValidateBarcode(string barcode)
         {
             if (string.IsNullOrEmpty(barcode)) return false;
+            // 条码校验开关必须生效: 之前 BarcodeEnabled 只被读写、从未被判断,
+            // 导致 ConfigForm 里勾选的"启用条码"完全不起作用。
+            if (!BarcodeEnabled) return true;
             string regex = BarcodeRegex;
             if (string.IsNullOrEmpty(regex)) return true;
             return Regex.IsMatch(barcode.Trim(), regex);

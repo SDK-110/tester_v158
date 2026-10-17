@@ -487,6 +487,7 @@ namespace test_antdui
                     AddLog(AppStrings.Get("barcode_scanned", barcode), Palette.AccentSoft);
 
                     _barcodeInput.Enabled = false;
+                    _btnStart.Focus();          // SN 框禁用时把焦点交给 Start
                     _btnStart.PerformClick();
                 }
                 else
@@ -543,6 +544,7 @@ namespace test_antdui
                 case "Settings":
                     using (var cfg = new ConfigForm())
                     cfg.ShowDialog(this);
+                    ApplyBarcodeMode();     // 配置里可能改了"启用条码" 
                     UpdateAllStats();
                     _tracker.Reload();
                     InitChartData();
@@ -559,6 +561,7 @@ namespace test_antdui
                 case "Clear Data":
                     using (var cfg = new ConfigForm())
                         cfg.ShowDialog(this);
+                    ApplyBarcodeMode();     // 配置里可能改了"启用条码" 
                     UpdateAllStats();
                     InitChartData();
                     break;
@@ -985,7 +988,7 @@ namespace test_antdui
             _btnStart.Enabled = true;
             _btnStart.Loading = false;
            
-            _barcodeInput.Enabled = true;
+            _barcodeInput.Enabled = _tracker.BarcodeEnabled;
             if (allPass)
             {
                 AddLog($"+++ SN {_sn} PASS +++", Palette.Pass);
@@ -1015,7 +1018,8 @@ namespace test_antdui
             InitChartData();
             SaveReportIfNeeded(allPass);
             if (!log_append.Checked) TestLoggerForm.Instance.SaveLog("FF");
-            _barcodeInput.Focus();
+            // 测试完成后按"条码是否启用"决定焦点: 启用则回 SN 框(继续扫码), 禁用则给 Start
+            ApplyBarcodeMode();
             if (_debugForm != null && !_debugForm.IsDisposed)
                 _debugForm.ResetState();
         }
@@ -1228,13 +1232,31 @@ namespace test_antdui
         {
             _btnStart.Enabled = true;
             _btnStart.Loading = false;
-            _barcodeInput.Enabled = true;
+            _barcodeInput.Enabled = _tracker.BarcodeEnabled;
             iconState.State = TType.None;
             tBadge7.State = TState.Default;
             SetAlertWarning(AppStrings.Get("alert_ready"));
             if (_debugForm != null && !_debugForm.IsDisposed)
                 _debugForm.ResetState();
+            ApplyBarcodeMode();
             AddLog("测试已中断（未走完整流程），界面已复位", Palette.WarnSoft);
+        }
+
+        /// <summary>
+        /// 按"条码是否启用"决定 SN 输入框的可用状态与焦点。
+        ///
+        /// 焦点始终跟随"条码输入是否启用":
+        ///   启用 -> SN 框可用, 焦点放回 SN 框(测试完成后也要回来, 否则下一枪扫码收不到)
+        ///   禁用 -> SN 框禁用, 焦点交给 Start(测试号会自动生成, 按一下就能开工)
+        /// </summary>
+        private void ApplyBarcodeMode()
+        {
+            bool enabled = _tracker.BarcodeEnabled;
+            _barcodeInput.Enabled = enabled;
+            if (enabled)
+                _barcodeInput.Focus();
+            else
+                _btnStart.Focus();
         }
 
         private void SaveReportIfNeeded(bool allPass)
@@ -1283,7 +1305,7 @@ namespace test_antdui
             // 原代码用 ProjectLoader.GetProjectNames()[0] 覆盖 —— 那是旧版遗留源，新版从不更新，
             // 显示的是旧版最后一次打开的工程，与实际加载的工程不一致。
             _statsPanel.Invalidate();
-            _barcodeInput.Focus();
+            ApplyBarcodeMode();
             menu1.Collapsed = true;
         }
 
