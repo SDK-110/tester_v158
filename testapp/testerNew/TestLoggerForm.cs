@@ -49,10 +49,11 @@ namespace test_antdui
             CheckForIllegalCrossThreadCalls = false;
             InitTimer();
             StartNewLog();
-            // 默认置顶 + 屏幕左上角
+            // 默认置顶 + 屏幕右侧（位置对齐 5.JPG：贴右边缘、纵向约 1/3 处）
             TopMost = true;
             StartPosition = FormStartPosition.Manual;
-            Location = new Point(0, 0);
+            Rectangle wa = Screen.PrimaryScreen.WorkingArea;
+            Location = new Point(wa.Right - Width, wa.Top + (int)(wa.Height * 0.33));
             checkbox1.Checked = true;   // 同步「TopLevel」复选框为勾选
         }
 

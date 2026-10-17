@@ -351,7 +351,6 @@ namespace testapp
             textBox1.ScrollBars = ScrollBars.Vertical;
             textBox1.Size = new System.Drawing.Size(375, 31);
             textBox1.TabIndex = 1;
-            textBox1.TextChanged += textBox1_TextChanged;
             textBox1.KeyDown += textBox1_KeyDown;
             // 
             // label2

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using testapp.glob_set;
 
 namespace test_antdui
 {
@@ -16,9 +17,21 @@ namespace test_antdui
 
         private void LoadConfig()
         {
-            // Barcode
-            txtBarcodeRegex.Text = _tracker.BarcodeRegex;
-            chkBarcodeEnabled.Checked = _tracker.BarcodeEnabled;
+            // Barcode：与 Main_f 一致，以 setup.ini [setbarcode] 为准（没有时才回退旧 JSON 配置）
+            var barcodeSec = glob_ini_instance.getInstance().getSetupIniData["setbarcode"];
+            if (barcodeSec != null)
+            {
+                txtBarcodeRegex.Text = barcodeSec["barreg"] ?? _tracker.BarcodeRegex;
+                string enabled = barcodeSec["barenable"];
+                chkBarcodeEnabled.Checked = string.IsNullOrEmpty(enabled)
+                    ? _tracker.BarcodeEnabled
+                    : string.Equals(enabled.Trim(), "true", StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                txtBarcodeRegex.Text = _tracker.BarcodeRegex;
+                chkBarcodeEnabled.Checked = _tracker.BarcodeEnabled;
+            }
 
             // Employee
             txtEmployeeId.Text = _tracker.OperatorName;
@@ -56,6 +69,19 @@ namespace test_antdui
             }
             _tracker.BarcodeRegex = regex;
             _tracker.BarcodeEnabled = chkBarcodeEnabled.Checked;
+
+            // 写回 setup.ini [setbarcode]（Main_f / MainControl 都从这里读）
+            var ini = glob_ini_instance.getInstance().getSetupIniData;
+            var barcodeSec = ini["setbarcode"];
+            if (barcodeSec == null)
+            {
+                ini.Sections.AddSection("setbarcode");
+                barcodeSec = ini["setbarcode"];
+            }
+            barcodeSec["barenable"] = chkBarcodeEnabled.Checked ? "true" : "false";
+            barcodeSec["barreg"] = regex;
+            glob_ini_instance.getInstance().write2Ini(ini);
+
             AntdUI.Message.success(this, "Barcode config saved", autoClose: 2);
         }
 

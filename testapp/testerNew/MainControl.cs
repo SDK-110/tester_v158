@@ -3,6 +3,7 @@ using IniParser.Model;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
 using PCHMI;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
@@ -49,6 +50,20 @@ namespace test_antdui
         private int _selectedHour = -1;
         private Timer _statsTimer;
         private ProductionTracker _tracker;
+
+        // ═══ Multi Barcode（与 Main_f 的 [setbarcode] 配置保持一致）═══
+        private sealed class BarcodeRule
+        {
+            public string Name = "";
+            public string Regex = "";
+        }
+
+        private readonly List<BarcodeRule> _barcodeRules = new List<BarcodeRule>();
+        private readonly List<string> _barcodeScanned = new List<string>();
+        private int _barcodeIndex;
+        private string _barcodeRulesSig;
+        /// <summary>扫入合格 SN 后、等待外部按钮按下前为 true（仅启用外部触发时使用）。</summary>
+        private bool _waitingForTrigger;
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string SN
@@ -161,10 +176,12 @@ namespace test_antdui
 
             inidata = glob_ini_instance.getInstance().getSetupIniData;
             iniread = glob_ini_instance.getInstance().fileIni;
+            BarcodeRulesSync();         // 加载 [setbarcode] 规则并刷新提示
 
             // 串口扫描器
             InitScanner();
             InitDiMonitor();
+            InitTriggerInput();         // 外部按钮/微动开关触发（setup.ini [settrigger]）
             windowBar.SubText = inidata["setproduct"]["project"];
             // 定时刷新
             _statsTimer = new Timer { Interval = 1000 };
@@ -465,52 +482,254 @@ namespace test_antdui
 
         // ═══ Barcode ═════════════════════════════════════
 
+        /// <summary>
+        /// 条码是否启用：优先 setup.ini [setbarcode] barenable（与 Main_f 一致），
+        /// 没有该项时回退到 ProductionTracker 里的旧配置。
+        /// </summary>
+        private bool BarcodeInputEnabled
+        {
+            get
+            {
+                var sec = inidata?["setbarcode"];
+                string v = sec?["barenable"];
+                if (!string.IsNullOrEmpty(v))
+                    return string.Equals(v.Trim(), "true", StringComparison.OrdinalIgnoreCase);
+                return _tracker != null && _tracker.BarcodeEnabled;
+            }
+        }
+
+        /// <summary>
+        /// 启用外部触发且 require_after_scan=true 时：
+        /// 扫码回车只负责装载/校验 SN，须等外部按钮可靠按下才启动测试。
+        /// 未配置触发器时保持原有“扫码即测”行为。
+        /// </summary>
+        private bool RequireTriggerAfterScan
+        {
+            get
+            {
+                if (_triggerInput == null) return false;
+                var sec = inidata?["settrigger"];
+                string value = sec?["require_after_scan"];
+                if (string.IsNullOrEmpty(value)) return true;
+                value = value.Trim().ToLowerInvariant();
+                return !(value == "false" || value == "0" || value == "no" || value == "off");
+            }
+        }
+
+        private static bool SafeRegexMatch(string pattern, string text)
+        {
+            if (string.IsNullOrEmpty(pattern)) return true;
+            try { return Regex.IsMatch(text ?? "", pattern); }
+            catch (ArgumentException) { return false; }
+        }
+
+        /// <summary>
+        /// 按 setup.ini [setbarcode] 重建规则表（与 Main_f.barcode_rules_sync 语义一致）：
+        /// count 存在时读 barreg1..N/name1..N；否则兼容旧配置只用 barreg（单条码）。
+        /// 配置没变则直接返回，保留当前扫描进度。
+        /// </summary>
+        private void BarcodeRulesSync()
+        {
+            var sec = inidata?["setbarcode"];
+            string sig = "";
+            if (sec != null)
+            {
+                sig = (sec["barenable"] ?? "") + "|" + (sec["count"] ?? "") + "|" + (sec["barreg"] ?? "");
+                int n = 0;
+                int.TryParse(sec["count"], out n);
+                for (int i = 1; i <= n; i++)
+                    sig += "|" + (sec["barreg" + i] ?? "") + "~" + (sec["name" + i] ?? "");
+            }
+            sig += "|t:" + (_tracker?.BarcodeRegex ?? "");
+            if (_barcodeRulesSig == sig && _barcodeRules.Count > 0) return;
+            _barcodeRulesSig = sig;
+            _barcodeRules.Clear();
+
+            int count = 0;
+            if (sec != null) int.TryParse(sec["count"], out count);
+            for (int i = 1; i <= count; i++)
+            {
+                string r = (sec["barreg" + i] ?? "").Trim();
+                if (r.Length == 0) continue;
+                string name = (sec["name" + i] ?? "").Trim();
+                if (name.Length == 0) name = "barcode" + (_barcodeRules.Count + 1);
+                _barcodeRules.Add(new BarcodeRule { Regex = r, Name = name });
+            }
+            if (_barcodeRules.Count == 0 && sec != null && (sec["barreg"] ?? "").Trim().Length > 0)
+                _barcodeRules.Add(new BarcodeRule { Regex = sec["barreg"].Trim(), Name = "input_sn" });
+
+            // 兜底：setup.ini 完全没配规则时，继续用 ConfigForm/ProductionTracker 里的单条正则
+            if (_barcodeRules.Count == 0 && !string.IsNullOrWhiteSpace(_tracker?.BarcodeRegex))
+                _barcodeRules.Add(new BarcodeRule { Regex = _tracker.BarcodeRegex.Trim(), Name = "input_sn" });
+
+            BarcodeReset();
+        }
+
+        private void BarcodeReset()
+        {
+            _barcodeIndex = 0;
+            _barcodeScanned.Clear();
+            _waitingForTrigger = false;
+            BarcodePrompt("");
+        }
+
+        /// <summary>刷新 SN 框右侧提示：err 非空显示红色错误，否则显示当前应扫第几条。</summary>
+        private void BarcodePrompt(string err)
+        {
+            if (!string.IsNullOrEmpty(err))
+            {
+                _lblBarcodeStatus.ForeColor = Palette.Fail;
+                _lblBarcodeStatus.Text = err;
+                return;
+            }
+
+            _lblBarcodeStatus.ForeColor = Palette.TextSecondary;
+            if (_barcodeRules.Count > 1 && _barcodeIndex < _barcodeRules.Count)
+            {
+                _lblBarcodeStatus.Text = AppStrings.Get("barcode_multi_prompt",
+                    _barcodeIndex + 1, _barcodeRules.Count, _barcodeRules[_barcodeIndex].Name);
+                return;
+            }
+
+            string regex = _barcodeRules.Count > 0 ? _barcodeRules[0].Regex : (_tracker?.BarcodeRegex ?? "");
+            _lblBarcodeStatus.Text = AppStrings.Get("barcode_status", regex, AppStrings.Get("barcode_waiting"));
+        }
+
+        /// <summary>
+        /// 逐条接收条码：按"当前第 _barcodeIndex 条"的规则校验并拒绝重复。
+        /// 全部扫满 → 写入 SN / 全局变量并返回 true（允许启动测试）；否则返回 false。
+        /// </summary>
+        private bool BarcodeTryAccept(string text, out string err)
+        {
+            err = "";
+            BarcodeRulesSync();
+            if (_barcodeRules.Count == 0) return true;          // 没配规则，维持原行为
+            if (_barcodeIndex >= _barcodeRules.Count) return true; // 本轮已扫满
+
+            text = (text ?? "").Trim();
+            if (text.Length == 0) { BarcodePrompt(""); return false; }
+
+            BarcodeRule rule = _barcodeRules[_barcodeIndex];
+            if (!SafeRegexMatch(rule.Regex, text))
+            {
+                err = AppStrings.Get("barcode_rule_mismatch",
+                    _barcodeIndex + 1, _barcodeRules.Count, rule.Name);
+                _barcodeInput.Text = "";
+                return false;
+            }
+            if (_barcodeScanned.Contains(text))
+            {
+                err = AppStrings.Get("barcode_duplicate", rule.Name);
+                _barcodeInput.Text = "";
+                return false;
+            }
+
+            _barcodeScanned.Add(text);
+            _barcodeIndex++;
+            if (_barcodeIndex < _barcodeRules.Count)
+            {
+                _barcodeInput.Text = "";        // 清空，等下一枪
+                BarcodePrompt("");
+                return false;
+            }
+
+            BarcodeCommit();
+            return true;
+        }
+
+        /// <summary>扫满后写入：第 1 条为 SN（兼容旧逻辑），其余按 nameN 存入全局变量。</summary>
+        private void BarcodeCommit()
+        {
+            for (int i = 0; i < _barcodeRules.Count && i < _barcodeScanned.Count; i++)
+            {
+                string v = _barcodeScanned[i];
+                if (i == 0) SN = v;
+                if (testcase_lib != null)
+                {
+                    if (i == 0) testcase_lib.input_sn = v;
+                    testcase_lib.golb_var_default[_barcodeRules[i].Name] = v;
+                }
+            }
+            // 保留旧行为：输入框内留着第 1 条，报告/CSV 仍取到 SN
+            if (_barcodeScanned.Count > 0) _barcodeInput.Text = _barcodeScanned[0];
+            BarcodePrompt("");
+        }
+
+        /// <summary>Start 前的条码校验：多条码时以第 1 条（SN）规则为准。</summary>
+        private bool BarcodeValidateForStart(string sn)
+        {
+            if (!BarcodeInputEnabled) return true;   // 条码未启用：不校验
+            BarcodeRulesSync();
+            if (_barcodeRules.Count == 0) return _tracker.ValidateBarcode(sn);
+            return SafeRegexMatch(_barcodeRules[0].Regex, sn);
+        }
+
         private void BarcodeInput_TextChanged(object sender, EventArgs e)
         {
             string text = _barcodeInput.Text.Trim();
-            _lblBarcodeStatus.Text = GetBarcodeStatusText(text) + "==> " + text;
             SN = text;
+            BarcodeRulesSync();
+
+            if (BarcodeInputEnabled && _barcodeRules.Count > 1 && _barcodeIndex < _barcodeRules.Count)
+            {
+                BarcodeRule rule = _barcodeRules[_barcodeIndex];
+                string state = string.IsNullOrEmpty(text)
+                    ? AppStrings.Get("barcode_waiting")
+                    : SafeRegexMatch(rule.Regex, text)
+                        ? AppStrings.Get("barcode_match")
+                        : AppStrings.Get("barcode_no_match");
+                _lblBarcodeStatus.ForeColor = Palette.TextSecondary;
+                _lblBarcodeStatus.Text = AppStrings.Get("barcode_multi_status",
+                    _barcodeIndex + 1, _barcodeRules.Count, rule.Name, state);
+                return;
+            }
+
+            BarcodePrompt("");
         }
 
         private void BarcodeInput_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Enter)
+            if (e.KeyCode != Keys.Enter) return;
+
+            string barcode = _barcodeInput.Text.Trim();
+
+            if (BarcodeInputEnabled)
             {
-                string barcode = _barcodeInput.Text.Trim();
-                if (string.IsNullOrEmpty(barcode)) return;
-              
-               
-                if (_tracker.ValidateBarcode(barcode))
+                string err;
+                if (!BarcodeTryAccept(barcode, out err))
                 {
-                    _sn = barcode;
-                   // AntdUI.Message.success(this, AppStrings.Get("sn_entered", barcode));
-                    AddLog(AppStrings.Get("barcode_scanned", barcode), Palette.AccentSoft);
-
-                    _barcodeInput.Enabled = false;
-                    _btnStart.Focus();          // SN 框禁用时把焦点交给 Start
-                    _btnStart.PerformClick();
-                }
-                else
-                {
-                    AntdUI.Message.error(this, AppStrings.Get("barcode_invalid"), autoClose: 2);
+                    if (!string.IsNullOrEmpty(err)) BarcodePrompt(err);
                     _barcodeInput.Focus();
-                    _barcodeInput.SelectAll();
+                    return;
                 }
+
+                // 扫满：BarcodeCommit 已把第 1 条写回输入框
+                string sn = _barcodeScanned.Count > 0 ? _barcodeScanned[0] : barcode;
+                AddLog(AppStrings.Get("barcode_scanned", sn), Palette.AccentSoft);
+
+                // 启用外部按钮时：扫码只负责录入 SN，等按钮可靠按下后再开测。
+                // 屏幕 Start 按钮不受此限制（按方案 1 保留为手动应急通道）。
+                if (RequireTriggerAfterScan)
+                {
+                    _waitingForTrigger = true;
+                    _lblBarcodeStatus.ForeColor = Palette.Warning;
+                    _lblBarcodeStatus.Text = AppStrings.Get("barcode_wait_trigger");
+                    AddLog(AppStrings.Get("log_wait_trigger"), Palette.Warning);
+                    _barcodeInput.Focus();
+                    return;
+                }
+
+                _barcodeInput.Enabled = false;
+                _btnStart.Focus();          // SN 框禁用时把焦点交给 Start
+                _btnStart.PerformClick();
+                return;
             }
-        }
 
-        private string GetBarcodeStatusText(string text)
-        {
-            string regex = _tracker.BarcodeRegex;
-            string regexDisplay = "";
-
-            if (string.IsNullOrEmpty(text))
-                return AppStrings.Get("barcode_status", regexDisplay, AppStrings.Get("barcode_waiting"));
-
-            if (_tracker.ValidateBarcode(text))
-                return AppStrings.Get("barcode_status", regexDisplay, AppStrings.Get("barcode_match"));
-            else
-                return AppStrings.Get("barcode_status", regexDisplay, AppStrings.Get("barcode_no_match"));
+            if (string.IsNullOrEmpty(barcode)) return;
+            SN = barcode;
+            _barcodeInput.Enabled = false;
+            _btnStart.Focus();
+            _btnStart.PerformClick();
         }
 
         // ═══ Mode Toggle ═════════════════════════════════
@@ -624,6 +843,7 @@ namespace test_antdui
             _statsTimer?.Dispose();
             _scanner?.Dispose();
             _diMonitor?.Dispose();
+            _triggerInput?.Dispose();
             if (_logForm != null) _logForm.Dispose();
             _debugForm?.Close();
             _debugForm?.Dispose();
@@ -987,8 +1207,8 @@ namespace test_antdui
 
             _btnStart.Enabled = true;
             _btnStart.Loading = false;
-           
-            _barcodeInput.Enabled = _tracker.BarcodeEnabled;
+
+            _barcodeInput.Enabled = BarcodeInputEnabled;
             if (allPass)
             {
                 AddLog($"+++ SN {_sn} PASS +++", Palette.Pass);
@@ -1011,6 +1231,7 @@ namespace test_antdui
             }
 
             _sn2 = _sn;
+            BarcodeReset();                 // 新一轮从第 1 条开始（与 Main_f 一致）
             _barcodeInput.Text = "";
             TestConfigManager.UpdateAfterTest(allPass);
             UpdateStatistics();
@@ -1057,10 +1278,56 @@ namespace test_antdui
         private async void _btnStart_Click(object sender, EventArgs e)
         {
             _testStartTime = DateTime.Now;
-            // 自动生成SN
-            if (string.IsNullOrEmpty(_sn) || _sn == "NA")
+            _waitingForTrigger = false;     // 任何启动路径都清除“等待按钮”状态
+
+            BarcodeRulesSync();
+            if (BarcodeInputEnabled)
+            {
+                string typed = _barcodeInput.Text.Trim();
+
+                if (_barcodeRules.Count > 1)
+                {
+                    // 多条码：必须逐条扫满，Start 不能跳过
+                    if (_barcodeIndex < _barcodeRules.Count)
+                    {
+                        BarcodePrompt(AppStrings.Get("barcode_incomplete", _barcodeIndex, _barcodeRules.Count));
+                        _barcodeInput.Focus();
+                        return;
+                    }
+                }
+                else
+                {
+                    // 单条码（或无规则）：Start 也必须校验输入框，不能自动生成 SN 绕过
+                    if (string.IsNullOrEmpty(typed))
+                    {
+                        BarcodePrompt(AppStrings.Get("barcode_required"));
+                        _barcodeInput.Focus();
+                        return;
+                    }
+                    if (_barcodeRules.Count == 1 && !SafeRegexMatch(_barcodeRules[0].Regex, typed))
+                    {
+                        BarcodePrompt(AppStrings.Get("barcode_rule_mismatch", 1, 1, _barcodeRules[0].Name));
+                        _barcodeInput.Focus();
+                        _barcodeInput.SelectAll();
+                        return;
+                    }
+
+                    SN = typed;
+                    if (testcase_lib != null)
+                    {
+                        testcase_lib.input_sn = typed;
+                        if (_barcodeRules.Count == 1)
+                            testcase_lib.golb_var_default[_barcodeRules[0].Name] = typed;
+                    }
+                }
+            }
+            else if (string.IsNullOrEmpty(_sn) || _sn == "NA")
+            {
+                // 条码未启用：维持旧行为，自动生成 SN
                 _sn = $"SN-{DateTime.Now:yyyyMMdd-HHmmss}";
-            if (!_tracker.ValidateBarcode(_sn)) return;
+            }
+
+            if (!BarcodeValidateForStart(_sn)) return;
             
                 if (!log_append.Checked) TestLoggerForm.Instance.ClearLog();
             TestLoggerForm.SetLogPrefix(_sn);
@@ -1232,7 +1499,8 @@ namespace test_antdui
         {
             _btnStart.Enabled = true;
             _btnStart.Loading = false;
-            _barcodeInput.Enabled = _tracker.BarcodeEnabled;
+            _barcodeInput.Enabled = BarcodeInputEnabled;
+            BarcodeReset();
             iconState.State = TType.None;
             tBadge7.State = TState.Default;
             SetAlertWarning(AppStrings.Get("alert_ready"));
@@ -1251,7 +1519,7 @@ namespace test_antdui
         /// </summary>
         private void ApplyBarcodeMode()
         {
-            bool enabled = _tracker.BarcodeEnabled;
+            bool enabled = BarcodeInputEnabled;
             _barcodeInput.Enabled = enabled;
             if (enabled)
                 _barcodeInput.Focus();
@@ -1307,6 +1575,7 @@ namespace test_antdui
             _statsPanel.Invalidate();
             ApplyBarcodeMode();
             menu1.Collapsed = true;
+            _triggerInput?.Start();     // 窗口就绪后再启动外部触发器
         }
 
         // ═══ Serial Scanner ═════════════════════════════
@@ -1411,6 +1680,59 @@ namespace test_antdui
                 return;
             }
             AddLog($"DI error: {message}", Palette.Fail);
+        }
+
+        // ═══ External Input Trigger (button / micro switch) ═══
+
+        /// <summary>
+        /// 外部触发器：setup.ini [settrigger] 配置串口引脚(CTS/DSR/DCD/RI)
+        /// 或 SRND-CM-12DI。触发只负责“点 Start”，SN 正则/多条码校验仍走 _btnStart_Click。
+        /// </summary>
+        private void InitTriggerInput()
+        {
+            try
+            {
+                _triggerInput = TriggerFactory.CreateFromIni(
+                    msg => AddLog(msg, Palette.Fail));
+                if (_triggerInput == null) return;
+
+                _triggerInput.Triggered += OnExternalTrigger;
+                _triggerInput.Status += OnTriggerStatus;
+                // Start 放到 MainForm_Shown：此时窗口句柄已创建，状态日志能安全回到 UI 线程
+            }
+            catch (Exception ex)
+            {
+                AddLog($"触发器初始化失败: {ex.Message}", Palette.Fail);
+            }
+        }
+
+        private void OnExternalTrigger()
+        {
+            if (IsDisposed) return;
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(OnExternalTrigger));
+                return;
+            }
+
+            // 测试进行中 / Start 不可用（含未加载模板等）时忽略，避免重复触发
+            if (!IsHandleCreated || !_btnStart.Enabled) return;
+            if (_engine != null && _engine.IsRunning) return;
+
+            _waitingForTrigger = false;
+            AddLog("外部触发: 启动测试", Palette.AccentSoft);
+            _btnStart.PerformClick();
+        }
+
+        private void OnTriggerStatus(string message)
+        {
+            if (IsDisposed) return;
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action<string>(OnTriggerStatus), message);
+                return;
+            }
+            AddLog(message, Palette.AccentSoft);
         }
 
         private void PwdInput_TextChanged(object sender, EventArgs e)
@@ -1607,6 +1929,7 @@ namespace test_antdui
         private DateTime _testStartTime;
         private ScannerService _scanner;
         private DigitalInputMonitor _diMonitor;
+        private ITriggerInput _triggerInput;
 
         #endregion
 

@@ -113,7 +113,7 @@
             lblBarcodeHint.Name = "lblBarcodeHint";
             lblBarcodeHint.Size = new System.Drawing.Size(350, 34);
             lblBarcodeHint.TabIndex = 2;
-            lblBarcodeHint.Text = "Hint: Barcode regex saved in setup.ini [setbarcode] barreg\nSave to apply, barcode input validates in real-time";
+            lblBarcodeHint.Text = "Hint: saved in setup.ini [setbarcode] barreg\nMulti-barcode: add count=N + barreg1..N/name1..N (1st = SN, rest -> global vars)";
             // 
             // btnSaveBarcode
             // 

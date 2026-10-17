@@ -65,6 +65,14 @@ namespace test_antdui
             ["sn_entered"] = Make("SN: {0} 已录入", "SN: {0} entered"),
             ["barcode_scanned"] = Make("条码录入: {0}", "Barcode: {0}"),
             ["barcode_invalid"] = Make("条码格式不匹配！", "Barcode format mismatch!"),
+            ["barcode_multi_prompt"] = Make("条码扫入 ({0}/{1}) {2}：", "Scan barcode ({0}/{1}) {2}:"),
+            ["barcode_multi_status"] = Make("({0}/{1}) {2}  |  {3}", "({0}/{1}) {2}  |  {3}"),
+            ["barcode_rule_mismatch"] = Make("第{0}/{1}条 ({2}) 条码不符合规则", "barcode {0}/{1} ({2}) not match rule"),
+            ["barcode_duplicate"] = Make("条码重复 ({0})", "duplicate barcode ({0})"),
+            ["barcode_incomplete"] = Make("请先扫完所有条码 ({0}/{1})", "Scan all barcodes first ({0}/{1})"),
+            ["barcode_required"] = Make("请先扫描/输入条码", "Scan or enter a barcode first"),
+            ["barcode_wait_trigger"] = Make("SN 已录入，请按外部按钮启动", "SN ready, press trigger button"),
+            ["log_wait_trigger"] = Make("条码已录入，等待外部按钮启动", "SN ready, waiting for trigger"),
 
             // ── Scanner ──
             ["scanner_connected"] = Make("📡 {0} 已连接", "📡 {0} connected"),
