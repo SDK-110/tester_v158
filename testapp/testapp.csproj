@@ -389,6 +389,26 @@
     这里在编译后删除这些冗余 DLL（Costura 运行时从内嵌资源加载），只保留主程序集。
     若以后新增无法嵌入的原生 DLL，把它加入下面的 Exclude。
   -->
+  <!--
+    RID 构建下这 7 个实现程序集位于 runtimes/win/lib，不属于编译引用，Costura 不会自动嵌入。
+    这里按 Costura 的资源命名手动嵌入，运行时由其 AssemblyResolve 加载。
+  -->
+  <Target Name="EmbedRuntimeManagedAssemblies" AfterTargets="ResolveReferences">
+    <ItemGroup>
+      <RuntimeManagedEmbed Include="@(RuntimeCopyLocalItems)"
+          Condition="'%(Filename)%(Extension)' == 'System.IO.Ports.dll'
+                  Or '%(Filename)%(Extension)' == 'System.Management.dll'
+                  Or '%(Filename)%(Extension)' == 'System.Data.OleDb.dll'
+                  Or '%(Filename)%(Extension)' == 'System.Diagnostics.EventLog.dll'
+                  Or '%(Filename)%(Extension)' == 'System.Runtime.Caching.dll'
+                  Or '%(Filename)%(Extension)' == 'Microsoft.Data.SqlClient.dll'
+                  Or '%(Filename)%(Extension)' == 'System.Data.SqlClient.dll'" />
+      <EmbeddedResource Include="@(RuntimeManagedEmbed)">
+        <LogicalName>costura.$([System.String]::Copy('%(Filename)').ToLowerInvariant()).dll</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
+
   <Target Name="RemoveCosturaEmbeddedDlls" AfterTargets="Build">
     <ItemGroup>
       <CosturaEmbeddedDll Include="$(OutDir)*.dll" Exclude="$(OutDir)testapp.dll" />

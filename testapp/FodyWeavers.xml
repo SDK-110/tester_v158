@@ -19,9 +19,6 @@
       libHarfBuzzSharp
     </Unmanaged32Assemblies>
 
-    <!-- RID 原生 DLL 已由上面的 Unmanaged32Assemblies 嵌入，不再重复嵌入一份 -->
-    <IncludeRuntimeReferences>false</IncludeRuntimeReferences>
-
     <!-- 可选：排除不需要嵌入的 DLL（按需取消注释）
     <ExcludeAssemblies>
       Ivi.Visa
