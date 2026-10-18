@@ -311,13 +311,16 @@ namespace test_antdui
                         AntdUI.Message.warn(this, "请在输入框中输入有效的目标行号");
                         return;
                     }
-                    if (_engine.IsRunning && _targetRow <= _engine.CurrentIndex)
+                    // 等于当前暂停项是允许的：会先执行完当前项，再停在下一项。
+                    if (_engine.IsRunning && _targetRow < _engine.CurrentIndex)
                     {
                         AntdUI.Message.warn(this, $"目标行 #{_targetRow + 1} 已过当前位置 (#{_engine.CurrentIndex + 1})");
                         return;
                     }
                     _engine.RunTo(_targetRow);
-                    _lblStatus.Text = $"状态：正在运行到目标行 #{_targetRow + 1}...";
+                    _lblStatus.Text = _engine.IsRunning
+                        ? $"状态：正在运行到目标行 #{_targetRow + 1}..."
+                        : $"状态：已设置目标行 #{_targetRow + 1}，开始测试后生效";
                     break;
 
                 case "继续运行":

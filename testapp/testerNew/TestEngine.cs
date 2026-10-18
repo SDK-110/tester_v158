@@ -90,6 +90,7 @@ namespace test_antdui
             }
 
             _isRunning = true;
+            _currentIndex = -1;      // 新的一轮：清掉上一轮遗留的位置
             _cts = new CancellationTokenSource();
 
             try
@@ -113,14 +114,15 @@ namespace test_antdui
                     // 调试暂停检查（在测试项执行前）
                     if (!_cts.Token.IsCancellationRequested && _debugMode != DebugMode.Normal)
                     {
-                        // RunToMode: 到达目标行时暂停，然后切换为 StepMode
-                        if (_debugMode == DebugMode.RunToMode && i >= _targetRow)
+                        // RunToMode: 目标行本身执行完，在下一项开始前暂停，然后切换为 StepMode
+                        if (_debugMode == DebugMode.RunToMode && i > _targetRow)
                         {
                             _debugMode = DebugMode.StepMode;
                             _pauseTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                             OnDebugPaused(i, item);
-                            OnLogMessage($"[调试] 已到达目标行 #{_targetRow + 1}，暂停在 [{item.Id}] {item.Name}");
+                            OnLogMessage($"[调试] 已完成目标行 #{_targetRow + 1}，暂停在下一项 [{item.Id}] {item.Name}");
                             await _pauseTcs.Task;
+                            if (_cts.Token.IsCancellationRequested) break;
                             OnLogMessage($"[调试] 继续执行...");
                         }
                         // StepMode: 在每项执行前暂停
@@ -130,6 +132,7 @@ namespace test_antdui
                             OnDebugPaused(i, item);
                             OnLogMessage($"[调试] 单步暂停在 [{item.Id}] {item.Name}");
                             await _pauseTcs.Task;
+                            if (_cts.Token.IsCancellationRequested) break;
                             OnLogMessage($"[调试] 继续执行...");
                         }
                     }
@@ -193,9 +196,10 @@ namespace test_antdui
             finally
             {
                 _isRunning = false;
-                // 调试模式复位
+                // 调试模式复位；位置也清掉，否则下一轮 RunTo 会拿上一轮的索引误判"已过当前位置"
                 _debugMode = DebugMode.Normal;
                 _targetRow = -1;
+                _currentIndex = -1;
                 _pauseTcs = null;
                 _cts?.Dispose();
                 _cts = null;
@@ -314,7 +318,9 @@ namespace test_antdui
         public void RunTo(int targetRow)
         {
             OnLogMessage($"[调试] RunTo({targetRow + 1}) 被调用, 当前索引={_currentIndex}, 引擎运行={_isRunning}");
-            if (targetRow <= _currentIndex)
+            // 只有"目标行在当前暂停项之前"才无法跳回；等于当前项表示执行完当前项再暂停。
+            // 引擎未运行时允许预设置目标行，供下一次启动使用。
+            if (_isRunning && targetRow < _currentIndex)
             {
                 OnLogMessage($"[调试] 目标行 #{targetRow + 1} 已过当前位置 (#{_currentIndex + 1})，无法跳回");
                 return;
