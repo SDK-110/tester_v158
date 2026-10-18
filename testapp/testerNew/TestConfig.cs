@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 namespace test_antdui
@@ -96,35 +97,73 @@ namespace test_antdui
             }
         }
 
+        // 不用 XmlSerializer：首次使用要动态生成序列化程序集，实测拖慢启动约 0.9 秒。
         public static TestConfig Load()
         {
+            var config = new TestConfig();
             try
             {
-                if (File.Exists(ConfigPath))
-                {
-                    var serializer = new XmlSerializer(typeof(TestConfig));
-                    using (var stream = new FileStream(ConfigPath, FileMode.Open))
-                    {
-                        return (TestConfig)serializer.Deserialize(stream);
-                    }
-                }
+                if (!File.Exists(ConfigPath)) return config;
+                var root = XDocument.Load(ConfigPath).Root;
+                if (root == null) return config;
+
+                config.TotalCount = GetInt(root, nameof(config.TotalCount), config.TotalCount);
+                config.PassCount = GetInt(root, nameof(config.PassCount), config.PassCount);
+                config.FailCount = GetInt(root, nameof(config.FailCount), config.FailCount);
+                config.LastTestTime = Get(root, nameof(config.LastTestTime), config.LastTestTime);
+                config.LastTestResult = Get(root, nameof(config.LastTestResult), config.LastTestResult);
+                config.ProjectName = Get(root, nameof(config.ProjectName), config.ProjectName);
+                config.LastExcelPath = Get(root, nameof(config.LastExcelPath), config.LastExcelPath);
+                config.SaveMethod = GetInt(root, nameof(config.SaveMethod), config.SaveMethod);
+                config.AutoSaveLog = GetBool(root, nameof(config.AutoSaveLog), config.AutoSaveLog);
+                config.LastOrderNo = Get(root, nameof(config.LastOrderNo), config.LastOrderNo);
+                config.LastOperatorNo = Get(root, nameof(config.LastOperatorNo), config.LastOperatorNo);
+                config.ReportPath = Get(root, nameof(config.ReportPath), config.ReportPath);
+                config.LogPath = Get(root, nameof(config.LogPath), config.LogPath);
+                config.StopOnFail = GetInt(root, nameof(config.StopOnFail), config.StopOnFail);
+                config.LOGAppend = GetInt(root, nameof(config.LOGAppend), config.LOGAppend);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"加载配置失败: {ex.Message}");
             }
-            return new TestConfig();
+            return config;
         }
+
+        private static string Get(XElement root, string name, string defaultValue)
+            => root.Element(name)?.Value ?? defaultValue;
+
+        private static int GetInt(XElement root, string name, int defaultValue)
+            => int.TryParse(root.Element(name)?.Value, out int value) ? value : defaultValue;
+
+        private static bool GetBool(XElement root, string name, bool defaultValue)
+            => bool.TryParse(root.Element(name)?.Value, out bool value) ? value : defaultValue;
 
         public static void Save(TestConfig config)
         {
             try
             {
-                var serializer = new XmlSerializer(typeof(TestConfig));
-                using (var stream = new FileStream(ConfigPath, FileMode.Create))
-                {
-                    serializer.Serialize(stream, config);
-                }
+                var doc = new XDocument(
+                    new XDeclaration("1.0", "utf-8", null),
+                    new XElement("TestConfig",
+                        new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
+                        new XAttribute(XNamespace.Xmlns + "xsd", "http://www.w3.org/2001/XMLSchema"),
+                        new XElement(nameof(config.TotalCount), config.TotalCount),
+                        new XElement(nameof(config.PassCount), config.PassCount),
+                        new XElement(nameof(config.FailCount), config.FailCount),
+                        new XElement(nameof(config.LastTestTime), config.LastTestTime),
+                        new XElement(nameof(config.LastTestResult), config.LastTestResult),
+                        new XElement(nameof(config.ProjectName), config.ProjectName),
+                        new XElement(nameof(config.LastExcelPath), config.LastExcelPath),
+                        new XElement(nameof(config.SaveMethod), config.SaveMethod),
+                        new XElement(nameof(config.AutoSaveLog), config.AutoSaveLog),
+                        new XElement(nameof(config.LastOrderNo), config.LastOrderNo),
+                        new XElement(nameof(config.LastOperatorNo), config.LastOperatorNo),
+                        new XElement(nameof(config.ReportPath), config.ReportPath),
+                        new XElement(nameof(config.LogPath), config.LogPath),
+                        new XElement(nameof(config.StopOnFail), config.StopOnFail),
+                        new XElement(nameof(config.LOGAppend), config.LOGAppend)));
+                doc.Save(ConfigPath);
             }
             catch (Exception ex)
             {

@@ -2,11 +2,18 @@ using ClosedXML.Excel;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace test_antdui
 {
     public class ExcelTestLoader
     {
+        private static readonly XNamespace Sml = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+
         public static string DefaultTemplatePath
         {
             get
@@ -43,84 +50,65 @@ namespace test_antdui
 
             try
             {
-                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                using (var workbook = new XLWorkbook(stream))
+                // 直接流式读取 xlsx（zip+xml），只取前 9 列、读到第一个空行即停。
+                // 不用 ClosedXML 读：它会把整张表（例如 3318 行 × 100 列）全部实例化，耗时 3~5 秒。
+                var rows = ReadRows(filePath);
+
+                // Detect sproj format: Row 1 Col A contains "project_name"
+                bool isSproj = Cell(rows, 1, 1).Contains("project_name");
+
+                if (isSproj)
                 {
-                    var sheet = workbook.Worksheet(1);
-                    if (sheet == null) return project;
+                    // sproj format: read project name from B1
+                    string projName = Cell(rows, 1, 2);
+                    if (!string.IsNullOrWhiteSpace(projName))
+                        project.ProjectName = projName;
 
-                    // Detect sproj format: Row 1 Col A contains "project_name"
-                    string cellA1 = GetCellValue(sheet, 1, 1);
-                    bool isSproj = cellA1 != null && cellA1.Contains("project_name");
-
-                    if (isSproj)
+                    int seq = 1;
+                    for (int row = 5; ; row++, seq++)
                     {
-                        // sproj format: read project name from B1
-                        string projName = GetCellValue(sheet, 1, 2);
-                        if (!string.IsNullOrWhiteSpace(projName))
-                            project.ProjectName = projName;
+                        string idStr = Cell(rows, row, 1);
+                        if (string.IsNullOrWhiteSpace(idStr))
+                            break; // Stop at first empty row (same as old engine: while Data!=null)
 
-                        int row = 5;
-                        int seq = 1;
-                        int maxRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
+                        string spikVal = Cell(rows, row, 5, "0");
 
-                        while (row <= maxRow)
+                        project.Items.Add(new TestItem
                         {
-                            string idStr = GetCellValue(sheet, row, 1);
-                            if (string.IsNullOrWhiteSpace(idStr))
-                            {
-                                break; // Stop at first empty row (same as old engine: while Data!=null)
-                            }
-
-                            string spikVal = GetCellValue(sheet, row, 5, "0");
-
-                            var item = new TestItem
-                            {
-                                Id = int.TryParse(idStr, out int id) ? id : seq,
-                                Name = GetCellValue(sheet, row, 2),
-                                HighLimit = GetCellValue(sheet, row, 3),  // C = testcase_high_limit (swapped)
-                                LowLimit = GetCellValue(sheet, row, 4),   // D = testcase_low_limit (swapped)
-                                Skip = (spikVal == "0") ? "1" : "0",      // Reverse: spik "0"→skip "1", spik "1"→skip "0"
-                                RetryCount = GetCellValue(sheet, row, 6, "1"),
-                                FunctionName = GetCellValue(sheet, row, 7),
-                                Jumper_Num = GetCellValue(sheet, row, 8),
-                                Parameter = GetCellValue(sheet, row, 9)
-                            };
-
-                            project.Items.Add(item);
-                            row++;
-                            seq++;
-                        }
+                            Id = int.TryParse(idStr, out int id) ? id : seq,
+                            Name = Cell(rows, row, 2),
+                            HighLimit = Cell(rows, row, 3),  // C = testcase_high_limit (swapped)
+                            LowLimit = Cell(rows, row, 4),   // D = testcase_low_limit (swapped)
+                            Skip = (spikVal == "0") ? "1" : "0",      // Reverse: spik "0"→skip "1", spik "1"→skip "0"
+                            RetryCount = Cell(rows, row, 6, "1"),
+                            FunctionName = Cell(rows, row, 7),
+                            Jumper_Num = Cell(rows, row, 8),
+                            Parameter = Cell(rows, row, 9)
+                        });
                     }
-                    else
+                }
+                else
+                {
+                    // Normal xlsx format: Row 1 = header, Row 2+ = data
+                    int seq = 1;
+                    for (int row = 2; ; row++, seq++)
                     {
-                        // Normal xlsx format: Row 1 = header, Row 2+ = data
-                        int row = 2;
-                        int seq = 1;
+                        string name = Cell(rows, row, 2);
+                        if (string.IsNullOrWhiteSpace(name))
+                            break;
 
-                        while (true)
+                        project.Items.Add(new TestItem
                         {
-                            string name = GetCellValue(sheet, row, 2);
-                            if (string.IsNullOrWhiteSpace(name))
-                                break;
-
-                            var item = new TestItem
-                            {
-                                Id = int.TryParse(GetCellValue(sheet, row, 1), out int id) ? id : seq,
-                                Name = name,
-                                LowLimit = GetCellValue(sheet, row, 3),
-                                HighLimit = GetCellValue(sheet, row, 4),
-                                Skip = GetCellValue(sheet, row, 5, "0"),
-                                RetryCount = GetCellValue(sheet, row, 6, "1"),
-                                FunctionName = GetCellValue(sheet, row, 7),
-                                Jumper_Num = GetCellValue(sheet, row, 8),
-                                Parameter = GetCellValue(sheet, row, 9)
-                            };
-
-                            project.Items.Add(item);
-                            row++;
-                            seq++;
-                        }
+                            Id = int.TryParse(Cell(rows, row, 1), out int id) ? id : seq,
+                            Name = name,
+                            LowLimit = Cell(rows, row, 3),
+                            HighLimit = Cell(rows, row, 4),
+                            Skip = Cell(rows, row, 5, "0"),
+                            RetryCount = Cell(rows, row, 6, "1"),
+                            FunctionName = Cell(rows, row, 7),
+                            Jumper_Num = Cell(rows, row, 8),
+                            Parameter = Cell(rows, row, 9)
+                        });
                     }
                 }
 
@@ -234,10 +222,134 @@ namespace test_antdui
             }
         }
 
-        private static string GetCellValue(IXLWorksheet sheet, int row, int col, string defaultValue = "")
+        /// <summary>读取第一张工作表：只保留 A..I 列，遇到数据区末尾即停止。</summary>
+        private static Dictionary<int, string[]> ReadRows(string filePath)
         {
-            var cell = sheet.Cell(row, col);
-            return cell.IsEmpty() ? defaultValue : cell.GetValue<string>() ?? defaultValue;
+            var rows = new Dictionary<int, string[]>();
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var zip = new ZipArchive(fs, ZipArchiveMode.Read);
+            var shared = ReadSharedStrings(zip);
+            using var sheet = GetFirstSheet(zip);
+            if (sheet == null) return rows;
+
+            using var reader = XmlReader.Create(sheet, new XmlReaderSettings { IgnoreWhitespace = true });
+            reader.MoveToContent();
+
+            bool? isSproj = null;
+            int rowNum = 0;
+            while (!reader.EOF)
+            {
+                // 只有读到行首才解析；XNode.ReadFrom 之后 reader 已在下一节点，不能再多读一次
+                if (reader.NodeType == XmlNodeType.Element
+                    && reader.LocalName == "row"
+                    && reader.NamespaceURI == Sml.NamespaceName)
+                {
+                    var row = (XElement)XNode.ReadFrom(reader);
+                    rowNum = int.TryParse((string)row.Attribute("r"), out int n) ? n : rowNum + 1;
+
+                    var cells = new string[10];   // 下标 1..9
+                    foreach (var c in row.Elements(Sml + "c"))
+                    {
+                        int col = ColumnIndex((string)c.Attribute("r"));
+                        if (col >= 1 && col <= 9)
+                            cells[col] = CellValue(c, shared);
+                    }
+                    rows[rowNum] = cells;
+
+                    isSproj ??= (cells[1] ?? "").Contains("project_name");
+                    bool done = isSproj.Value
+                        ? rowNum >= 5 && string.IsNullOrWhiteSpace(cells[1])
+                        : rowNum >= 2 && string.IsNullOrWhiteSpace(cells[2]);
+                    if (done) break;
+                    continue;
+                }
+                reader.Read();
+            }
+            return rows;
+        }
+
+        private static string Cell(Dictionary<int, string[]> rows, int row, int col, string defaultValue = "")
+            => rows.TryGetValue(row, out var cells) ? (cells[col] ?? defaultValue) : defaultValue;
+
+        private static string CellValue(XElement cell, List<string> shared)
+        {
+            string type = (string)cell.Attribute("t");
+            if (type == "inlineStr")
+                return string.Concat(cell.Descendants(Sml + "t").Select(t => t.Value));
+
+            var v = cell.Element(Sml + "v");
+            if (v == null) return "";
+            string raw = v.Value;
+            if (type == "s")
+                return int.TryParse(raw, out int idx) && idx >= 0 && idx < shared.Count ? shared[idx] : "";
+            return raw;
+        }
+
+        private static List<string> ReadSharedStrings(ZipArchive zip)
+        {
+            var list = new List<string>();
+            var entry = zip.GetEntry("xl/sharedStrings.xml");
+            if (entry == null) return list;
+
+            using var stream = entry.Open();
+            var doc = XDocument.Load(stream);
+            foreach (var si in doc.Root.Elements(Sml + "si"))
+            {
+                var sb = new StringBuilder();
+                foreach (var t in si.Descendants(Sml + "t"))
+                {
+                    if (t.Parent?.Name == Sml + "rPh") continue;   // 注音不是单元格内容
+                    sb.Append(t.Value);
+                }
+                list.Add(sb.ToString());
+            }
+            return list;
+        }
+
+        /// <summary>按 workbook.xml + rels 找到第一张工作表的 xml 流。</summary>
+        private static Stream GetFirstSheet(ZipArchive zip)
+        {
+            string target = null;
+            var wbEntry = zip.GetEntry("xl/workbook.xml");
+            var relsEntry = zip.GetEntry("xl/_rels/workbook.xml.rels");
+            if (wbEntry != null && relsEntry != null)
+            {
+                XNamespace rel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+                XNamespace pkg = "http://schemas.openxmlformats.org/package/2006/relationships";
+                XDocument wb, rels;
+                using (var s = wbEntry.Open()) wb = XDocument.Load(s);
+                using (var s = relsEntry.Open()) rels = XDocument.Load(s);
+
+                var sheet = wb.Root?.Element(Sml + "sheets")?.Elements(Sml + "sheet").FirstOrDefault();
+                string id = (string)sheet?.Attribute(rel + "id");
+                string path = (string)rels.Root?.Elements(pkg + "Relationship")
+                    .FirstOrDefault(e => (string)e.Attribute("Id") == id)?.Attribute("Target");
+                if (!string.IsNullOrEmpty(path))
+                {
+                    path = path.TrimStart('/');
+                    target = path.StartsWith("xl/") ? path : "xl/" + path;
+                }
+            }
+
+            var entry = target != null ? zip.GetEntry(target) : null;
+            entry ??= zip.GetEntry("xl/worksheets/sheet1.xml");
+            entry ??= zip.Entries.FirstOrDefault(e =>
+                e.FullName.StartsWith("xl/worksheets/") && e.FullName.EndsWith(".xml"));
+            return entry?.Open();
+        }
+
+        /// <summary>"B12" → 2。</summary>
+        private static int ColumnIndex(string cellRef)
+        {
+            int col = 0;
+            if (cellRef == null) return 0;
+            foreach (char ch in cellRef)
+            {
+                if (ch >= 'A' && ch <= 'Z') col = col * 26 + (ch - 'A' + 1);
+                else if (ch >= 'a' && ch <= 'z') col = col * 26 + (ch - 'a' + 1);
+                else break;
+            }
+            return col;
         }
     }
 }
