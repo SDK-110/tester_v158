@@ -188,6 +188,7 @@ namespace test_antdui
                     if (fileExists)
                     {
                         sheet = workbook.Worksheet(1);
+                        MigrateAppendHeaders(sheet, project);
                     }
                     else
                     {
@@ -205,10 +206,12 @@ namespace test_antdui
                     sheet.Cell(newRow, col++).Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     sheet.Cell(newRow, col++).Value = GetOverallResult(project);
 
-                    foreach (var item in project.Items)
+                    for (int i = 0; i < project.Items.Count; i++)
                     {
-                        string colName = $"{item.Name}_({item.HighLimit}_{item.LowLimit})";
-                        int headerCol = GetHeaderColumn(sheet, colName);
+                        var item = project.Items[i];
+                        // 列名必须带步骤序号：同名同限值的步骤（如多个 Delay）否则会重名，
+                        // GetHeaderColumn 永远命中第一列，导致后续步骤没有记录。
+                        int headerCol = GetHeaderColumn(sheet, ItemHeader(item, i));
                         if (headerCol > 0)
                         {
                             if (item.State == TestState.Pending)
@@ -240,6 +243,9 @@ namespace test_antdui
             return -1;
         }
 
+        private static string ItemHeader(TestItem item, int index)
+            => $"#{index + 1} {item.Name}_({item.HighLimit}_{item.LowLimit})";
+
         private static void CreateAppendHeaders(IXLWorksheet sheet, TestProject project)
         {
             int col = 1;
@@ -249,15 +255,29 @@ namespace test_antdui
             sheet.Cell(1, col++).Value = "测试时间";
             sheet.Cell(1, col++).Value = "最终结果";
 
-            foreach (var item in project.Items)
-            {
-                string colName = $"{item.Name}_({item.HighLimit}_{item.LowLimit})";
-                sheet.Cell(1, col++).Value = colName;
-            }
+            for (int i = 0; i < project.Items.Count; i++)
+                sheet.Cell(1, col++).Value = ItemHeader(project.Items[i], i);
 
             // Bold all headers in first row
             for (int i = 1; i < col; i++)
                 sheet.Cell(1, i).Style.Font.Bold = true;
+        }
+
+        /// <summary>
+        /// 旧版追加表的列名没有步骤序号。若测试表存在同名同限值的步骤，
+        /// 这些列会完全重名，导致所有步骤都写进第一列。
+        /// 打开旧表时按“一列一步骤”的既有布局重写列名；已是新格式则不动。
+        /// </summary>
+        private static void MigrateAppendHeaders(IXLWorksheet sheet, TestProject project)
+        {
+            int lastCol = sheet.LastColumnUsed()?.ColumnNumber() ?? 0;
+            if (lastCol <= 5) return;
+
+            string firstItemHeader = sheet.Cell(1, 6).GetString();
+            if (firstItemHeader.StartsWith("#")) return;   // 已是新格式
+
+            for (int i = 0; i < project.Items.Count; i++)
+                sheet.Cell(1, 6 + i).Value = ItemHeader(project.Items[i], i);
         }
 
         private static string GetStateText(TestState state)
