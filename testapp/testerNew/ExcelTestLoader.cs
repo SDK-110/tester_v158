@@ -52,7 +52,7 @@ namespace test_antdui
             {
                 // 直接流式读取 xlsx（zip+xml），只取前 9 列、读到第一个空行即停。
                 // 不用 ClosedXML 读：它会把整张表（例如 3318 行 × 100 列）全部实例化，耗时 3~5 秒。
-                var rows = ReadRows(filePath);
+                var rows = ReadStepRows(filePath);
 
                 // Detect sproj format: Row 1 Col A contains "project_name"
                 bool isSproj = Cell(rows, 1, 1).Contains("project_name");
@@ -222,8 +222,11 @@ namespace test_antdui
             }
         }
 
-        /// <summary>读取第一张工作表：只保留 A..I 列，遇到数据区末尾即停止。</summary>
-        private static Dictionary<int, string[]> ReadRows(string filePath)
+        /// <summary>
+        /// 读取第一张工作表：只保留 A..I 列，遇到数据区末尾即停止。
+        /// 返回 行号 -> 列值(下标 1..9)，供 Main_f 等其它加载器共用。
+        /// </summary>
+        public static Dictionary<int, string[]> ReadStepRows(string filePath)
         {
             var rows = new Dictionary<int, string[]>();
             using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);

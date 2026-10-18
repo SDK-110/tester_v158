@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using MiniExcelLibs;
 using unvell.ReoGrid;
 using unvell.ReoGrid.IO;
 using 重构程序.testcase_loader;
@@ -94,43 +91,29 @@ namespace rebuild.testcase_loader
             var sav = new tester_project();
             sav.test_cases = new List<tester_standard_style>();
 
-            // MiniExcel.Query 要求文件后缀为 .xlsx，.sproj 实质是 xlsx 格式，先复制临时文件
-            string loadPath = project_tester_name;
-            string tempFile = null;
             try
             {
-                if (project_tester_name.EndsWith(".sproj", StringComparison.OrdinalIgnoreCase))
+                // 与 testerNew 共用流式读取：只取 A-I 列，遇到空行即停。
+                // 不再整表加载（工作表范围常被撑到几千行×100 列）。
+                var rows = test_antdui.ExcelTestLoader.ReadStepRows(project_tester_name);
+                if (!rows.ContainsKey(5)) return null;
+
+                sav.project = Cell(rows, 1, 2);
+                sav.project_tester_name = Cell(rows, 2, 2);
+
+                for (int row = 5; ; row++)
                 {
-                    tempFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".xlsx");
-                    System.IO.File.Copy(project_tester_name, tempFile, overwrite: true);
-                    loadPath = tempFile;
-                }
-
-                // MiniExcel 流式读取，不加载整个文件的 XML DOM（比 ReoGrid 快 5-10 倍）
-                var rows = MiniExcel.Query(loadPath, useHeaderRow: false).ToList();
-                if (rows.Count < 5) return null;
-
-                var r0 = (IDictionary<string, object>)rows[0];
-                sav.project = r0.TryGetValue("B", out var v0) ? v0?.ToString() : null;
-
-                var r1 = (IDictionary<string, object>)rows[1];
-                sav.project_tester_name = r1.TryGetValue("B", out var v1) ? v1?.ToString() : null;
-
-                for (int i = 4; i < rows.Count; i++)
-                {
-                    var r = (IDictionary<string, object>)rows[i];
-                    if (!r.TryGetValue("A", out var tmp) || tmp == null) break;
-                    string id = tmp.ToString();
+                    string id = Cell(rows, row, 1);
                     if (string.IsNullOrEmpty(id)) break;
 
-                    string test_description = r.TryGetValue("B", out var c2) ? c2?.ToString() ?? "" : "";
-                    string high_limit       = r.TryGetValue("C", out var c3) ? c3?.ToString() ?? "" : "";
-                    string low_limit        = r.TryGetValue("D", out var c4) ? c4?.ToString() ?? "" : "";
-                    string spik             = r.TryGetValue("E", out var c5) ? c5?.ToString() ?? "" : "";
-                    string repeat           = r.TryGetValue("F", out var c6) ? c6?.ToString() ?? "" : "";
-                    string lib              = r.TryGetValue("G", out var c7) ? c7?.ToString() ?? "" : "";
-                    string loop             = r.TryGetValue("H", out var c8) ? c8?.ToString() ?? "" : "";
-                    string param            = r.TryGetValue("I", out var c9) ? c9?.ToString() ?? "" : "";
+                    string test_description = Cell(rows, row, 2);
+                    string high_limit       = Cell(rows, row, 3);
+                    string low_limit        = Cell(rows, row, 4);
+                    string spik             = Cell(rows, row, 5);
+                    string repeat           = Cell(rows, row, 6);
+                    string lib              = Cell(rows, row, 7);
+                    string loop             = Cell(rows, row, 8);
+                    string param            = Cell(rows, row, 9);
 
                     if (string.IsNullOrEmpty(test_description) ||
                         string.IsNullOrEmpty(high_limit) ||
@@ -160,12 +143,10 @@ namespace rebuild.testcase_loader
             {
                 return null;
             }
-            finally
-            {
-                if (tempFile != null && File.Exists(tempFile))
-                    System.IO.File.Delete(tempFile);
-            }
         }
+
+        private static string Cell(Dictionary<int, string[]> rows, int row, int col)
+            => rows.TryGetValue(row, out var cells) ? (cells[col] ?? "") : "";
 
         private static void Workbook_WorkbookLoaded(object sender, EventArgs e)
         {
