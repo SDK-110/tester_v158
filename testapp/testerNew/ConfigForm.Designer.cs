@@ -1,4 +1,4 @@
-﻿namespace test_antdui
+namespace test_antdui
 {
     partial class ConfigForm
     {
@@ -59,29 +59,29 @@
             // 
             // tabBarcode
             // 
-            tabBarcode.BackColor = System.Drawing.Color.FromArgb(10, 15, 30);
-            tabBarcode.Controls.Add(lblBarcodeRegex);
-            tabBarcode.Controls.Add(txtBarcodeRegex);
-            tabBarcode.Controls.Add(chkBarcodeEnabled);
-            tabBarcode.Controls.Add(lblBarcodeHint);
-            tabBarcode.Controls.Add(btnSaveBarcode);
-            tabBarcode.Location = new System.Drawing.Point(4, 29);
-            tabBarcode.Name = "tabBarcode";
-            tabBarcode.Padding = new System.Windows.Forms.Padding(3);
-            tabBarcode.Size = new System.Drawing.Size(592, 367);
-            tabBarcode.TabIndex = 0;
-            tabBarcode.Text = "📏 Barcode";
+            this.tabBarcode.BackColor = Palette.Bg;
+            this.tabBarcode.Controls.Add(this.lblBarcodeRegex);
+            this.tabBarcode.Controls.Add(this.txtBarcodeRegex);
+            this.tabBarcode.Controls.Add(this.chkBarcodeEnabled);
+            this.tabBarcode.Controls.Add(this.lblBarcodeHint);
+            this.tabBarcode.Controls.Add(this.btnSaveBarcode);
+            this.tabBarcode.Location = new System.Drawing.Point(4, 29);
+            this.tabBarcode.Name = "tabBarcode";
+            this.tabBarcode.Padding = new System.Windows.Forms.Padding(3);
+            this.tabBarcode.Size = new System.Drawing.Size(592, 367);
+            this.tabBarcode.TabIndex = 0;
+            this.tabBarcode.Text = "📏 Barcode";
             // 
             // lblBarcodeRegex
             // 
-            lblBarcodeRegex.AutoSize = true;
-            lblBarcodeRegex.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            lblBarcodeRegex.ForeColor = System.Drawing.Color.FromArgb(155, 179, 224);
-            lblBarcodeRegex.Location = new System.Drawing.Point(24, 30);
-            lblBarcodeRegex.Name = "lblBarcodeRegex";
-            lblBarcodeRegex.Size = new System.Drawing.Size(112, 20);
-            lblBarcodeRegex.TabIndex = 0;
-            lblBarcodeRegex.Text = "Barcode Regex:";
+            this.lblBarcodeRegex.AutoSize = true;
+            this.lblBarcodeRegex.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
+            this.lblBarcodeRegex.ForeColor = Palette.TextSecondary;
+            this.lblBarcodeRegex.Location = new System.Drawing.Point(24, 30);
+            this.lblBarcodeRegex.Name = "lblBarcodeRegex";
+            this.lblBarcodeRegex.Size = new System.Drawing.Size(112, 20);
+            this.lblBarcodeRegex.TabIndex = 0;
+            this.lblBarcodeRegex.Text = "Barcode Regex:";
             // 
             // txtBarcodeRegex
             // 
@@ -106,14 +106,15 @@
             // 
             // lblBarcodeHint
             // 
-            lblBarcodeHint.AutoSize = true;
-            lblBarcodeHint.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
-            lblBarcodeHint.ForeColor = System.Drawing.Color.FromArgb(108, 134, 176);
-            lblBarcodeHint.Location = new System.Drawing.Point(24, 148);
-            lblBarcodeHint.Name = "lblBarcodeHint";
-            lblBarcodeHint.Size = new System.Drawing.Size(350, 34);
-            lblBarcodeHint.TabIndex = 2;
-            lblBarcodeHint.Text = "Hint: saved in setup.ini [setbarcode] barreg\nMulti-barcode: add count=N + barreg1..N/name1..N (1st = SN, rest -> global vars)";
+            this.lblBarcodeHint.AutoSize = true;
+            this.lblBarcodeHint.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
+            this.lblBarcodeHint.ForeColor = Palette.TextMuted;
+            this.lblBarcodeHint.Location = new System.Drawing.Point(24, 148);
+            this.lblBarcodeHint.Name = "lblBarcodeHint";
+            this.lblBarcodeHint.Size = new System.Drawing.Size(350, 34);
+            this.lblBarcodeHint.TabIndex = 2;
+            this.lblBarcodeHint.Text = "Hint: Barcode regex saved in setup.ini [setbarcode] barreg\nSave to apply, barcode" +
+    " input validates in real-time";
             // 
             // btnSaveBarcode
             // 
@@ -128,50 +129,50 @@
             // 
             // tabShift
             // 
-            tabShift.BackColor = System.Drawing.Color.FromArgb(10, 15, 30);
-            tabShift.Controls.Add(lblShift);
-            tabShift.Controls.Add(lblShiftValue);
-            tabShift.Controls.Add(lblShiftTime);
-            tabShift.Controls.Add(btnToggleShift);
-            tabShift.Location = new System.Drawing.Point(4, 29);
-            tabShift.Name = "tabShift";
-            tabShift.Padding = new System.Windows.Forms.Padding(3);
-            tabShift.Size = new System.Drawing.Size(592, 367);
-            tabShift.TabIndex = 1;
-            tabShift.Text = "🔄 Shift";
+            this.tabShift.BackColor = Palette.Bg;
+            this.tabShift.Controls.Add(this.lblShift);
+            this.tabShift.Controls.Add(this.lblShiftValue);
+            this.tabShift.Controls.Add(this.lblShiftTime);
+            this.tabShift.Controls.Add(this.btnToggleShift);
+            this.tabShift.Location = new System.Drawing.Point(4, 29);
+            this.tabShift.Name = "tabShift";
+            this.tabShift.Padding = new System.Windows.Forms.Padding(3);
+            this.tabShift.Size = new System.Drawing.Size(592, 367);
+            this.tabShift.TabIndex = 1;
+            this.tabShift.Text = "🔄 Shift";
             // 
             // lblShift
             // 
-            lblShift.AutoSize = true;
-            lblShift.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            lblShift.ForeColor = System.Drawing.Color.FromArgb(155, 179, 224);
-            lblShift.Location = new System.Drawing.Point(24, 30);
-            lblShift.Name = "lblShift";
-            lblShift.Size = new System.Drawing.Size(97, 20);
-            lblShift.TabIndex = 0;
-            lblShift.Text = "Current Shift:";
+            this.lblShift.AutoSize = true;
+            this.lblShift.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
+            this.lblShift.ForeColor = Palette.TextSecondary;
+            this.lblShift.Location = new System.Drawing.Point(24, 30);
+            this.lblShift.Name = "lblShift";
+            this.lblShift.Size = new System.Drawing.Size(97, 20);
+            this.lblShift.TabIndex = 0;
+            this.lblShift.Text = "Current Shift:";
             // 
             // lblShiftValue
             // 
-            lblShiftValue.AutoSize = true;
-            lblShiftValue.Font = new System.Drawing.Font("Microsoft YaHei UI", 24F, System.Drawing.FontStyle.Bold);
-            lblShiftValue.ForeColor = System.Drawing.Color.FromArgb(255, 176, 32);
-            lblShiftValue.Location = new System.Drawing.Point(24, 56);
-            lblShiftValue.Name = "lblShiftValue";
-            lblShiftValue.Size = new System.Drawing.Size(82, 42);
-            lblShiftValue.TabIndex = 1;
-            lblShiftValue.Text = "白班";
+            this.lblShiftValue.AutoSize = true;
+            this.lblShiftValue.Font = new System.Drawing.Font("Microsoft YaHei UI", 24F, System.Drawing.FontStyle.Bold);
+            this.lblShiftValue.ForeColor = Palette.Warning;
+            this.lblShiftValue.Location = new System.Drawing.Point(24, 56);
+            this.lblShiftValue.Name = "lblShiftValue";
+            this.lblShiftValue.Size = new System.Drawing.Size(82, 42);
+            this.lblShiftValue.TabIndex = 1;
+            this.lblShiftValue.Text = "白班";
             // 
             // lblShiftTime
             // 
-            lblShiftTime.AutoSize = true;
-            lblShiftTime.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            lblShiftTime.ForeColor = System.Drawing.Color.FromArgb(108, 134, 176);
-            lblShiftTime.Location = new System.Drawing.Point(24, 100);
-            lblShiftTime.Name = "lblShiftTime";
-            lblShiftTime.Size = new System.Drawing.Size(259, 20);
-            lblShiftTime.TabIndex = 2;
-            lblShiftTime.Text = "Day: 08:00-20:00  |  Night: 20:00-08:00";
+            this.lblShiftTime.AutoSize = true;
+            this.lblShiftTime.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
+            this.lblShiftTime.ForeColor = Palette.TextMuted;
+            this.lblShiftTime.Location = new System.Drawing.Point(24, 100);
+            this.lblShiftTime.Name = "lblShiftTime";
+            this.lblShiftTime.Size = new System.Drawing.Size(259, 20);
+            this.lblShiftTime.TabIndex = 2;
+            this.lblShiftTime.Text = "Day: 08:00-20:00  |  Night: 20:00-08:00";
             // 
             // btnToggleShift
             // 
@@ -185,51 +186,51 @@
             // 
             // tabProduction
             // 
-            tabProduction.BackColor = System.Drawing.Color.FromArgb(10, 15, 30);
-            tabProduction.Controls.Add(lblProdTitle);
-            tabProduction.Controls.Add(lblTotalStats);
-            tabProduction.Controls.Add(lblHourlyStats);
-            tabProduction.Controls.Add(btnClearHour);
-            tabProduction.Controls.Add(btnClearAll);
-            tabProduction.Location = new System.Drawing.Point(4, 29);
-            tabProduction.Name = "tabProduction";
-            tabProduction.Padding = new System.Windows.Forms.Padding(3);
-            tabProduction.Size = new System.Drawing.Size(592, 367);
-            tabProduction.TabIndex = 2;
-            tabProduction.Text = "🗑️ Production";
+            this.tabProduction.BackColor = Palette.Bg;
+            this.tabProduction.Controls.Add(this.lblProdTitle);
+            this.tabProduction.Controls.Add(this.lblTotalStats);
+            this.tabProduction.Controls.Add(this.lblHourlyStats);
+            this.tabProduction.Controls.Add(this.btnClearHour);
+            this.tabProduction.Controls.Add(this.btnClearAll);
+            this.tabProduction.Location = new System.Drawing.Point(4, 29);
+            this.tabProduction.Name = "tabProduction";
+            this.tabProduction.Padding = new System.Windows.Forms.Padding(3);
+            this.tabProduction.Size = new System.Drawing.Size(592, 367);
+            this.tabProduction.TabIndex = 2;
+            this.tabProduction.Text = "🗑️ Production";
             // 
             // lblProdTitle
             // 
-            lblProdTitle.AutoSize = true;
-            lblProdTitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            lblProdTitle.ForeColor = System.Drawing.Color.FromArgb(155, 179, 224);
-            lblProdTitle.Location = new System.Drawing.Point(24, 30);
-            lblProdTitle.Name = "lblProdTitle";
-            lblProdTitle.Size = new System.Drawing.Size(123, 20);
-            lblProdTitle.TabIndex = 0;
-            lblProdTitle.Text = "Production Stats:";
+            this.lblProdTitle.AutoSize = true;
+            this.lblProdTitle.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
+            this.lblProdTitle.ForeColor = Palette.TextSecondary;
+            this.lblProdTitle.Location = new System.Drawing.Point(24, 30);
+            this.lblProdTitle.Name = "lblProdTitle";
+            this.lblProdTitle.Size = new System.Drawing.Size(123, 20);
+            this.lblProdTitle.TabIndex = 0;
+            this.lblProdTitle.Text = "Production Stats:";
             // 
             // lblTotalStats
             // 
-            lblTotalStats.AutoSize = true;
-            lblTotalStats.Font = new System.Drawing.Font("Microsoft YaHei UI", 11F);
-            lblTotalStats.ForeColor = System.Drawing.Color.FromArgb(238, 245, 255);
-            lblTotalStats.Location = new System.Drawing.Point(24, 56);
-            lblTotalStats.Name = "lblTotalStats";
-            lblTotalStats.Size = new System.Drawing.Size(268, 20);
-            lblTotalStats.TabIndex = 1;
-            lblTotalStats.Text = "Total: 0 | PASS: 0 | FAIL: 0 | Yield: 0%";
+            this.lblTotalStats.AutoSize = true;
+            this.lblTotalStats.Font = new System.Drawing.Font("Microsoft YaHei UI", 11F);
+            this.lblTotalStats.ForeColor = Palette.TextPrimary;
+            this.lblTotalStats.Location = new System.Drawing.Point(24, 56);
+            this.lblTotalStats.Name = "lblTotalStats";
+            this.lblTotalStats.Size = new System.Drawing.Size(268, 20);
+            this.lblTotalStats.TabIndex = 1;
+            this.lblTotalStats.Text = "Total: 0 | PASS: 0 | FAIL: 0 | Yield: 0%";
             // 
             // lblHourlyStats
             // 
-            lblHourlyStats.AutoSize = true;
-            lblHourlyStats.Font = new System.Drawing.Font("Microsoft YaHei UI", 11F);
-            lblHourlyStats.ForeColor = System.Drawing.Color.FromArgb(106, 169, 255);
-            lblHourlyStats.Location = new System.Drawing.Point(24, 82);
-            lblHourlyStats.Name = "lblHourlyStats";
-            lblHourlyStats.Size = new System.Drawing.Size(301, 20);
-            lblHourlyStats.TabIndex = 2;
-            lblHourlyStats.Text = "This Hour: 0 | PASS: 0 | FAIL: 0 | Yield: 0%";
+            this.lblHourlyStats.AutoSize = true;
+            this.lblHourlyStats.Font = new System.Drawing.Font("Microsoft YaHei UI", 11F);
+            this.lblHourlyStats.ForeColor = Palette.AccentSoft;
+            this.lblHourlyStats.Location = new System.Drawing.Point(24, 82);
+            this.lblHourlyStats.Name = "lblHourlyStats";
+            this.lblHourlyStats.Size = new System.Drawing.Size(301, 20);
+            this.lblHourlyStats.TabIndex = 2;
+            this.lblHourlyStats.Text = "This Hour: 0 | PASS: 0 | FAIL: 0 | Yield: 0%";
             // 
             // btnClearHour
             // 
@@ -254,27 +255,27 @@
             // 
             // tabEmployee
             // 
-            tabEmployee.BackColor = System.Drawing.Color.FromArgb(10, 15, 30);
-            tabEmployee.Controls.Add(lblEmpId);
-            tabEmployee.Controls.Add(txtEmployeeId);
-            tabEmployee.Controls.Add(btnSaveEmployee);
-            tabEmployee.Location = new System.Drawing.Point(4, 29);
-            tabEmployee.Name = "tabEmployee";
-            tabEmployee.Padding = new System.Windows.Forms.Padding(3);
-            tabEmployee.Size = new System.Drawing.Size(592, 367);
-            tabEmployee.TabIndex = 3;
-            tabEmployee.Text = "👤 Employee";
+            this.tabEmployee.BackColor = Palette.Bg;
+            this.tabEmployee.Controls.Add(this.lblEmpId);
+            this.tabEmployee.Controls.Add(this.txtEmployeeId);
+            this.tabEmployee.Controls.Add(this.btnSaveEmployee);
+            this.tabEmployee.Location = new System.Drawing.Point(4, 29);
+            this.tabEmployee.Name = "tabEmployee";
+            this.tabEmployee.Padding = new System.Windows.Forms.Padding(3);
+            this.tabEmployee.Size = new System.Drawing.Size(592, 367);
+            this.tabEmployee.TabIndex = 3;
+            this.tabEmployee.Text = "👤 Employee";
             // 
             // lblEmpId
             // 
-            lblEmpId.AutoSize = true;
-            lblEmpId.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            lblEmpId.ForeColor = System.Drawing.Color.FromArgb(155, 179, 224);
-            lblEmpId.Location = new System.Drawing.Point(24, 30);
-            lblEmpId.Name = "lblEmpId";
-            lblEmpId.Size = new System.Drawing.Size(97, 20);
-            lblEmpId.TabIndex = 0;
-            lblEmpId.Text = "Employee ID:";
+            this.lblEmpId.AutoSize = true;
+            this.lblEmpId.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
+            this.lblEmpId.ForeColor = Palette.TextSecondary;
+            this.lblEmpId.Location = new System.Drawing.Point(24, 30);
+            this.lblEmpId.Name = "lblEmpId";
+            this.lblEmpId.Size = new System.Drawing.Size(97, 20);
+            this.lblEmpId.TabIndex = 0;
+            this.lblEmpId.Text = "Employee ID:";
             // 
             // txtEmployeeId
             // 
@@ -299,43 +300,45 @@
             // 
             // pageHeader1
             // 
-            pageHeader1.Dock = System.Windows.Forms.DockStyle.Top;
-            pageHeader1.ForeColor = System.Drawing.Color.FromArgb(238, 245, 255);
-            pageHeader1.Location = new System.Drawing.Point(0, 0);
-            pageHeader1.Name = "pageHeader1";
-            pageHeader1.ShowBack = true;
-            pageHeader1.ShowButton = true;
-            pageHeader1.Size = new System.Drawing.Size(600, 23);
-            pageHeader1.TabIndex = 1;
-            pageHeader1.Text = "";
+            this.pageHeader1.Dock = System.Windows.Forms.DockStyle.Top;
+            // 原为 Transparent: 会把标题栏的关闭/返回按钮画成透明 —— 看不见但命中区域还在,
+            // 表现为"关闭按钮不显示却功能正常"。改成可见前景色, 与窗体 ForeColor 一致。
+            this.pageHeader1.ForeColor = Palette.TextPrimary;
+            this.pageHeader1.Location = new System.Drawing.Point(0, 0);
+            this.pageHeader1.Name = "pageHeader1";
+            this.pageHeader1.ShowBack = true;
+            this.pageHeader1.ShowButton = true;
+            this.pageHeader1.Size = new System.Drawing.Size(600, 34);
+            this.pageHeader1.TabIndex = 1;
+            this.pageHeader1.Text = "";
             // 
             // ConfigForm
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 19F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            BackColor = System.Drawing.Color.FromArgb(10, 15, 30);
-            ClientSize = new System.Drawing.Size(600, 400);
-            Controls.Add(pageHeader1);
-            Controls.Add(tabConfig);
-            Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
-            ForeColor = System.Drawing.Color.FromArgb(238, 245, 255);
-            FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "ConfigForm";
-            ShowIcon = false;
-            StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            Text = "Settings";
-            tabConfig.ResumeLayout(false);
-            tabBarcode.ResumeLayout(false);
-            tabBarcode.PerformLayout();
-            tabShift.ResumeLayout(false);
-            tabShift.PerformLayout();
-            tabProduction.ResumeLayout(false);
-            tabProduction.PerformLayout();
-            tabEmployee.ResumeLayout(false);
-            tabEmployee.PerformLayout();
-            ResumeLayout(false);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 19F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = Palette.Bg;
+            this.ClientSize = new System.Drawing.Size(600, 400);
+            this.Controls.Add(this.pageHeader1);
+            this.Controls.Add(this.tabConfig);
+            this.Font = new System.Drawing.Font("Microsoft YaHei UI", 10F);
+            this.ForeColor = Palette.TextPrimary;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "ConfigForm";
+            this.ShowIcon = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Settings";
+            this.tabConfig.ResumeLayout(false);
+            this.tabBarcode.ResumeLayout(false);
+            this.tabBarcode.PerformLayout();
+            this.tabShift.ResumeLayout(false);
+            this.tabShift.PerformLayout();
+            this.tabProduction.ResumeLayout(false);
+            this.tabProduction.PerformLayout();
+            this.tabEmployee.ResumeLayout(false);
+            this.tabEmployee.PerformLayout();
+            this.ResumeLayout(false);
 
         }
 
