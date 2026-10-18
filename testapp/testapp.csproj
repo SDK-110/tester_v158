@@ -15,6 +15,11 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <StartupObject>testapp.Program</StartupObject>
     <PlatformTarget>x86</PlatformTarget>
+    <!-- 只保留 Windows x86 的原生依赖（程序本身是 x86），输出不再生成 runtimes 多平台目录 -->
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <!-- 输出仍放在 bin\<Config>\<TFM>\，不要多一层 win-x86 子目录 -->
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <LangVersion>latest</LangVersion>
     <NoWarn>CS0168;CS0219;CS0414;CS0649;CS0162;CS8601;CS8602;CS8603;CS8625;CA1416;CA1418;CS8981;CS0169;NU1701;SYSLIB0014</NoWarn>
     <!-- MSB3277: 遗留 DLL 引用导致的程序集版本冲突（AForge/Metro/EPPlus 等），转为消息不再告警 -->
@@ -390,6 +395,8 @@
       <ReferenceDocXml Include="$(OutDir)FTD2XX_NET.XML" />
     </ItemGroup>
     <Delete Files="@(CosturaEmbeddedDll);@(ReferenceDocXml)" />
+    <!-- 清理旧版多 RID 构建遗留的目录（原生依赖已嵌入 testapp.dll） -->
+    <RemoveDir Directories="$(OutDir)runtimes;$(OutDir)win-x86" />
   </Target>
 
 </Project>
