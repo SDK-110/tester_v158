@@ -353,7 +353,7 @@ namespace test_antdui
             string modeText = e.Mode == DebugMode.StepMode ? "单步执行" : "运行到指定行";
             _lblMode.Text = $"当前模式：{modeText}";
             _lblStatus.Text = $"状态：已暂停 — {e.CurrentItem?.Name}";
-            _lblCurrentItem.Text = $"当前项：#{e.CurrentIndex + 1} - {e.CurrentItem?.Name}";
+            _lblCurrentItem.Text = $"当前项：第{e.CurrentIndex + 1}行（序号 {e.CurrentItem?.Id}） - {e.CurrentItem?.Name}";
 
             if (_mainForm != null)
             {

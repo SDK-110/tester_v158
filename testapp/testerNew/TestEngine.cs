@@ -117,10 +117,13 @@ namespace test_antdui
                         // RunToMode: 目标行本身执行完，在下一项开始前暂停，然后切换为 StepMode
                         if (_debugMode == DebugMode.RunToMode && i > _targetRow)
                         {
+                            // 先记下完成的行号：DebugPaused 处理器可能同步改变 _targetRow
+                            int completedRow = _targetRow;
                             _debugMode = DebugMode.StepMode;
                             _pauseTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                             OnDebugPaused(i, item);
-                            OnLogMessage($"[调试] 已完成目标行 #{_targetRow + 1}，暂停在下一项 [{item.Id}] {item.Name}");
+                            int completedId = completedRow >= 0 && completedRow < _testItems.Count ? _testItems[completedRow].Id : -1;
+                            OnLogMessage($"[调试] 已完成目标行 #{completedRow + 1}（序号 {completedId}），暂停在下一项 第{i + 1}行（序号 {item.Id}）：{item.Name}");
                             await _pauseTcs.Task;
                             if (_cts.Token.IsCancellationRequested) break;
                             OnLogMessage($"[调试] 继续执行...");
@@ -130,14 +133,14 @@ namespace test_antdui
                         {
                             _pauseTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                             OnDebugPaused(i, item);
-                            OnLogMessage($"[调试] 单步暂停在 [{item.Id}] {item.Name}");
+                            OnLogMessage($"[调试] 单步暂停在第{i + 1}行（序号 {item.Id}）：{item.Name}");
                             await _pauseTcs.Task;
                             if (_cts.Token.IsCancellationRequested) break;
                             OnLogMessage($"[调试] 继续执行...");
                         }
                     }
 
-                    OnLogMessage($"[{item.Id}] {item.Name} - 开始");
+                    OnLogMessage($"[第{i + 1}行] {item.Name} - 开始");
 
                     var sw = Stopwatch.StartNew();
                     TestItemStarted?.Invoke(this, new TestEngineEventArgs(item, i, _testItems.Count));
@@ -153,7 +156,7 @@ namespace test_antdui
                     if (string.IsNullOrEmpty(displayValue))
                         displayValue = item.State == TestState.Pass ? "PASS" : "FAIL";
                     
-                    OnLogMessage($"[{item.Id}] {item.Name} = {displayValue} (实测:{item.MeasuredValue}, 限值:{item.LowLimit}~{item.HighLimit}, {item.Duration}ms)");
+                    OnLogMessage($"[第{i + 1}行] {item.Name} = {displayValue} (实测:{item.MeasuredValue}, 限值:{item.LowLimit}~{item.HighLimit}, {item.Duration}ms)");
                     TestItemCompleted?.Invoke(this, new TestEngineEventArgs(item, i, _testItems.Count));
                     if (!itemPass && i != int.Parse(item.Jumper_Num) && jump_cout-->0) {
                         
