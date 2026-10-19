@@ -28,11 +28,28 @@ namespace test_antdui
     {
         private bool _active;
         private bool _fired;
+        private bool _primed;
         private DateTime _since = DateTime.UtcNow;
+
+        public bool IsPrimed => _primed;
 
         public bool Update(bool active, int debounceMs, int rearmMs)
         {
             DateTime now = DateTime.UtcNow;
+
+            // 启动/端口重连后的第一次可靠采样只作为基准，不算一次按下。
+            // 否则输入空闲电平恰好等于有效电平（例如 CTS 空闲为高、active=high）时，
+            // 程序一启动就会满足去抖条件，自动开始一次测试。
+            // 已在按下状态则视为“已触发过”，须松开并重新按下才会触发。
+            if (!_primed)
+            {
+                _primed = true;
+                _active = active;
+                _fired = active;
+                _since = now;
+                return false;
+            }
+
             if (active != _active)
             {
                 _active = active;
@@ -60,6 +77,7 @@ namespace test_antdui
         {
             _active = false;
             _fired = false;
+            _primed = false;
             _since = DateTime.UtcNow;
         }
     }
@@ -338,6 +356,10 @@ namespace test_antdui
                 else _stableCount = 0;
 
                 bool stableActive = _stableCount >= _stablePolls;
+
+                // 有效电平还没稳定时先不建立基准：
+                // 否则启动瞬间读数被当作“未按下”，稳定后又被当成一次新按下。
+                if (!_filter.IsPrimed && raw && !stableActive) return;
 
                 // 连续采样本身已提供 N 次确认，这里只再叠加用户配置的时间去抖
                 int debounce = Math.Max(_debounceMs, _pollMs);

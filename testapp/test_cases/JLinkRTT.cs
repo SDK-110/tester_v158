@@ -25,7 +25,13 @@ namespace testapp.test_cases
         // ============================================================
 
         private const string DLL = "JLinkARM.dll";
+        // JLINKARM_* 导出为 __cdecl，JLINK_RTTERMINAL_* 导出为 __stdcall
+        // （已用 dumpbin/cdb 核对导出函数尾部：JLINKARM_ReadMem/ExecCommand 为 ret，
+        //   JLINK_RTTERMINAL_Control 为 ret 8，Read/Write 为 ret 0Ch）。
+        // 调用约定不匹配会让 P/Invoke stub 的 ESP 偏移，进而在 GC 期间破坏
+        // Thread.m_pFrame 帧链，导致 0xC0000409 (FAST_FAIL_STACK_COOKIE_CHECK_FAILURE)。
         private const CallingConvention CC = CallingConvention.Cdecl;
+        private const CallingConvention CC_RTT = CallingConvention.StdCall;
 
         // RTT Control 命令常量
         private const uint RTT_CMD_START     = 0;
@@ -113,15 +119,15 @@ namespace testapp.test_cases
 
         // ── SEGGER 官方 RTT API（直接 DllImport，不再动态加载）──
 
-        [DllImport(DLL, CallingConvention = CC)]
+        [DllImport(DLL, CallingConvention = CC_RTT)]
         private static extern int JLINK_RTTERMINAL_Control(
             uint Cmd, IntPtr pCmdData);
 
-        [DllImport(DLL, CallingConvention = CC)]
+        [DllImport(DLL, CallingConvention = CC_RTT)]
         private static extern int JLINK_RTTERMINAL_Read(
             uint BufferIndex, byte[] pBuffer, uint BufferSize);
 
-        [DllImport(DLL, CallingConvention = CC)]
+        [DllImport(DLL, CallingConvention = CC_RTT)]
         private static extern int JLINK_RTTERMINAL_Write(
             uint BufferIndex, byte[] pBuffer, uint NumBytes);
 
