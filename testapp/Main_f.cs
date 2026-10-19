@@ -24,6 +24,7 @@ using unvell.ReoGrid;
 using Org.BouncyCastle.Bcpg.OpenPgp;
 using testapp.glob_set;
 using testapp.MyVisa;
+using test_antdui;          // ITriggerInput / TriggerFactory（与 MainControl 共用）
 using SprojFileBrowser;
 
 /*         try { ((System.ComponentModel.ISupportInitialize)(this.rep1)).EndInit(); }
@@ -119,6 +120,11 @@ namespace testapp
         #endregion
         /*--------------message loop dll upload-------------*/
         int timestart = 0;
+
+        // setup.ini [settrigger] 外部触发器（与 MainControl 共用 TriggerInput.cs）
+        private ITriggerInput _triggerInput;
+        private bool _triggerInited;
+        private bool _waitingTrigger;   // 条码已录入，等待外部按钮/开关按下
         /// <summary>
         /// sgw垃圾
         /// </summary>
@@ -2182,6 +2188,19 @@ private void barcode_show_err(string err)
 private void textBox1_KeyDown(object sender, KeyEventArgs e)
 {
     if (inidata["statu"]["plc_auto"] != null) return;
+
+    // 等待外部触发期间：Esc 取消本轮，回到扫码状态
+    if (e.KeyCode == Keys.Escape && _waitingTrigger)
+    {
+        _waitingTrigger = false;
+        this.textBox1.Text = "";
+        barcode_reset();
+        this.textBox1.Focus();
+        return;
+    }
+    // 等待外部触发期间忽略重复回车，避免重复校验/报“条码重复”
+    if (_waitingTrigger) return;
+
     if (e.KeyCode == Keys.Enter || e.KeyData==Keys.F4) {
 
         if (inidata["setbarcode"]["barenable"] == "true")
@@ -2194,20 +2213,105 @@ private void textBox1_KeyDown(object sender, KeyEventArgs e)
                 return;
             }
 
+            // [settrigger] require_after_scan=true 且触发器已启用：
+            // 扫码只录入 SN，须等外部按钮/开关可靠按下后才启动测试（与 MainControl 一致）。
+            if (require_trigger_after_scan())
+            {
+                _waitingTrigger = true;
+                testcase_lib.input_sn = this.textBox1.Text;
+                barcode_prompt("");
+                label2.Text = barcode_is_english()
+                    ? "barcode ready, press the button to start :"
+                    : "条码已录入，请按启动按钮触发测试：";
+                return;
+            }
+
             // button2.PerformClick();
-            testcase_lib.input_sn = this.textBox1.Text;
-            textBox1.Enabled = false;
-            this.timestart = 1;
-            this.textBox3.Text = DateTime.Now.ToString("HH:mm:ss:ffff") + ""; ;
-            ts1 = new TimeSpan(DateTime.Now.Ticks);
-            this.textBox4.Text = "";
-            this.textBox5.Text = "";
-            label3.Text = "running test1";
-            label3.BackColor = Color.GreenYellow;
-          viewloader.table_load_into_viewer();
-          backgroundWorker1.RunWorkerAsync();
+            begin_test_after_barcode();
         }
     }
+}
+
+/// <summary>扫码校验通过后实际启动测试（原 textBox1_KeyDown 中的启动块）。</summary>
+private void begin_test_after_barcode()
+{
+    testcase_lib.input_sn = this.textBox1.Text;
+    textBox1.Enabled = false;
+    this.timestart = 1;
+    this.textBox3.Text = DateTime.Now.ToString("HH:mm:ss:ffff") + ""; ;
+    ts1 = new TimeSpan(DateTime.Now.Ticks);
+    this.textBox4.Text = "";
+    this.textBox5.Text = "";
+    label3.Text = "running test1";
+    label3.BackColor = Color.GreenYellow;
+    viewloader.table_load_into_viewer();
+    backgroundWorker1.RunWorkerAsync();
+}
+
+/// <summary>
+/// 是否须等外部触发：require_after_scan 为 true（缺省 true）
+/// 且 [settrigger] 触发器可用。触发器未启用时返回 false，保持原“扫码即测”。
+/// </summary>
+private bool require_trigger_after_scan()
+{
+    var sec = inidata?["settrigger"];
+    string value = sec?["require_after_scan"];
+    if (!string.IsNullOrEmpty(value))
+    {
+        value = value.Trim().ToLowerInvariant();
+        if (value == "false" || value == "0" || value == "no" || value == "off")
+            return false;
+    }
+
+    init_trigger_input();
+    return _triggerInput != null;
+}
+
+/// <summary>首次需要时创建并启动触发器（串口打开/轮询由 TriggerInput 内部处理）。</summary>
+private void init_trigger_input()
+{
+    if (_triggerInited) return;
+    _triggerInited = true;
+    try
+    {
+        _triggerInput = TriggerFactory.CreateFromIni(trigger_status);
+        if (_triggerInput == null) return;
+        _triggerInput.Triggered += on_external_trigger;
+        _triggerInput.Status += trigger_status;
+        _triggerInput.Start();
+    }
+    catch (Exception ex)
+    {
+        trigger_status("触发器初始化失败: " + ex.Message);
+    }
+}
+
+private void trigger_status(string message)
+{
+    if (IsDisposed) return;
+    if (InvokeRequired)
+    {
+        try { BeginInvoke(new Action<string>(trigger_status), message); } catch { }
+        return;
+    }
+    this.textBox2.AppendText("trigger : --> " + message + "\r\n");
+}
+
+/// <summary>外部按钮/开关触发：仅当“扫码完成、等待触发”时启动测试。</summary>
+private void on_external_trigger()
+{
+    if (IsDisposed) return;
+    if (InvokeRequired)
+    {
+        try { BeginInvoke(new Action(on_external_trigger)); } catch { }
+        return;
+    }
+    if (!_waitingTrigger) return;
+    if (backgroundWorker1.IsBusy) return;
+
+    _waitingTrigger = false;
+    barcode_prompt("");
+    begin_test_after_barcode();
 }
 
 private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
