@@ -73,6 +73,59 @@ namespace test_antdui
                 }
     }
 
+    /// <summary>
+    /// 测试工程文件路径的存取规则：
+    /// 程序目录内的文件存相对路径，外部文件存绝对路径；
+    /// 读取时原路径失效则按文件名回退到程序目录查找。
+    /// 这样整个程序目录搬移/换机器后，只要文件与 exe 在一起就能自动找回。
+    /// </summary>
+    public static class ProjectPath
+    {
+        private static string AppDirectory
+            => AppDomain.CurrentDomain.BaseDirectory;
+
+        /// <summary>把实际路径转成配置中保存的形式。</summary>
+        public static string ToStoredPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return path;
+            try
+            {
+                string full = Path.GetFullPath(path);
+                string baseDir = Path.GetFullPath(AppDirectory)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                if (full.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
+                    return full.Substring(baseDir.Length);
+                return full;
+            }
+            catch
+            {
+                return path;
+            }
+        }
+
+        /// <summary>把配置中保存的路径解析成可直接使用的绝对路径。</summary>
+        public static string ResolvePath(string storedPath)
+        {
+            if (string.IsNullOrWhiteSpace(storedPath)) return "";
+            try
+            {
+                if (Path.IsPathRooted(storedPath))
+                {
+                    if (File.Exists(storedPath)) return Path.GetFullPath(storedPath);
+                    // 旧配置的绝对路径失效：按文件名到程序目录下找
+                    string fallback = Path.Combine(AppDirectory, Path.GetFileName(storedPath));
+                    return File.Exists(fallback) ? fallback : Path.GetFullPath(storedPath);
+                }
+                return Path.Combine(AppDirectory, storedPath);
+            }
+            catch
+            {
+                return storedPath;
+            }
+        }
+    }
+
     public class TestConfigManager
     {
         private static readonly string ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestConfig.xml");
@@ -127,6 +180,17 @@ namespace test_antdui
             {
                 System.Diagnostics.Debug.WriteLine($"加载配置失败: {ex.Message}");
             }
+
+            // 归一化：程序目录内的文件改存相对路径；
+            // 原路径失效但程序目录下有同名文件时，自动回写为可用路径。
+            string resolved = ProjectPath.ResolvePath(config.LastExcelPath);
+            string stored = ProjectPath.ToStoredPath(resolved);
+            if (!string.Equals(stored, config.LastExcelPath, StringComparison.Ordinal))
+            {
+                config.LastExcelPath = stored;
+                Save(config);
+            }
+
             return config;
         }
 
@@ -197,7 +261,8 @@ namespace test_antdui
 
         public static void UpdateLastExcelPath(string path)
         {
-            _instance.LastExcelPath = path;
+            // 程序目录内的文件只存相对路径，避免程序目录搬移后路径失效
+            _instance.LastExcelPath = ProjectPath.ToStoredPath(path);
             Save();
         }
 
@@ -212,7 +277,7 @@ namespace test_antdui
         /// </summary>
         public static string CurrentProjectPath
         {
-            get { return _instance.LastExcelPath; }
+            get { return ProjectPath.ResolvePath(_instance.LastExcelPath); }
         }
 
         public static void UpdateOrderNo(string orderNo)

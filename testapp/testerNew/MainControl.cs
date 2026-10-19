@@ -1464,23 +1464,50 @@ namespace test_antdui
             chkSaveAppend.Checked = (config.SaveMethod & 2) == 2;
             chkStopOnFail.Checked = config.StopOnFail == 1;
 
-            if (!string.IsNullOrEmpty(config.LastExcelPath) && File.Exists(config.LastExcelPath))
+            // 配置里存的是相对路径（程序目录内），必须经 ResolvePath 解析后再判断
+            string currentPath = TestConfigManager.CurrentProjectPath;
+            if (!string.IsNullOrEmpty(currentPath) && File.Exists(currentPath))
             {
-                LoadFromExcel(config.LastExcelPath);
+                LoadFromExcel(currentPath);
             }
         }
 
         void AutoLoadTemplate()
         {
+            // LoadConfig 已加载成功则无需兜底
+            string currentPath = TestConfigManager.CurrentProjectPath;
+            if (!string.IsNullOrEmpty(currentPath) && File.Exists(currentPath))
+                return;
+
+            // LastExcelPath 失效：先试 project_files.XML 记录的工程（ProjectLoader 已按程序目录解析旧路径）
+            string projectFile = FindProgramProjectFile();
+            if (!string.IsNullOrEmpty(projectFile))
+            {
+                LoadFromExcel(projectFile);
+                return;
+            }
+
             string templatePath = ExcelTestLoader.DefaultTemplatePath;
             if (!File.Exists(templatePath))
             {
                 ExcelTestLoader.CreateSampleTemplate(templatePath);
             }
-            if (string.IsNullOrEmpty(TestConfigManager.Instance.LastExcelPath) || !File.Exists(TestConfigManager.Instance.LastExcelPath))
+            LoadFromExcel(templatePath);
+        }
+
+        /// <summary>从 project_files.XML 中找第一个实际存在的工程文件。</summary>
+        private static string FindProgramProjectFile()
+        {
+            try
             {
-                LoadFromExcel(templatePath);
+                foreach (string path in SprojFileBrowser.ProjectLoader.Instance.GetProjectNames())
+                {
+                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                        return path;
+                }
             }
+            catch { }
+            return null;
         }
 
         /// <summary>

@@ -68,6 +68,13 @@ namespace SprojFileBrowser
                     projectData.DocumentCount = 1;
                     SaveProjects();
                 }
+
+                // 归一化旧配置：程序目录内的文件改存相对路径；
+                // 绝对路径失效时按文件名到程序目录找回，避免程序目录搬移后定位失败。
+                if (NormalizeProjectPaths())
+                {
+                    SaveProjects();
+                }
             }
             catch (Exception ex)
             {
@@ -83,10 +90,30 @@ namespace SprojFileBrowser
             get { return instance; }
         }
 
-        // 获取projectNames列表
+        // 获取工程文件完整路径列表（配置里存相对路径，调用方需要可直接加载的绝对路径）
         public List<string> GetProjectNames()
         {
-            return new List<string>(projectData.ProjectNames); // 返回副本，保持封装性
+            return projectData.ProjectNames
+                .Select(p => test_antdui.ProjectPath.ResolvePath(p))
+                .ToList();
+        }
+
+        // 把配置项归一化为"程序目录内相对路径 / 外部绝对路径"，返回是否有变化
+        private bool NormalizeProjectPaths()
+        {
+            bool changed = false;
+            for (int i = 0; i < projectData.ProjectNames.Count; i++)
+            {
+                string stored = projectData.ProjectNames[i];
+                string resolved = test_antdui.ProjectPath.ResolvePath(stored);
+                string normalized = test_antdui.ProjectPath.ToStoredPath(resolved);
+                if (!string.Equals(stored, normalized, StringComparison.Ordinal))
+                {
+                    projectData.ProjectNames[i] = normalized;
+                    changed = true;
+                }
+            }
+            return changed;
         }
 
         // 添加项目名称
@@ -97,7 +124,7 @@ namespace SprojFileBrowser
                 if (!string.IsNullOrEmpty(projectName) &&
                     !projectData.ProjectNames.Any(p => p.Equals(projectName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    projectData.ProjectNames[0] = projectName;
+                    projectData.ProjectNames[0] = test_antdui.ProjectPath.ToStoredPath(projectName);
                     projectData.DocumentCount = projectData.ProjectNames.Count;
                     SaveProjects();
                 }
