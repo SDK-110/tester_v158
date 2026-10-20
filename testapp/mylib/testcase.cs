@@ -3432,9 +3432,9 @@ namespace testapp
         {
 
 
-            mic_thd_test_project p = new mic_thd_test_project(this);
+          //  mic_thd_test_project p = new mic_thd_test_project(this);
 
-            funcs["mic_thd_measure"]("600", "300", out c, "1000,3000,0,5,16384");
+         //   funcs["mic_thd_measure"]("600", "300", out c, "1000,3000,0,5,16384");
 
             
 

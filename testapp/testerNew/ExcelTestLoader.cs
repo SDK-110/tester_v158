@@ -80,9 +80,11 @@ namespace test_antdui
                             HighLimit = Cell(rows, row, 3),  // C = testcase_high_limit (swapped)
                             LowLimit = Cell(rows, row, 4),   // D = testcase_low_limit (swapped)
                             Skip = (spikVal == "0") ? "1" : "0",      // Reverse: spik "0"→skip "1", spik "1"→skip "0"
-                            RetryCount = Cell(rows, row, 6, "1"),
+                            // 旧格式列义：F(6)=repeat_goto（失败跳转目标）、H(8)=test_loop_count（重试次数）。
+                            // 之前两列写反：把“重试次数=1”当成跳转目标，失败时会把目标解析成第 1 行 → 从头重跑。
+                            RetryCount = Cell(rows, row, 8, "1"),
                             FunctionName = Cell(rows, row, 7),
-                            Jumper_Num = Cell(rows, row, 8),
+                            Jumper_Num = Cell(rows, row, 6),
                             Parameter = Cell(rows, row, 9)
                         });
                     }

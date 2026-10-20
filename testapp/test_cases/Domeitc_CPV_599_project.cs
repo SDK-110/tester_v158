@@ -646,7 +646,7 @@ namespace testapp.test_cases
                 ivps.set_on_off(0);
                 Thread.Sleep(2000);
                 ivps.set_on_off(1);
-                Thread.Sleep(10000);
+                Thread.Sleep(13000);
                 List<double> recent = new List<double>();
                
                 for (int i = 0; i < confirm_sec; i++)

@@ -102,7 +102,14 @@ namespace test_antdui
                 bool overallResult = true;
                 bool stopOnFail = TestConfigManager.Instance.StopOnFail == 1;
                 OnLogMessage($"[配置] StopOnFail = {TestConfigManager.Instance.StopOnFail} ({(stopOnFail ? "已启用" : "已禁用")})");
-                int jump_cout = 1;
+                // 失败跳回（旧引擎语义）：仅当 setup.ini [statu] case_jumper 已配置时启用，
+                // 跳转次数受 case_jumper 限制；未配置则失败后不跳回。
+                int? caseJumper = ReadCaseJumperLimit();
+                int[] jumpFlags = new int[_testItems.Count];
+                Array.Fill(jumpFlags, 1);       // 与旧引擎 jump_loop_flog 初值一致
+                OnLogMessage(caseJumper.HasValue
+                    ? $"[配置] case_jumper = {caseJumper.Value}（失败跳回已启用）"
+                    : "[配置] case_jumper 未配置（失败不跳回）");
                 for (int i = 0; i < _testItems.Count; i++)
                 {
                     if (_cts.Token.IsCancellationRequested) break;
@@ -158,15 +165,22 @@ namespace test_antdui
                     
                     OnLogMessage($"[第{i + 1}行] {item.Name} = {displayValue} (实测:{item.MeasuredValue}, 限值:{item.LowLimit}~{item.HighLimit}, {item.Duration}ms)");
                     TestItemCompleted?.Invoke(this, new TestEngineEventArgs(item, i, _testItems.Count));
-                    if (!itemPass && i != int.Parse(item.Jumper_Num) && jump_cout-->0) {
-                        
-                        i = int.Parse(item.Jumper_Num)-2; continue; 
-                    
-                    
-                    }
-                    if (!itemPass) 
+                    // 失败跳回：按 Jumper_Num（旧格式 repeat_goto / 新模板“跳转编号”）
+                    // 跳回指定行重跑。旧引擎语义：
+                    //   - 目标行就是当前行时不跳；
+                    //   - 该失败项跳转配额（初值 1）用尽（<= -case_jumper）后不再跳。
+                    if (!itemPass && caseJumper.HasValue
+                        && TryResolveJumpTarget(item, out int targetIndex)
+                        && targetIndex != i
+                        && jumpFlags[i] > -caseJumper.Value)
                     {
-                        jump_cout = 1;
+                        jumpFlags[i]--;
+                        OnLogMessage($"[跳转] 第{i + 1}行 {item.Name} 失败，跳回第{targetIndex + 1}行重新执行");
+                        i = targetIndex - 1;    // for 自增后 i == targetIndex
+                        continue;
+                    }
+                    if (!itemPass)
+                    {
                         overallResult = false;
                         OnLogMessage($"[结果] {item.Name} = FAIL (实测值:{item.MeasuredValue})");
                         if (stopOnFail)
@@ -207,6 +221,48 @@ namespace test_antdui
                 _cts?.Dispose();
                 _cts = null;
             }
+        }
+
+        /// <summary>
+        /// 解析失败跳转目标行（Jumper_Num）。
+        /// 旧格式 sproj 的 repeat_goto 为 0 基序号，新模板“跳转编号”为 1 基序号；
+        /// 先按 Id 精确匹配（两种格式都成立），匹配不到再按 0 基下标解释。
+        /// 空值/非法值返回 false（不跳转），不再因 int.Parse 抛异常终止整轮测试。
+        /// </summary>
+        private bool TryResolveJumpTarget(TestItem item, out int targetIndex)
+        {
+            targetIndex = -1;
+            if (item == null || !int.TryParse((item.Jumper_Num ?? "").Trim(), out int target))
+                return false;
+
+            for (int k = 0; k < _testItems.Count; k++)
+            {
+                if (_testItems[k].Id == target)
+                {
+                    targetIndex = k;
+                    return true;
+                }
+            }
+            if (target >= 0 && target < _testItems.Count)
+            {
+                targetIndex = target;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>setup.ini [statu] case_jumper；未配置/非法/负数返回 null（不跳转）。</summary>
+        private static int? ReadCaseJumperLimit()
+        {
+            try
+            {
+                var ini = testapp.glob_set.glob_ini_instance.getInstance()?.getSetupIniData;
+                string value = ini?["statu"]?["case_jumper"];
+                if (!string.IsNullOrWhiteSpace(value) && int.TryParse(value.Trim(), out int n) && n >= 0)
+                    return n;
+            }
+            catch { }
+            return null;
         }
 
         private Task<string> ExecuteTestItemAsync(TestItem item, CancellationToken token)
