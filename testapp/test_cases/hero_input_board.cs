@@ -374,10 +374,18 @@ namespace testapp.test_cases
                 utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: input_sn='{sn}'");
 
                 // 序列号至少需要 8 位数字: 前4位(序列号) + 后4位(日期)
-                if (sn.Length < 8)
+                if (sn.Length != 13)
                 {
-                    c = "fail;sn_too_short";
-                    utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: SN too short ({sn.Length} chars)");
+                    c = "fail;sn_length_error";
+                    utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: SN length_error ({sn.Length} chars)");
+                    return "fail";
+                }
+
+                int _year = 0;
+                if (!int.TryParse(sn.Substring(2,2),out  _year) &&  _year<26)
+                {
+                    c = "fail;year_error";
+                    utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: SN date code  ({sn.Length} error)");
                     return "fail";
                 }
 
@@ -388,7 +396,9 @@ namespace testapp.test_cases
 
                 // ── 提取前4位 → Register 2 (Serial Number) ──
                 // 前4位为递增序列号, 直接作为数值写入
-                string first4 = sn.Substring(0, 4);
+
+           
+                string first4 = sn.Substring(6, 4);
                 if (!ushort.TryParse(first4, out ushort snValue))
                 {
                     c = "fail;sn_parse_error";
@@ -399,7 +409,7 @@ namespace testapp.test_cases
                 // ── 提取后4位 → Register 3 (Manufacturing Date, 16-bit format) ──
                 // 后4位解析为 YYMM 格式 (年=后2位, 月=后2位)
                 // 打包为16位日期: (yy << 9) | (mm << 5) | day, day默认为1
-                string last4 = sn.Substring(sn.Length - 4, 4);
+                string last4 = sn.Substring(2, 4);
                 if (last4.Length < 4 || !int.TryParse(last4.Substring(0, 2), out int yy)
                     || !int.TryParse(last4.Substring(2, 2), out int mm) || mm < 1 || mm > 12)
                 {
