@@ -19,6 +19,9 @@ namespace testapp.mylib.modbus_ecloab
         private readonly int _readTimeout;
         private readonly int _writeTimeout;
 
+        // Scratch buffer used when draining stale bytes from the serial input.
+        private readonly byte[] _discardBuffer = new byte[256];
+
         // Inter-frame gap for RTU: at least 3.5 character times.
         // At 115200 baud this is roughly 0.3 ms; we use 5 ms for safety margin.
         private const int InterFrameDelayMs = 5;
@@ -54,7 +57,7 @@ namespace testapp.mylib.modbus_ecloab
                 throw new ArgumentOutOfRangeException(nameof(count), "Count must be 1..125");
 
             byte[] response = SendRequest(slaveId, (byte)ModbusFunctionCode.ReadInputRegisters,
-                BuildReadRequest(startAddress, count));
+                BuildReadRequest(startAddress, count), count * 2);
 
             int byteCount = response[2];
             if (byteCount != count * 2)
@@ -77,7 +80,7 @@ namespace testapp.mylib.modbus_ecloab
                 throw new ArgumentOutOfRangeException(nameof(count), "Count must be 1..125");
 
             byte[] response = SendRequest(slaveId, (byte)ModbusFunctionCode.ReadHoldingRegisters,
-                BuildReadRequest(startAddress, count));
+                BuildReadRequest(startAddress, count), count * 2);
 
             int byteCount = response[2];
             if (byteCount != count * 2)
@@ -100,7 +103,7 @@ namespace testapp.mylib.modbus_ecloab
                 throw new ArgumentOutOfRangeException(nameof(count), "Count must be 1..2000");
 
             byte[] response = SendRequest(slaveId, (byte)ModbusFunctionCode.ReadCoils,
-                BuildReadRequest(startAddress, count));
+                BuildReadRequest(startAddress, count), (count + 7) / 8);
 
             int byteCount = response[2];
             int expectedBytes = (count + 7) / 8;
@@ -129,7 +132,7 @@ namespace testapp.mylib.modbus_ecloab
             pdu[2] = coilValue[0];
             pdu[3] = coilValue[1];
 
-            SendRequest(slaveId, (byte)ModbusFunctionCode.WriteSingleCoil, pdu);
+            SendRequest(slaveId, (byte)ModbusFunctionCode.WriteSingleCoil, pdu, 4);
         }
 
         /// <summary>
@@ -143,7 +146,7 @@ namespace testapp.mylib.modbus_ecloab
             pdu[2] = (byte)(value >> 8);
             pdu[3] = (byte)(value & 0xFF);
 
-            SendRequest(slaveId, (byte)ModbusFunctionCode.WriteSingleRegister, pdu);
+            SendRequest(slaveId, (byte)ModbusFunctionCode.WriteSingleRegister, pdu, 4);
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -173,7 +176,7 @@ namespace testapp.mylib.modbus_ecloab
             return frame;
         }
 
-        private byte[] SendRequest(byte slaveId, byte functionCode, byte[] pdu)
+        private byte[] SendRequest(byte slaveId, byte functionCode, byte[] pdu, int expectedDataLength)
         {
             byte[] frame = BuildFrame(slaveId, functionCode, pdu);
 
@@ -181,12 +184,18 @@ namespace testapp.mylib.modbus_ecloab
                 throw new ModbusException("Serial port is not open");
 
             Thread.Sleep(InterFrameDelayMs);
+
+            // Drop anything still buffered from a previous transaction (echo, late
+            // response, partial frame left behind by a timeout). Otherwise this frame
+            // is parsed from a wrong offset and a stale frame can be taken as the reply.
+            DiscardInputBuffer();
+
             _port.Write(frame, 0, frame.Length);
 
-            return ReceiveResponse(slaveId, functionCode);
+            return ReceiveResponse(slaveId, functionCode, expectedDataLength);
         }
 
-        private byte[] ReceiveResponse(byte expectedSlaveId, byte expectedFc)
+        private byte[] ReceiveResponse(byte expectedSlaveId, byte expectedFc, int expectedDataLength)
         {
             byte[] header = ReadBytes(2, _readTimeout);
             byte respSlave = header[0];
@@ -198,6 +207,8 @@ namespace testapp.mylib.modbus_ecloab
             if ((respFc & 0x80) != 0)
             {
                 byte[] rest = ReadBytes(3, _readTimeout);
+                byte[] exceptionFrame = { respSlave, respFc, rest[0], rest[1], rest[2] };
+                ValidateCrc(exceptionFrame);
                 byte exceptionCode = rest[0];
                 throw new ModbusException(expectedSlaveId, respFc, exceptionCode,
                     $"Modbus exception from slave {expectedSlaveId}: {ModbusException.DescribeExceptionCode(exceptionCode)}");
@@ -214,6 +225,15 @@ namespace testapp.mylib.modbus_ecloab
             {
                 byte[] byteCountBuf = ReadBytes(1, _readTimeout);
                 byte byteCount = byteCountBuf[0];
+
+                // The length must match this request; otherwise it is a misaligned or
+                // stale frame. Drop the whole buffer so it cannot poison later transactions.
+                if (byteCount != expectedDataLength)
+                {
+                    DiscardInputBuffer();
+                    throw new ModbusException($"Byte count mismatch: expected {expectedDataLength}, got {byteCount}");
+                }
+
                 byte[] remaining = ReadBytes(byteCount + 2, _readTimeout);
                 data = new byte[1 + byteCount];
                 data[0] = byteCount;
@@ -258,7 +278,7 @@ namespace testapp.mylib.modbus_ecloab
         {
             byte[] buffer = new byte[count];
             int totalRead = 0;
-            int elapsed = 0;
+            int startTicks = Environment.TickCount;
             int pollInterval = 5;
 
             while (totalRead < count)
@@ -272,8 +292,9 @@ namespace testapp.mylib.modbus_ecloab
                 else
                 {
                     Thread.Sleep(pollInterval);
-                    elapsed += pollInterval;
-                    if (elapsed > timeoutMs)
+                    // Total elapsed time, not just idle polls: a trickle of bytes
+                    // must not stretch the timeout indefinitely.
+                    if (unchecked(Environment.TickCount - startTicks) > timeoutMs)
                     {
                         throw new ModbusException(
                             $"Serial read timeout: expected {count} bytes, got {totalRead} within {timeoutMs} ms");
@@ -281,6 +302,16 @@ namespace testapp.mylib.modbus_ecloab
                 }
             }
             return buffer;
+        }
+
+        /// <summary>Discard every byte currently sitting in the input buffer.</summary>
+        private void DiscardInputBuffer()
+        {
+            while (_port.BytesToRead > 0)
+            {
+                int n = Math.Min(_port.BytesToRead, _discardBuffer.Length);
+                _port.Read(_discardBuffer, 0, n);
+            }
         }
 
         public void Dispose()
