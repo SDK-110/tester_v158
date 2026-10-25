@@ -237,6 +237,19 @@ namespace testapp.test_cases
                 string cmd = get_required(p, "cmd");
                 string expect = get_optional(p, "expect", "");
                 int timeout = get_int(p, "timeout", 30000);
+                return uboot_exec_line(cmd, expect, timeout, out c);
+            }
+            catch (Exception ex) { utility_func.callbackdebuginfo($"[HERO_FINAL] uboot_exec error: {ex.Message}"); c = "error"; return "fail"; }
+        }
+
+        /// <summary>
+        /// 直接下发一条 u-boot 命令行 (可含 ';', 不经过 parse_d), 等提示符并校验 expect 正则。
+        /// </summary>
+        private string uboot_exec_line(string cmd, string expect, int timeout, out string c)
+        {
+            c = "fail";
+            try
+            {
                 if (ubootPort == null || !ubootPort.IsOpen) { utility_func.callbackdebuginfo("[HERO_FINAL] u-boot serial not open"); return "fail"; }
                 clear_uboot_rx();
                 lock (ubootLock) { ubootPort.WriteLine(cmd); }
@@ -258,7 +271,7 @@ namespace testapp.test_cases
                 }
                 c = ""; return "fail";
             }
-            catch (Exception ex) { utility_func.callbackdebuginfo($"[HERO_FINAL] uboot_exec error: {ex.Message}"); c = "error"; return "fail"; }
+            catch (Exception ex) { utility_func.callbackdebuginfo($"[HERO_FINAL] uboot_exec_line error: {ex.Message}"); c = "error"; return "fail"; }
         }
 
         // ── 测量封装 ──
@@ -1458,9 +1471,9 @@ namespace testapp.test_cases
         ///   1. 获取 MAC 地址 (MySQL TOP1 未使用 或 手动输入)
         ///   2. 继电器上电
         ///   3. 中断 u-boot (发空格等待 => 提示符)
-        ///   4. fuse prog 9 0 <MAC后8位>
-        ///   5. fuse prog 9 1 0x001E
-        ///   6. 安全锁定 fuse prog -y 6/7/1 (固定值)
+        ///   4. fuse prog -y 9 0 <MAC后8位>
+        ///   5. fuse prog -y 9 1 0x001E
+        ///   6. 安全锁定 fuse prog -y 6/7/1 (固定值, 一行批量下发并按回显校验 9 个 word)
         ///   7. 标记 MAC 为已使用
         ///
         /// d 参数: mac_source=mysql|manual (默认manual)
@@ -1562,27 +1575,29 @@ namespace testapp.test_cases
                 }
                 utility_func.callbackdebuginfo("[HERO_FINAL] program_mac: u-boot prompt ready");
 
-                // === Step 4: fuse prog 9 0 <MAC后8位> ===
-                string fuseCmd1 = $"fuse prog 9 0 0x{macLast8}";
+                // === Step 4: fuse prog 9 0 <MAC后8位> (-y 跳过 <y/N> 确认) ===
+                string fuseCmd1 = $"fuse prog -y 9 0 {macLast8}";
                 string fuseOut1;
-                if (uboot_exec("", "", out fuseOut1, $"cmd={fuseCmd1};expect=;timeout=10000") != "pass")
+                if (uboot_exec_line(fuseCmd1, $"(?i)Programming bank 9 word 0x[0-9a-f]+ to 0x{macLast8}", 10000, out fuseOut1) != "pass")
                 {
                     c = "fail;fuse_mac_low_failed";
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: fuse mac low failed: {fuseOut1}");
                     return "fail";
                 }
                 utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: {fuseCmd1} done");
 
-                // === Step 5: fuse prog 9 1 0x001E ===
-                string fuseCmd2 = "fuse prog 9 1 0x001E";
+                // === Step 5: fuse prog 9 1 0x001E (-y 跳过确认) ===
+                string fuseCmd2 = "fuse prog -y 9 1 0x001E";
                 string fuseOut2;
-                if (uboot_exec("", "", out fuseOut2, $"cmd={fuseCmd2};expect=;timeout=10000") != "pass")
+                if (uboot_exec_line(fuseCmd2, @"(?i)Programming bank 9 word 0x[0-9a-f]+ to 0x0000001e", 10000, out fuseOut2) != "pass")
                 {
                     c = "fail;fuse_mac_high_failed";
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: fuse mac high failed: {fuseOut2}");
                     return "fail";
                 }
                 utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: {fuseCmd2} done");
 
-                // === Step 6: 安全锁定 (固定值, 不可逆!) ===
+                // === Step 6: 安全锁定 (固定值, 不可逆!) — 一行批量下发, 按回显条数校验 ===
                 string[] lockCmds = new string[]
                 {
                     "fuse prog -y 6 0 0x614ADC5E",
@@ -1596,17 +1611,23 @@ namespace testapp.test_cases
                     "fuse prog -y 1 3 0x02000000"
                 };
 
-                for (int i = 0; i < lockCmds.Length; i++)
+                string lockBatch = string.Join("; ", lockCmds);
+                string lockOut;
+                if (uboot_exec_line(lockBatch, @"(?i)Programming bank \d+ word 0x[0-9a-f]+ to 0x[0-9a-f]+", 30000, out lockOut) != "pass")
                 {
-                    string lockOut;
-                    if (uboot_exec("", "", out lockOut, $"cmd={lockCmds[i]};expect=;timeout=10000") != "pass")
-                    {
-                        c = $"fail;lock_cmd_{i}_failed;cmd={lockCmds[i]}";
-                        utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: LOCK FAILED at cmd {i}: {lockCmds[i]}");
-                        return "fail";
-                    }
-                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: lock {i + 1}/{lockCmds.Length} done: {lockCmds[i]}");
+                    c = "fail;lock_batch_failed";
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: LOCK BATCH FAILED: {lockBatch}");
+                    return "fail";
                 }
+
+                int lockProgCount = Regex.Matches(lockOut, @"(?i)Programming bank \d+ word 0x[0-9a-f]+ to 0x[0-9a-f]+").Count;
+                if (lockProgCount != lockCmds.Length)
+                {
+                    c = $"fail;lock_verify_{lockProgCount}_of_{lockCmds.Length}";
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: LOCK INCOMPLETE {lockProgCount}/{lockCmds.Length}: {lockOut}");
+                    return "fail";
+                }
+                utility_func.callbackdebuginfo($"[HERO_FINAL] program_mac: {lockCmds.Length} lock words programmed");
 
                 // === Step 7: 标记 MAC 为已使用 ===
                 if (macSource.Equals("mysql", StringComparison.OrdinalIgnoreCase) && macDbId > 0)
