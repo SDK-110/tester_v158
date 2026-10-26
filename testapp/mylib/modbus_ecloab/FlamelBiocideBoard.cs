@@ -78,6 +78,14 @@ namespace testapp.mylib.modbus_ecloab
                 1)[0];
         }
 
+        public ushort ReadTankProbeTemp()
+        {
+            return _master.ReadInputRegisters(
+                SlaveId,
+                FlamelRegisterMap.Tank_ProbeTemp,
+                1)[0];
+        }
+
         public ushort ReadConductivity()
         {
             return _master.ReadInputRegisters(

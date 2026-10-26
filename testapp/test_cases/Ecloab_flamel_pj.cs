@@ -47,6 +47,7 @@ namespace testapp.test_cases
             tc.funcs.Add(id + "read_recirc_full", read_recirc_full);
             tc.funcs.Add(id + "read_board_type", read_board_type);
             tc.funcs.Add(id + "read_cond_temp", read_cond_temp);
+            tc.funcs.Add(id + "read_tank_temp", read_tank_temp);
             tc.funcs.Add(id + "read_conductivity", read_conductivity);
             tc.funcs.Add(id + "read_product_level", read_product_level);
             tc.funcs.Add(id + "enter_coil_mode", enter_coil_mode);
@@ -203,9 +204,14 @@ namespace testapp.test_cases
             {
                 if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 ushort val = board.ReadConductivityProbeTemp();
-                int expected = int.Parse(a.Trim());
-                bool pass = val == expected;
-                c = $"'{val}'[exp={expected}]={(pass ? "PASS" : "FAIL")}";
+                int expected_hi = int.Parse(a.Trim());
+                int expected_lo = int.Parse(b.Trim());
+
+                bool pass = false;
+                
+                if(val <= expected_hi && val>= expected_lo) pass = true;
+                
+                c = $"'{val}'[exp>={expected_lo}&&<={expected_hi}]={(pass ? "PASS" : "FAIL")}";
                 utility_func.callbackdebuginfo($"[flamel] Cond Probe Temp (Reg 117): {c}");
                 return pass ? "pass" : "fail";
             }
@@ -217,6 +223,32 @@ namespace testapp.test_cases
             }
         }
 
+
+        private string read_tank_temp(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
+                ushort val = board.ReadTankProbeTemp();
+                int expected_hi = int.Parse(a.Trim());
+                int expected_lo = int.Parse(b.Trim());
+
+                bool pass = false;
+
+                if (val <= expected_hi && val >= expected_lo) pass = true;
+
+                c = $"'{val}'[exp>={expected_lo}&&<={expected_hi}]={(pass ? "PASS" : "FAIL")}";
+                utility_func.callbackdebuginfo($"[flamel] Tank Probe Temp (Reg 127): {c}");
+                return pass ? "pass" : "fail";
+            }
+            catch (Exception e)
+            {
+                utility_func.callbackdebuginfo(e.ToString());
+                c = "error";
+                return "fail";
+            }
+        }
         private string read_conductivity(string a, string b, out string c, string d)
         {
             c = "fail";
@@ -246,9 +278,11 @@ namespace testapp.test_cases
             {
                 if (!string.IsNullOrEmpty(d)) board.SlaveId = byte.Parse(d);
                 ushort val = board.ReadProductLevel();
-                int expected = int.Parse(a.Trim());
-                bool pass = val == expected;
-                c = $"'{val}'[exp={expected}]={(pass ? "PASS" : "FAIL")}";
+                int expected_hi = int.Parse(a.Trim());
+                int expected_lo = int.Parse(b.Trim());
+                bool pass = false;
+                if(val<= expected_hi && val>=expected_lo)pass = true;
+                c = $"'{val}'[exp>={expected_lo}&& exp<={expected_hi}]={(pass ? "PASS" : "FAIL")}";
                 utility_func.callbackdebuginfo($"[flamel] Product Level (Reg 119): {c}");
                 return pass ? "pass" : "fail";
             }

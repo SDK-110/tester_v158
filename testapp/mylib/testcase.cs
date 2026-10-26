@@ -32820,12 +32820,22 @@ namespace testapp
             string judge = "";
             float rt;
             int count = 0;
+
+            // d 支持 "量程" 或 "量程;偏移值" 两种写法
+            string[] dparts = d.Trim().Split(';');
+            int range = int.Parse(dparts[0].Trim());
+            float offset = 0f;
+            bool hasOffset = dparts.Length > 1 && float.TryParse(dparts[1].Trim(), out offset);
+
+            float low = float.Parse(b);
+            float high = float.Parse(a);
+
             do
             {
 
                 try
                 {
-                    ret = dm3058.read_resistance(int.Parse(d.Trim()));
+                    ret = dm3058.read_resistance(range);
                     rt = float.Parse(ret.Trim());
 
 
@@ -32841,7 +32851,15 @@ namespace testapp
 
                 }
 
-                if (rt > float.Parse(b) && rt < float.Parse(a))
+                // 原始读数已在范围内则不做偏移；超出范围才用真实值减偏移值
+                if (hasOffset && rt >= 0 && (rt < low || rt >= high))
+                {
+
+                    rt = rt - offset;
+
+                }
+
+                if (rt >= low && rt < high)
                 {
 
                     judge = "pass";
@@ -32873,12 +32891,22 @@ namespace testapp
             string judge = "";
             float rt;
             int count = 0;
+
+            // d 支持 "量程" 或 "量程;偏移值" 两种写法
+            string[] dparts = d.Trim().Split(';');
+            int range = int.Parse(dparts[0].Trim());
+            float offset = 0f;
+            bool hasOffset = dparts.Length > 1 && float.TryParse(dparts[1].Trim(), out offset);
+
+            float low = float.Parse(b);
+            float high = float.Parse(a);
+
             do
             {
 
                 try
                 {
-                    ret = dm3058.read_resistance_4w(int.Parse(d.Trim()));
+                    ret = dm3058.read_resistance_4w(range);
                     rt = float.Parse(ret.Trim());
 
 
@@ -32894,7 +32922,15 @@ namespace testapp
 
                 }
 
-                if (rt > float.Parse(b) && rt < float.Parse(a))
+                // 原始读数已在范围内则不做偏移；超出范围才用真实值减偏移值
+                if (hasOffset && rt >= 0 && (rt < low || rt >= high))
+                {
+
+                    rt = rt - offset;
+
+                }
+
+                if (rt >= low && rt < high)
                 {
 
                     judge = "pass";

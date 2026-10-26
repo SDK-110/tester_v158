@@ -58,6 +58,10 @@ namespace testapp.mylib.modbus_ecloab
         /// <summary>Conductivity Probe Temperature (Reg 117, expected: 21)</summary>
         public const ushort ConductivityProbeTemp = 117;
 
+
+        /// <summary>Tank Temperature (Reg 127, expected: 21)</summary>
+        public const ushort Tank_ProbeTemp = 127;
+
         /// <summary>Product Level (Reg 119, expected: 50)</summary>
         public const ushort ProductLevel = 119;
 
