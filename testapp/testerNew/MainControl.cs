@@ -837,16 +837,31 @@ namespace test_antdui
 
         internal TestEngine GetEngine() => _engine;
 
+        private bool _destroyed;
+
         public void destroy()
         {
+            if (_destroyed) return;
+            _destroyed = true;
+
             _statsTimer?.Stop();
             _statsTimer?.Dispose();
             _scanner?.Dispose();
             _diMonitor?.Dispose();
-            _triggerInput?.Dispose();
+            _triggerInput?.Dispose();   // Stop() → 关闭并释放 [settrigger] 串口
             if (_logForm != null) _logForm.Dispose();
             _debugForm?.Close();
             _debugForm?.Dispose();
+        }
+
+        /// <summary>
+        /// 窗体关闭时释放资源：此前 destroy() 无调用点，[settrigger] 串口靠进程退出才释放。
+        /// </summary>
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            try { destroy(); }
+            catch { }
+            base.OnFormClosed(e);
         }
 
         private void CreateLogForm2()
