@@ -100,6 +100,9 @@ namespace testapp.test_cases
             // ── 序列号 / MAC / 软件版本回读 (通过串口执行取数命令并解析) ──
             tc.funcs.Add(id + "read_sn_mac_version", read_sn_mac_version);
 
+            // ── WiFi 扫描 (串口执行板内 wifiscan, 读出附近 SSID 与 RSSI; 只读) ──
+            tc.funcs.Add(id + "wifi_scan", wifi_scan);
+
             // ── 优雅关机 (通过串口发送 sync + halt) ──
             tc.funcs.Add(id + "graceful_shutdown", graceful_shutdown);
 
@@ -1018,6 +1021,8 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
+                tc.golb_var_default["input_sn"] = "EH2640C0005";
+
                 // 从全局变量获取条码
                 if (tc.golb_var_default.TryGetValue("input_sn", out object val) == false || val == null)
                 {
@@ -1255,6 +1260,247 @@ namespace testapp.test_cases
             catch (Exception ex)
             {
                 utility_func.callbackdebuginfo($"[HERO_FINAL] read_sn_mac_version error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        // ── WiFi 扫描 ──
+
+        private sealed class WifiAp
+        {
+            public string Ssid;
+            public double Rssi;
+            public string Freq;
+            public string Sec;
+        }
+
+        /// <summary>
+        /// 扫描附近 WiFi — 通过串口执行板内 /usr/local/bin/wifiscan, 解析出 SSID / 信号强度(RSSI) /
+        /// 频点 / 加密方式。只读扫描: 不连网、不改任何配置、不写板上的文件。
+        ///
+        /// 流程: 催出 shell 提示符(必要时登录) -> 发 "echo WS_BEGIN; wifiscan ...; echo WS_END"
+        ///       -> 取两个标记之间的输出 -> 逐行正则解析表格 -> 按 RSSI 从强到弱排序
+        ///       -> 判定 count / expect / 最强 AP 的 RSSI 区间 -> 汇总到 c
+        ///
+        /// d 参数: login=<true|false, 默认true>; user=<默认root>; pass=<默认EcoTest>
+        ///         all=<true=保留全部 BSS(2.4G/5G 各一条), 默认false(同名 SSID 只留最强的一条)>
+        ///         limit=<最多取几条, 默认30>; timeout=<扫描+提示符超时ms, 默认60000>
+        ///         expect=<必须出现的 SSID, 子串或正则, 可选>
+        ///         rssi_min=<最强 AP 的 RSSI 下限 dBm, 默认-100>; rssi_max=<上限 dBm, 默认0>
+        ///         min_count=<至少扫到几个 AP, 默认1>; allow_empty=<true=一个都没扫到也算pass, 默认false>
+        ///         iface=<指定无线接口, 可选>; cmd=<覆盖扫描命令, 可选>
+        /// a/b = 无效
+        /// c = "count=5;best=SeasonMobile/-49;list=SeasonMobile~-49|GuestLogin~-49|..." 或 "fail;reason"
+        ///
+        /// 说明: list 用 | 分隔条目、~ 分隔 SSID 与 dBm; SSID 中的 ; , | ~ 会被替换成 _ 以便上层切分。
+        ///       rssi_min/rssi_max 只对最强的那一条判定, 避免远处弱 AP 把整体判成 fail。
+        /// </summary>
+        private string wifi_scan(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            const string wsBegin = "WS_BEGIN";
+            const string wsEnd = "WS_END";
+            try
+            {
+                var p = parse_d(d);
+                bool needLogin = get_optional(p, "login", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+                string user = get_optional(p, "user", "root");
+                string pass = get_optional(p, "pass", "EcoTest");
+                bool all = get_optional(p, "all", "false").Equals("true", StringComparison.OrdinalIgnoreCase);
+                int limit = get_int(p, "limit", 1);
+                int timeout = get_int(p, "timeout", 60000);
+                string expect = get_optional(p, "expect", "");
+                double rssiMin = get_double(p, "rssi_min", -100);
+                double rssiMax = get_double(p, "rssi_max", 0);
+                int minCount = get_int(p, "min_count", 1);
+                bool allowEmpty = get_optional(p, "allow_empty", "false").Equals("true", StringComparison.OrdinalIgnoreCase);
+                string iface = get_optional(p, "iface", "");
+                string cmdOverride = get_optional(p, "cmd", "");
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: serial port not open");
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
+
+                string scanCmd = cmdOverride;
+                if (scanCmd.Length == 0)
+                {
+                    scanCmd = "wifiscan" + (all ? " -a" : "") + (limit > 0 ? " -n " + limit : "") + (iface.Length > 0 ? " -i " + iface : "");
+                }
+
+                // Step 1: 催出 shell 提示符 (周期发回车), 不行再登录。rsshuser 走 PAM day-pass 不可用, 固定 root/EcoTest。
+                if (!wake_shell_prompt(Math.Min(timeout, 20000)))
+                {
+                    if (!needLogin)
+                    {
+                        utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: no shell prompt");
+                        c = "fail;no_prompt";
+                        return "fail";
+                    }
+                    utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: attempting login...");
+                    ubootPort.WriteLine(user);
+                    Thread.Sleep(500);
+                    ubootPort.WriteLine(pass);
+                    Thread.Sleep(1200);
+                    if (!wake_shell_prompt(8000))
+                    {
+                        utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: login failed, no prompt");
+                        c = "fail;login_failed";
+                        return "fail";
+                    }
+                }
+
+                // Step 2: 执行扫描, 用 BEGIN/END 标记把全部输出包住
+                clear_uboot_rx();
+                ubootPort.WriteLine("echo " + wsBegin + "; " + scanCmd + "; echo " + wsEnd);
+                utility_func.callbackdebuginfo($"[HERO_FINAL] wifi_scan: {scanCmd} (timeout={timeout}ms)");
+                if (!wait_for_prompt(timeout))
+                {
+                    string tail = "";
+                    lock (ubootLock) { tail = clean_uboot_output(ubootRx.ToString(), scanCmd); }
+                    c = "fail;cmd_timeout";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: command timeout, tail=" + tail);
+                    return "fail";
+                }
+
+                // Step 3: 取标记之间的输出 (取最后一次出现, 避开被回显的那行命令)
+                string raw;
+                lock (ubootLock) { raw = ubootRx.ToString(); }
+                raw = raw.Replace("\r", "\n");
+                string block = raw;
+                int bIdx = raw.LastIndexOf(wsBegin, StringComparison.Ordinal);
+                if (bIdx >= 0)
+                {
+                    int eIdx = raw.IndexOf(wsEnd, bIdx + wsBegin.Length, StringComparison.Ordinal);
+                    block = eIdx > bIdx
+                        ? raw.Substring(bIdx + wsBegin.Length, eIdx - bIdx - wsBegin.Length)
+                        : raw.Substring(bIdx + wsBegin.Length);
+                }
+
+                if (cmdOverride.Length == 0 &&
+                    Regex.IsMatch(block, @"not\s+found", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)))
+                {
+                    c = "fail;wifiscan_missing";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: wifiscan not installed on board (install HERO_scripts/ or pass cmd=...)");
+                    return "fail";
+                }
+
+                // Step 4: 逐行解析。表格形如 "1   SeasonMobile  -49.00 dBm  5260 MHz  WPA2"
+                //         SSID 列 %-30s 补齐, 但超过 30 字符会溢出把后面列右推, 所以以 dBm/MHz 为界定, 不按列宽切。
+                var aps = new List<WifiAp>();
+                int reported = -1;
+                string firstError = "";
+                var rxAp = new Regex(@"^\s*\d{1,3}\s+(?<ssid>.+?)\s+(?<rssi>-?\d+(?:\.\d+)?)\s*dBm\s+(?<freq>\d+)\s*MHz\s+(?<sec>\S+)\s*$",
+                                     RegexOptions.None, TimeSpan.FromSeconds(1));
+                var rxReported = new Regex(@"(\d+)\s+network\(s\)\s+found", RegexOptions.None, TimeSpan.FromSeconds(1));
+
+                foreach (var line in block.Split('\n'))
+                {
+                    string s = line.Trim();
+                    if (s.Length == 0) continue;
+
+                    if (s.StartsWith("ERROR", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (firstError.Length == 0) firstError = s;
+                        continue;
+                    }
+
+                    var mr = rxReported.Match(s);
+                    if (mr.Success)
+                    {
+                        int v;
+                        if (int.TryParse(mr.Groups[1].Value, out v)) reported = v;
+                        continue;
+                    }
+
+                    var m = rxAp.Match(s);
+                    if (!m.Success) continue;   // 表头 / "scanning wlan0 ..." / 提示符等一律跳过
+
+                    double rssi;
+                    if (!double.TryParse(m.Groups["rssi"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out rssi)) continue;
+
+                    aps.Add(new WifiAp
+                    {
+                        Ssid = m.Groups["ssid"].Value.Trim(),
+                        Rssi = rssi,
+                        Freq = m.Groups["freq"].Value,
+                        Sec = m.Groups["sec"].Value
+                    });
+                }
+
+                // Step 5: 排序(板端已按信号强弱排过, 这里再排一次, 覆盖 cmd= 自定义命令的情况)
+                aps.Sort((x, y) => y.Rssi.CompareTo(x.Rssi));
+
+                if (aps.Count == 0)
+                {
+                    if (allowEmpty)
+                    {
+                        c = "pass;count=0";
+                        utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: 0 AP, allow_empty=true" + (firstError.Length > 0 ? " (" + firstError + ")" : ""));
+                        return "pass";
+                    }
+                    c = firstError.Length > 0 ? "fail;scan_error;" + firstError : "fail;no_ap";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: no AP parsed" + (firstError.Length > 0 ? ", " + firstError : ""));
+                    return "fail";
+                }
+
+                // Step 6: 汇总 + 逐条打日志
+                var listText = new StringBuilder();
+                for (int i = 0; i < aps.Count; i++)
+                {
+                    var ap = aps[i];
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] wifi_scan: {i + 1:00}. {ap.Ssid}  {ap.Rssi:0} dBm  {ap.Freq} MHz  {ap.Sec}");
+                    if (listText.Length > 0) listText.Append('|');
+                    listText.Append(wifi_safe(ap.Ssid)).Append('~').Append(((int)Math.Round(ap.Rssi)).ToString(CultureInfo.InvariantCulture));
+                }
+                utility_func.callbackdebuginfo($"[HERO_FINAL] wifi_scan: parsed {aps.Count} AP(s), board reported {(reported >= 0 ? reported.ToString() : "n/a")}");
+
+                if (aps.Count < minCount)
+                {
+                    c = $"fail;too_few;count={aps.Count};min={minCount}";
+                    return "fail";
+                }
+
+                var best = aps[0];
+                if (best.Rssi < rssiMin || best.Rssi > rssiMax)
+                {
+                    c = string.Format(CultureInfo.InvariantCulture, "fail;rssi_out_of_range;best={0}/{1:0};range={2:0}..{3:0}",
+                        wifi_safe(best.Ssid), best.Rssi, rssiMin, rssiMax);
+                    utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: " + c);
+                    return "fail";
+                }
+
+                if (expect.Length > 0)
+                {
+                    bool hit = false;
+                    foreach (var ap in aps)
+                    {
+                        if (ap.Ssid.IndexOf(expect, StringComparison.OrdinalIgnoreCase) >= 0) { hit = true; break; }
+                        try
+                        {
+                            if (Regex.IsMatch(ap.Ssid, expect, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1))) { hit = true; break; }
+                        }
+                        catch (ArgumentException) { }
+                    }
+                    if (!hit)
+                    {
+                        c = "fail;expect_not_found;expect=" + expect + ";count=" + aps.Count + ";list=" + listText;
+                        utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: " + c);
+                        return "fail";
+                    }
+                }
+
+                c = string.Format(CultureInfo.InvariantCulture, "count={0};best={1}/{2:0};list={3}",
+                    aps.Count, wifi_safe(best.Ssid), best.Rssi, listText);
+                utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: " + c);
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] wifi_scan error: {ex.Message}");
                 c = "error";
                 return "fail";
             }
@@ -1726,6 +1972,22 @@ namespace testapp.test_cases
         private static int get_int(Dictionary<string, string> p, string key, int def)
         {
             return p.TryGetValue(key, out var val) && int.TryParse(val, out var result) ? result : def;
+        }
+
+        private static double get_double(Dictionary<string, string> p, string key, double def)
+        {
+            return p.TryGetValue(key, out var val) &&
+                   double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var result)
+                ? result : def;
+        }
+
+        /// <summary>
+        /// 把 SSID 里会破坏 c 字段分隔的字符换成下划线 (c 用 ; 分段, list 用 | 分条、~ 分字段)
+        /// </summary>
+        private static string wifi_safe(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace(';', '_').Replace(',', '_').Replace('|', '_').Replace('~', '_');
         }
 
         // ── 资源释放 ──
