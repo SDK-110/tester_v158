@@ -64,6 +64,7 @@ namespace testapp.test_cases
             tc.funcs[id + "query_match"]         = rtt_query_match;
             tc.funcs[id + "query_numeric"]       = rtt_query_numeric;
             tc.funcs[id + "query_range"]         = rtt_query_range;
+            tc.funcs[id + "query_id_value"]      = rtt_query_id_value;
             tc.funcs[id + "query_multi"]         = rtt_query_multi;
             tc.funcs[id + "query_regex"]         = rtt_query_regex;
             tc.funcs[id + "write_sn"]           = rtt_write_sn;
@@ -499,6 +500,64 @@ namespace testapp.test_cases
             catch (Exception ex)
             {
                 mylib.utility_func.callbackdebuginfo($"[RTT] query_range: {ex.Message}");
+                c = "fail;" + ex.Message;
+                return "fail";
+            }
+        }
+
+        /// <summary>双值判定 — 从回应提取 id/value 并各自做闭区间检查</summary>
+        /// a: id 上限;下限    例 "100;2"   → 2 &lt;= id  &lt;= 100
+        /// b: value 上限;下限 例 "30;1"    → 1 &lt;= value &lt;= 30
+        /// d: "命令;超时ms"（超时缺省 3000）
+        /// 回应样例: read mic    ok,id = 0,value = 0
+        private string rtt_query_id_value(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            string localC = "fail";
+            try
+            {
+                string[] pa = SplitParam(a, 2);
+                string[] pb = SplitParam(b, 2);
+                if (pa == null || pb == null) { c = "fail;param_error"; return "fail"; }
+
+                double idMax  = double.Parse(pa[0].Trim());   // a 第一个 = id 上限
+                double idMin  = double.Parse(pa[1].Trim());   // a 第二个 = id 下限
+                double valMax = double.Parse(pb[0].Trim());   // b 第一个 = value 上限
+                double valMin = double.Parse(pb[1].Trim());   // b 第二个 = value 下限
+
+                string[] pd = (d ?? "").Trim().Split(';');
+                string cmd = pd.Length > 0 ? pd[0].Trim() : "";
+                int timeoutMs = 3000;
+                if (pd.Length > 1 && !int.TryParse(pd[1].Trim(), out timeoutMs))
+                    timeoutMs = 3000;
+                if (string.IsNullOrEmpty(cmd)) { c = "fail;param_error"; return "fail"; }
+
+                string result = RetryQuery("query_id_value", () =>
+                    DoQuery(cmd, timeoutMs, resp =>
+                    {
+                        var mi = Regex.Match(resp, @"\bid\s*=\s*(-?\d+(?:\.\d+)?)");
+                        var mv = Regex.Match(resp, @"\bvalue\s*=\s*(-?\d+(?:\.\d+)?)");
+                        if (!mi.Success || !mv.Success)
+                            return Fail(out localC, "regex_no_match", $"id/value 未匹配: {resp.Trim()}");
+
+                        double idVal = double.Parse(mi.Groups[1].Value);
+                        double val   = double.Parse(mv.Groups[1].Value);
+
+                        if (idVal < idMin || idVal > idMax)
+                            return Fail(out localC, "id_out_of_range", $"id={idVal} 不在 [{idMin},{idMax}]");
+                        if (val < valMin || val > valMax)
+                            return Fail(out localC, "value_out_of_range", $"value={val} 不在 [{valMin},{valMax}]");
+
+                        localC = $"pass;id={idVal},value={val}";
+                        return "pass";
+                    }));
+
+                c = localC;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                mylib.utility_func.callbackdebuginfo($"[RTT] query_id_value: {ex.Message}");
                 c = "fail;" + ex.Message;
                 return "fail";
             }
