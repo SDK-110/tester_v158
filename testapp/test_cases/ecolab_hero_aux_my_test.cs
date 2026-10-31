@@ -13,7 +13,7 @@ namespace testapp.test_cases
     /// HERO AUX Board 串口测试 (STM32F103C8 合并项目)
     ///
     /// 通讯方式: 普通串口 (System.IO.Ports.SerialPort, 9600 8N1)
-    /// 测试内容: I2C扫描/RTC时间设置/EEPROM读写/看门狗状态/喂狗控制/触摸屏读取/触摸自动上报
+    /// 测试内容: I2C扫描/RTC时间设置/EEPROM读写/看门狗状态/喂狗控制/触摸屏读取/触摸自动上报/GPIO控制
     ///
     /// 单片机命令集 (以回车结束):
     ///   1                  - 扫描 I2C 器件 (AT24Cxx + DS3231)
@@ -23,6 +23,8 @@ namespace testapp.test_cases
     ///   5 {0|1}            - 0=停止喂狗(进入等待超时)  1=恢复喂狗
     ///   6                  - 触摸屏单次读取 (X/Y/Z, 10s 超时)
     ///   7 {0|1}            - 0=关闭触摸自动上报  1=开启
+    ///   8 {1-6} {0|1}      - 设置 PB10~PB15 电平 (1=PB10 ... 6=PB15, 1=高 0=低)
+    ///   8                  - 查询 PB10~PB15 六路当前电平, 上电默认全部高电平
     ///
     /// setup.ini 配置:
     ///   [setport]
@@ -109,6 +111,18 @@ namespace testapp.test_cases
             // d = "0" (关闭) 或 "1" (开启)
             // a/b = "pass", c = 响应文本
             tc.funcs.Add(id + "touch_auto", touch_auto);
+
+            // ── 通用 GPIO 设置 (命令 8) ──
+            // 设置 PB10~PB15 中某一路输出电平
+            // d = "pin=1;value=1" (pin: 1~6 → PB10~PB15; value: 1=HIGH, 0=LOW)，兼容简写 "1;1"
+            // a/b = "pass", c = "PB10=HIGH"
+            tc.funcs.Add(id + "gpio_set", gpio_set);
+
+            // ── 通用 GPIO 读取 (命令 8 无参数) ──
+            // 读取 PB10~PB15 当前输出电平; d 为空读全部 6 路
+            // d = "pin=1;expect=1" (pin/expect 均可选; expect 需配合 pin 使用)，兼容简写 "1;1"
+            // a/b = "pass", c = "PB10=HIGH" 或 "1:PB10=HIGH;2:PB11=HIGH;..."
+            tc.funcs.Add(id + "gpio_read", gpio_read);
 
             // ── 串口资源探测 (WMI 查询) ──
             // 通过 VID/PID/名称查找串口, 返回发现的数量和端口列表
@@ -654,6 +668,186 @@ namespace testapp.test_cases
             }
         }
 
+        // ── 命令 8: 通用 GPIO 设置 ──────────────────────────────────
+        // 设置 PB10~PB15 中某一路的输出电平
+        // d = "pin=1;value=1" (pin: 1~6 → PB10~PB15; value: 1=HIGH, 0=LOW)
+        //     兼容简写 "1;1" (第一个参数为 pin, 第二个为 value)
+        // a/b = "pass", c = "PB10=HIGH"
+        private string gpio_set(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                int pin, value;
+                if (!parse_gpio_params(d, out pin, out value))
+                {
+                    c = "invalid_param";
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_set invalid param: {d}");
+                    return "fail";
+                }
+
+                string level = value == 1 ? "HIGH" : "LOW";
+                string expect = $"GPIO: PB{9 + pin} = {level}";
+
+                string resp;
+                if (send_and_recv($"8 {pin} {value}", 5000, out resp) != "pass")
+                    return "fail";
+
+                // send_and_recv 超时也会返回 pass, 必须校验响应内容
+                if (!resp.Contains(expect))
+                {
+                    c = resp.Substring(0, Math.Min(resp.Length, 300));
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_set FAIL: expect '{expect}', got '{c}'");
+                    return "fail";
+                }
+
+                c = $"PB{9 + pin}={level}";
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] GPIO set: {c}");
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_set error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        // ── 命令 8 无参数: 通用 GPIO 读取 ──────────────────────────
+        // 读取 PB10~PB15 当前输出电平
+        // d 为空           → 读取全部 6 路
+        // d = "pin=1"      → 只读取 PB10
+        // d = "pin=1;expect=1" → 读取并校验 PB10 是否为高
+        // 兼容简写 "1" / "1;1"; expect 必须配合 pin 使用
+        // a/b = "pass", c = "PB10=HIGH" 或 "1:PB10=HIGH;2:PB11=HIGH;..."
+        private string gpio_read(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                int pin = 0;        // 0 = 全部 6 路
+                int expect = -1;    // -1 = 不校验电平
+
+                var p = parse_d(d);
+                if (p.Count > 0)
+                {
+                    if (!p.ContainsKey("pin")
+                        || !int.TryParse(get_optional(p, "pin", ""), out pin))
+                    {
+                        c = "invalid_param";
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read invalid param: {d}");
+                        return "fail";
+                    }
+
+                    string expectStr = get_optional(p, "expect", "");
+                    if (expectStr != "" && !int.TryParse(expectStr, out expect))
+                    {
+                        c = "invalid_param";
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read invalid expect: {d}");
+                        return "fail";
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(d))
+                {
+                    var parts = d.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (!int.TryParse(parts[0].Trim(), out pin))
+                    {
+                        c = "invalid_param";
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read invalid param: {d}");
+                        return "fail";
+                    }
+                    if (parts.Length >= 2 && !int.TryParse(parts[1].Trim(), out expect))
+                    {
+                        c = "invalid_param";
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read invalid expect: {d}");
+                        return "fail";
+                    }
+                }
+
+                if (pin < 0 || pin > 6)
+                {
+                    c = "invalid_pin";
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read invalid pin: {pin}");
+                    return "fail";
+                }
+                if (expect != -1 && expect != 0 && expect != 1)
+                {
+                    c = "invalid_expect";
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read invalid expect: {expect}");
+                    return "fail";
+                }
+                if (expect != -1 && pin == 0)
+                {
+                    c = "invalid_param";
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] gpio_read expect requires pin");
+                    return "fail";
+                }
+
+                string resp;
+                if (send_and_recv("8", 5000, out resp) != "pass")
+                    return "fail";
+
+                // 解析固件输出: "  1: PB10 = HIGH"
+                var levels = new Dictionary<int, string>();
+                foreach (Match m in Regex.Matches(resp, @"(\d)\s*:\s*PB(\d+)\s*=\s*(HIGH|LOW)"))
+                {
+                    int idx = int.Parse(m.Groups[1].Value);
+                    int pb  = int.Parse(m.Groups[2].Value);
+                    if (idx >= 1 && idx <= 6 && pb == 9 + idx)
+                        levels[idx] = m.Groups[3].Value;
+                }
+
+                // 单路读取
+                if (pin > 0)
+                {
+                    string state;
+                    if (!levels.TryGetValue(pin, out state))
+                    {
+                        c = resp.Substring(0, Math.Min(resp.Length, 300));
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read FAIL: no PB{9 + pin} in response: {c}");
+                        return "fail";
+                    }
+
+                    c = $"PB{9 + pin}={state}";
+                    if (expect != -1)
+                    {
+                        string want = expect == 1 ? "HIGH" : "LOW";
+                        if (state != want)
+                        {
+                            c = $"PB{9 + pin}={state} (expect {want})";
+                            utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read FAIL: {c}");
+                            return "fail";
+                        }
+                    }
+
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] GPIO read: {c}");
+                    return "pass";
+                }
+
+                // 全部读取: 必须解析到完整 6 路
+                if (levels.Count != 6)
+                {
+                    c = resp.Substring(0, Math.Min(resp.Length, 300));
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read FAIL: parsed {levels.Count}/6 pins: {c}");
+                    return "fail";
+                }
+
+                var details = new List<string>();
+                for (int i = 1; i <= 6; i++)
+                    details.Add($"{i}:PB{9 + i}={levels[i]}");
+
+                c = string.Join(";", details);
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] GPIO read all: {c}");
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_read error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
         // ══════════════════════════════════════════════════════════════
         //  串口资源探测与回环测试
         // ══════════════════════════════════════════════════════════════
@@ -991,6 +1185,34 @@ namespace testapp.test_cases
         private static int get_int(Dictionary<string, string> p, string key, int def)
         {
             return p.TryGetValue(key, out var val) && int.TryParse(val, out var result) ? result : def;
+        }
+
+        /// <summary>
+        /// 解析 GPIO 设置参数: 推荐 "pin=1;value=1"，兼容简写 "1;1"。
+        /// 返回 false 表示缺参、格式错误或越界。
+        /// </summary>
+        private static bool parse_gpio_params(string d, out int pin, out int value)
+        {
+            pin = 0;
+            value = -1;
+            if (string.IsNullOrWhiteSpace(d)) return false;
+
+            var p = parse_d(d);
+            if (p.Count > 0)
+            {
+                if (!p.ContainsKey("pin")) return false;
+                if (!int.TryParse(get_optional(p, "pin", ""), out pin)) return false;
+                if (!int.TryParse(get_optional(p, "value", ""), out value)) return false;
+            }
+            else
+            {
+                var parts = d.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 2) return false;
+                if (!int.TryParse(parts[0].Trim(), out pin)) return false;
+                if (!int.TryParse(parts[1].Trim(), out value)) return false;
+            }
+
+            return pin >= 1 && pin <= 6 && (value == 0 || value == 1);
         }
 
         // ══════════════════════════════════════════════════════════════
