@@ -451,6 +451,7 @@ namespace testapp
             cmw100addr_for_lte = setup_ini_data["setport"]["cmw100address_for_lte"];
             #region  //注册case 函数
             m.Add("cmd_Exec", cmd_Exec);
+            m.Add("run_func_group", run_func_group);
             m.Add("desaysv_test_api", desaysv_test_api);
             m.Add("record_buf_var_init", record_buf_var_init); //用于跨函数的缓冲变量初始化
             m.Add("testsysini", testsysini);
@@ -39489,6 +39490,58 @@ namespace testapp
             if(rs == "pass") return "pass";
 
             return "fail";
+        }
+
+        // 批量执行注册函数群: 解析 d 中的函数列表并在本程序中逐个执行
+        // d 格式: 函数名;上限;下限;参数|函数名;上限;下限;参数
+        //   - 命令用 '|' 分隔; 每条只切前 3 个 ';', 参数里可继续含 ';' 和 ','
+        // a(群组上限): 输出指示器, 指定第几步的结果写入 c (序号从1开始 或 函数名)
+        //   指定步骤不存在(含 a 为空) -> c = "fail"
+        string run_func_group(string a, string b, out string c, string d)
+        {
+            string[] items = d.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+            var names = new List<string>();
+            var subs = new List<string>();
+            bool allPass = true;
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                string[] f = items[i].Split(new[] { ';' }, 4);
+                string name = f[0].Trim();
+                string high = f.Length > 1 ? f[1] : "";
+                string low = f.Length > 2 ? f[2] : "";
+                string param = f.Length > 3 ? f[3] : "";
+
+                string sub = "not_found";
+                string r = "fail";
+                if (name != "run_func_group" && m.ContainsKey(name))
+                {
+                    r = m[name](high, low, out sub, param);
+                }
+
+                if (r != "pass") allPass = false;
+                names.Add(name);
+                subs.Add(sub);
+
+                // 每个步骤: 函数名 + 上下限 + 测试结果, 实时输出到调试窗口
+                mylib.utility_func.callbackdebuginfo(
+                    $"[run_func_group] {i + 1}/{items.Length} {name} 上限={high} 下限={low} 参数={param} 结果={sub} => {r}");
+            }
+
+            // 关键步骤: 按 a 指示把对应步骤的结果写入 c
+            int idx = int.TryParse(a, out int no) ? no - 1 : names.IndexOf(a.Trim());
+            if (idx >= 0 && idx < subs.Count)
+            {
+                c = SerialEchoService.CsvSafe(subs[idx]);
+            }
+            else
+            {
+                c = "fail";
+                allPass = false;
+                mylib.utility_func.callbackdebuginfo($"[run_func_group] 输出指示 {a} 无对应步骤, c=fail");
+            }
+
+            return allPass ? "pass" : "fail";
         }
 
 
