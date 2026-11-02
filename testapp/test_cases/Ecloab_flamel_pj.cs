@@ -309,9 +309,14 @@ namespace testapp.test_cases
             }
             catch (Exception e)
             {
+
                 utility_func.callbackdebuginfo(e.ToString());
                 c = "error";
                 return "fail";
+            }
+            finally {
+
+                board.SlaveId = 22;
             }
         }
 
