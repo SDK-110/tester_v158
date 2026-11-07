@@ -398,7 +398,7 @@ namespace testapp.test_cases
                 // 前4位为递增序列号, 直接作为数值写入
 
            
-                string first4 = sn.Substring(6, 4);
+                string first4 = sn.Substring(6, 5);
                 if (!ushort.TryParse(first4, out ushort snValue))
                 {
                     c = "fail;sn_parse_error";
