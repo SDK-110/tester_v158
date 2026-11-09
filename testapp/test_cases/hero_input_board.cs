@@ -411,14 +411,14 @@ namespace testapp.test_cases
                 // 打包为16位日期: (yy << 9) | (mm << 5) | day, day默认为1
                 string last4 = sn.Substring(2, 4);
                 if (last4.Length < 4 || !int.TryParse(last4.Substring(0, 2), out int yy)
-                    || !int.TryParse(last4.Substring(2, 2), out int mm) || mm < 1 || mm > 12)
+                    || !int.TryParse(last4.Substring(2, 2), out int mm) || mm < 1 || mm > 52)
                 {
                     c = "fail;date_parse_error";
                     utility_func.callbackdebuginfo($"[HERO_INPUT] program_sn: cannot parse last4='{last4}' as YYMM");
                     return "fail";
                 }
-                ushort dateValue = (ushort)((yy << 9) | (mm << 5) | 1);
-
+                //ushort dateValue = (ushort)((yy << 9) | (mm << 5) | 1);
+                ushort dateValue = (ushort)(ushort.Parse(last4));
                 // ── 写入 Register 2: Serial Number ──
                 exec_with_retry(() => master!.WriteSingleRegisterAsync(slaveId, snReg, snValue));
                 Thread.Sleep(100);
