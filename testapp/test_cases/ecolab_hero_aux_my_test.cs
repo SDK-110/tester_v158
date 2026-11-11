@@ -25,6 +25,7 @@ namespace testapp.test_cases
     ///   7 {0|1}            - 0=关闭触摸自动上报  1=开启
     ///   8 {1-6} {0|1}      - 设置 PB10~PB15 电平 (1=PB10 ... 6=PB15, 1=高 0=低)
     ///   8                  - 查询 PB10~PB15 六路当前电平, 上电默认全部高电平
+    ///   9                  - 读取输入脚 PA0 电平 (浮空输入, 单次采样)
     ///
     /// setup.ini 配置:
     ///   [setport]
@@ -123,6 +124,13 @@ namespace testapp.test_cases
             // d = "pin=1;expect=1" (pin/expect 均可选; expect 需配合 pin 使用)，兼容简写 "1;1"
             // a/b = "pass", c = "PB10=HIGH" 或 "1:PB10=HIGH;2:PB11=HIGH;..."
             tc.funcs.Add(id + "gpio_read", gpio_read);
+
+            // ── 通用 GPIO 输入检测 (命令 9) ──
+            // 单次读取 PA0 电平并与期望值比较, 不做按下/松开边沿检测。
+            // d = "expect=HIGH" 或 "expect=LOW"; 也可直接写 "HIGH"/"LOW"/"1"/"0"
+            //     缺省 expect=LOW（按键按下接地）
+            // a/b = "pass", c = "PA0=LOW (expect LOW)"
+            tc.funcs.Add(id + "gpio_input", gpio_input);
 
             // ── 串口资源探测 (WMI 查询) ──
             // 通过 VID/PID/名称查找串口, 返回发现的数量和端口列表
@@ -846,6 +854,85 @@ namespace testapp.test_cases
                 c = "error";
                 return "fail";
             }
+        }
+
+        // ── 命令 9: 输入脚 PA0 电平检测（按键/气缸） ────────────────
+        // 单次读取 PA0 电平并与期望值比较, 不做按下/松开边沿检测。
+        // d = "expect=HIGH" 或 "expect=LOW"; 也可直接写 "HIGH"/"LOW"/"1"/"0"
+        //     缺省 expect=LOW（按键按下接地）
+        // a/b = "pass", c = "PA0=LOW (expect LOW)"
+        private string gpio_input(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                string want = "LOW";                    // 默认: 按键按下=低
+                string raw = (d ?? "").Trim();
+                if (raw != "")
+                {
+                    var p = parse_d(raw);
+                    if (p.ContainsKey("expect"))
+                        raw = get_optional(p, "expect", "");
+
+                    if (!parse_input_level(raw, out want))
+                    {
+                        c = "invalid_expect";
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_input invalid expect: {d}");
+                        return "fail";
+                    }
+                }
+
+                string resp, state;
+                if (!read_input_state(out resp, out state))
+                {
+                    c = resp;
+                    return "fail";
+                }
+
+                c = $"PA0={state} (expect {want})";
+                if (state == want)
+                {
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_input: {c}, PASS");
+                    return "pass";
+                }
+
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_input FAIL: {c}");
+                return "fail";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_input error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>发送命令 9 并解析 "PA0 = HIGH|LOW"; 成功返回 true</summary>
+        private bool read_input_state(out string resp, out string state)
+        {
+            state = "";
+            if (send_and_recv("9", 5000, out resp) != "pass")
+                return false;
+
+            var m = Regex.Match(resp, @"PA0\s*=\s*(HIGH|LOW)");
+            if (!m.Success)
+            {
+                resp = resp.Substring(0, Math.Min(resp.Length, 300));
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] gpio_input: no PA0 level in response: {resp}");
+                return false;
+            }
+            state = m.Groups[1].Value;
+            return true;
+        }
+
+        /// <summary>把 HIGH/LOW/1/0 统一成 HIGH/LOW</summary>
+        private static bool parse_input_level(string s, out string level)
+        {
+            level = "";
+            s = (s ?? "").Trim().ToUpperInvariant();
+            if (s == "HIGH" || s == "1") { level = "HIGH"; return true; }
+            if (s == "LOW"  || s == "0") { level = "LOW";  return true; }
+            return false;
         }
 
         // ══════════════════════════════════════════════════════════════
