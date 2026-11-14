@@ -91,6 +91,97 @@ namespace testapp.test_cases
             tc.funcs.Add(id + "product_connect", product_connect);
             tc.funcs.Add(id + "power_cycle", power_cycle);
             tc.funcs.Add(id + "get_psu_current", get_psu_current);
+
+            // ── 串口参数动态切换 (特殊板 19200/Even) ──
+            tc.funcs.Add(id + "set_serial", set_serial);
+            tc.funcs.Add(id + "reset_serial", reset_serial);
+        }
+
+        /// <summary>
+        /// 按新参数重建串口与 Modbus master, 默认使用构造函数里已打开的端口
+        /// </summary>
+        private void reopen_port(int baud, Parity parity)
+        {
+            string port = modbusPort?.PortName
+                ?? glob_ini_instance.getInstance().getSetupIniData["setport"]["hero_input_board_modbus_port"];
+            try
+            {
+                if (modbusPort != null)
+                {
+                    if (modbusPort.IsOpen) modbusPort.Close();
+                    modbusPort.Dispose();
+                }
+            }
+            catch { }
+
+            modbusPort = new SerialPort(port, baud, parity, 8, StopBits.One)
+            {
+                ReadTimeout = readTimeout,
+                WriteTimeout = 2000
+            };
+            modbusPort.Open();
+            master = new ModbusFactory().CreateRtuMaster(new SerialPortAdapter(modbusPort));
+        }
+
+        /// <summary>
+        /// 动态切换串口参数, 用于测试特殊板 (默认 19200/Even)
+        /// d = "baud=19200;parity=Even"
+        /// </summary>
+        private string set_serial(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                int baud = get_int(p, "baud", 19200);
+                string parityStr = get_optional(p, "parity", "Even");
+                if (!Enum.TryParse(parityStr, true, out Parity parity))
+                {
+                    c = "bad_parity";
+                    return "fail";
+                }
+                if (modbusPort != null && modbusPort.IsOpen && modbusPort.BaudRate == baud && modbusPort.Parity == parity)
+                {
+                    c = $"unchanged;baud={baud};parity={parity}";
+                    return "pass";
+                }
+                reopen_port(baud, parity);
+                c = $"baud={baud};parity={parity}";
+                utility_func.callbackdebuginfo($"[HERO_INPUT] set_serial: {c}");
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_INPUT] set_serial error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 恢复串口默认参数 115200/None, 测试结束或失败后调用
+        /// </summary>
+        private string reset_serial(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                if (modbusPort != null && modbusPort.IsOpen && modbusPort.BaudRate == 115200 && modbusPort.Parity == Parity.None)
+                {
+                    c = "unchanged;baud=115200;parity=None";
+                    return "pass";
+                }
+                reopen_port(115200, Parity.None);
+                c = "baud=115200;parity=None";
+                utility_func.callbackdebuginfo($"[HERO_INPUT] reset_serial: {c}");
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_INPUT] reset_serial error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
         }
 
         private string read_input_reg(string a, string b, out string c, string d)
