@@ -32,7 +32,16 @@ namespace testapp.test_cases
                 int baud = int.Parse(ini["setport"]["hero_input_board_modbus_baudrate"] ?? "115200");
                 slaveId = byte.Parse(ini["setport"]["hero_modbus_slave_id"] ?? "40");
 
-                modbusPort = new SerialPort(port, baud, Parity.None, 8, StopBits.One);
+                if (ini["setport"]["hero_input_19200"] != null)
+                {
+
+                    modbusPort = new SerialPort(port, 19200, Parity.Even, 8, StopBits.One);
+                }
+                else {
+                    modbusPort = new SerialPort(port, baud, Parity.None, 8, StopBits.One);
+
+                }
+                  
                 modbusPort.ReadTimeout = readTimeout;
                 modbusPort.WriteTimeout = 2000;
                 modbusPort.Open();
