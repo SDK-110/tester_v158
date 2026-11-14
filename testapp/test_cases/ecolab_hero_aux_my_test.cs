@@ -21,7 +21,7 @@ namespace testapp.test_cases
     ///   3 ADDR d1 d2 ...   - 写 EEPROM 并读回校验 (最多32字节)
     ///   4                  - 查询看门狗超时标记: 1=等待超时, 0=超时已发生
     ///   5 {0|1}            - 0=停止喂狗(进入等待超时)  1=恢复喂狗
-    ///   6                  - 触摸屏单次读取 (X/Y/Z, 10s 超时)
+    ///   6                  - 触摸屏单次读取 (X/Y/Z, 10s 超时, 需继电器驱动气缸按下)
     ///   7 {0|1}            - 0=关闭触摸自动上报  1=开启
     ///   8 {1-6} {0|1}      - 设置 PB10~PB15 电平 (1=PB10 ... 6=PB15, 1=高 0=低)
     ///   8                  - 查询 PB10~PB15 六路当前电平, 上电默认全部高电平
@@ -31,6 +31,8 @@ namespace testapp.test_cases
     ///   [setport]
     ///   ecolab_hero_aux_serial_port = COM3
     ///   ecolab_hero_aux_serial_baudrate = 9600
+    ///   sk_Relay_board = COM18            (touch_read 驱动气缸用)
+    ///   sk_Relay_board_baudrate = 9600
     /// </summary>
     public class ecolab_hero_aux_my_test : IDefaultAction, IDisposable
     {
@@ -103,9 +105,10 @@ namespace testapp.test_cases
             tc.funcs.Add(id + "wdt_feed", wdt_feed);
 
             // ── 触摸屏单次读取 (命令 6) ──
-            // 等待触摸按下, 读取 X/Y/Z 坐标
+            // 发送 6 → 继电器(sk_relay1_set)驱动气缸按下触摸屏 → 读取 X/Y/Z 坐标
             // a = "X上限;Y上限", b = "X下限;Y下限", c = "X=xxx Y=xxx Z=xxx"
-            // d = "timeout=10000" (可选, 默认10s)
+            // d = "timeout=10000;relay_func=sk_relay1_set;relay_ch=1;send_delay_ms=100;press_ms=500"
+            //     缺省: 超时10s, 继电器通道1, 发送后延时100ms, 按住500ms
             tc.funcs.Add(id + "touch_read", touch_read);
 
             // ── 触摸自动上报开关 (命令 7) ──
@@ -232,6 +235,29 @@ namespace testapp.test_cases
         }
 
         /// <summary>
+        /// 只发送命令, 不等待响应 (用于发送和接收之间需要插入动作的场景)
+        /// </summary>
+        private string send_only(string cmd)
+        {
+            clear_rx();
+            port.WriteLine(cmd);
+            utility_func.callbackdebuginfo($"[HERO_AUX_TEST] TX: {cmd}");
+            return "pass";
+        }
+
+        /// <summary>
+        /// 只等待响应直到 "> " 提示符, 响应中的 \r\n 替换为空格
+        /// </summary>
+        private string recv_response(int timeoutMs, out string response)
+        {
+            var raw = wait_for_prompt("> ", timeoutMs);
+            response = raw.Replace("\r", " ").Replace("\n", " ");
+            response = Regex.Replace(response, @">\s*$", "").Trim();
+            utility_func.callbackdebuginfo($"[HERO_AUX_TEST] RX: {response.Substring(0, Math.Min(response.Length, 300))}");
+            return "pass";
+        }
+
+        /// <summary>
         /// 发送命令到单片机, 等待 "> " 提示符后返回完整响应
         /// 响应中的 \r\n 替换为空格, 结果赋值给调用方用于 c
         /// </summary>
@@ -240,21 +266,38 @@ namespace testapp.test_cases
             response = "";
             try
             {
-                clear_rx();
-                port.WriteLine(cmd);
-                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] TX: {cmd}");
-
-                var raw = wait_for_prompt("> ", timeoutMs);
-                response = raw.Replace("\r", " ").Replace("\n", " ");
-                response = Regex.Replace(response, @">\s*$", "").Trim();
-                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] RX: {response.Substring(0, Math.Min(response.Length, 300))}");
-                return "pass";
+                send_only(cmd);
+                return recv_response(timeoutMs, out response);
             }
             catch (Exception ex)
             {
                 utility_func.callbackdebuginfo($"[HERO_AUX_TEST] send_and_recv error: {ex.Message}");
                 response = "error";
                 return "fail";
+            }
+        }
+
+        /// <summary>
+        /// 控制继电器通道, 默认执行体 sk_relay1_set, 格式 "$ch:1$"
+        /// </summary>
+        private bool set_relay(string relayFunc, string relayCh, int on, out string err)
+        {
+            err = "";
+            if (!tc.funcs.ContainsKey(relayFunc))
+            {
+                err = "relay_func_not_found";
+                return false;
+            }
+            try
+            {
+                string outMsg;
+                tc.funcs[relayFunc]("", "", out outMsg, $"${relayCh}:{on}$");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                err = ex.Message.Replace(",", ";").Replace("\r", " ").Replace("\n", " ");
+                return false;
             }
         }
 
@@ -572,19 +615,54 @@ namespace testapp.test_cases
         }
 
         // ── 命令 6: 触摸屏单次读取 ──────────────────────────────────
-        // 等待触摸按下, 读取 X/Y/Z 坐标
+        // 发送 6 → 继电器驱动气缸按下触摸屏 → 等待坐标响应
         // a = "X上限;Y上限", b = "X下限;Y下限"
         // c = "X=xxx Y=xxx Z=xxx" (实际读到的坐标)
-        // d = "timeout=10000" (可选)
+        // d = "timeout=10000;relay_func=sk_relay1_set;relay_ch=1;send_delay_ms=100;press_ms=500"
         private string touch_read(string a, string b, out string c, string d)
         {
             c = "fail";
+            bool relayOn = false;
+            string relayFunc = "";
+            string relayCh = "";
             try
             {
                 var p = parse_d(d);
                 int timeout = get_int(p, "timeout", 10000);
+                int sendDelay = get_int(p, "send_delay_ms", 100);
+                int pressMs = get_int(p, "press_ms", 500);
+                relayFunc = get_optional(p, "relay_func", "sk_relay1_set");
+                relayCh = get_optional(p, "relay_ch", "1");
 
-                if (send_and_recv("6", timeout + 2000, out c) != "pass")
+                if (!tc.funcs.ContainsKey(relayFunc))
+                {
+                    c = "relay_func_not_found";
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] touch_read: relay func '{relayFunc}' not registered");
+                    return "fail";
+                }
+
+                // 先发命令, 让固件进入触摸等待
+                send_only("6");
+                if (sendDelay > 0) Thread.Sleep(sendDelay);
+
+                // 继电器吸合 → 气缸按下触摸屏
+                string relayErr;
+                if (!set_relay(relayFunc, relayCh, 1, out relayErr))
+                {
+                    c = $"relay_on_fail:{relayErr}";
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] touch_read: relay ON failed: {relayErr}");
+                    return "fail";
+                }
+                relayOn = true;
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] touch_read: relay ON ({relayFunc} ch={relayCh})");
+
+                Thread.Sleep(pressMs);
+
+                // 气缸松开后等待坐标
+                set_relay(relayFunc, relayCh, 0, out relayErr);
+                relayOn = false;
+
+                if (recv_response(timeout + 2000, out c) != "pass")
                     return "fail";
 
                 // 检查是否检测到触摸
@@ -642,6 +720,12 @@ namespace testapp.test_cases
                 utility_func.callbackdebuginfo($"[HERO_AUX_TEST] touch_read error: {ex.Message}");
                 c = "error";
                 return "fail";
+            }
+            finally
+            {
+                // 兜底复位, 避免异常时气缸一直顶住触摸屏
+                if (relayOn)
+                    set_relay(relayFunc, relayCh, 0, out _);
             }
         }
 
