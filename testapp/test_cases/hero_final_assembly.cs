@@ -19,6 +19,14 @@ namespace testapp.test_cases
     {
         testcase_dll tc;
         string id = "hero_final_";
+        // ── 连接通道选择 (setup.ini [setport] hero_conn_mode = serial|ssh, 默认 serial) ──
+        //   serial: 走 hero_uboot_serial_port 串口 shell (无需网线)
+        //   ssh:    走 hero_ssh_host SSH (需要治具网线连 DUT), SshClient 惰性连接, 不在启动时抢连
+        string conn_mode = "serial";
+        string ssh_host = "";
+        int ssh_port = 22;
+        string ssh_user = "root";
+        string ssh_pass = "EcoTest";
         SshClient ssh;
         bool ssh_connected = false;
         SerialPort ubootPort;
@@ -32,27 +40,48 @@ namespace testapp.test_cases
             try
             {
                 var ini = glob_ini_instance.getInstance().getSetupIniData;
-                /*===================
-                string host = ini["setport"]["hero_ssh_host"];
-                int port = int.Parse(ini["setport"]["hero_ssh_port"] ?? "22");
-                string user = ini["setport"]["hero_ssh_user"] ?? "root";
-                string pass = ini["setport"]["hero_ssh_password"] ?? "EcoTest";
-                ssh = new SshClient(host, port, user, pass);
-                ssh.ConnectionInfo.Timeout = TimeSpan.FromSeconds(10);
-                ssh.Connect();
-                ssh_connected = true;
-                utility_func.callbackdebuginfo($"[HERO_FINAL] SSH connected to {host}:{port}");
-                ====================*/
-                string sport = ini["setport"]["hero_uboot_serial_port"];
-                int sbaud = int.Parse(ini["setport"]["hero_uboot_serial_baudrate"] ?? "115200");
-                ubootPort = new SerialPort(sport, sbaud, Parity.None, 8, StopBits.One);
-                ubootPort.ReadTimeout = 5000;
-                ubootPort.WriteTimeout = 2000;
-                ubootPort.NewLine = "\r\n";
-                ubootPort.Encoding = Encoding.UTF8;
-                ubootPort.DataReceived += UbootPort_DataReceived;
-                ubootPort.Open();
-                utility_func.callbackdebuginfo($"[HERO_FINAL] u-boot serial connected: {sport}@{sbaud}");
+                // ── SSH: 只加载配置, 不创建客户端、不连接 ──
+                //   SSH 依赖 DUT 启动(网络可达)才能连接, 因此 SshClient 的创建与 Connect
+                //   全部推迟到首次使用时 (见 ensure_ssh), 构造函数只把配置读出来。
+                //   通道选择: hero_conn_mode = serial|ssh (缺省 serial)。
+                conn_mode = (ini["setport"]["hero_conn_mode"] ?? "serial").Trim().ToLowerInvariant();
+                if (conn_mode != "serial" && conn_mode != "ssh") conn_mode = "serial";
+                if (conn_mode == "ssh")
+                {
+                    ssh_host = ini["setport"]["hero_ssh_host"] ?? "";
+                    if (ssh_host.Length == 0)
+                    {
+                        utility_func.callbackdebuginfo("[HERO_FINAL] hero_conn_mode=ssh 但未配置 hero_ssh_host, 回退串口模式");
+                        conn_mode = "serial";
+                    }
+                    else
+                    {
+                        try { ssh_port = int.Parse(ini["setport"]["hero_ssh_port"] ?? "22"); }
+                        catch { ssh_port = 22; }
+                        ssh_user = ini["setport"]["hero_ssh_user"] ?? "root";
+                        ssh_pass = ini["setport"]["hero_ssh_password"] ?? "EcoTest";
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] conn_mode=ssh, host={ssh_host}:{ssh_port} (配置已加载, 等 DUT 启动后首次使用时再创建/连接)");
+                    }
+                }
+
+                // ── 串口: 独立 try, 配置好即可提前打开 (不依赖 DUT 状态) ──
+                try
+                {
+                    string sport = ini["setport"]["hero_uboot_serial_port"];
+                    int sbaud = int.Parse(ini["setport"]["hero_uboot_serial_baudrate"] ?? "115200");
+                    ubootPort = new SerialPort(sport, sbaud, Parity.None, 8, StopBits.One);
+                    ubootPort.ReadTimeout = 5000;
+                    ubootPort.WriteTimeout = 2000;
+                    ubootPort.NewLine = "\r\n";
+                    ubootPort.Encoding = Encoding.UTF8;
+                    ubootPort.DataReceived += UbootPort_DataReceived;
+                    ubootPort.Open();
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] u-boot serial connected: {sport}@{sbaud}");
+                }
+                catch (Exception exSerial)
+                {
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] serial init error: {exSerial.Message}");
+                }
             }
             catch (Exception ex)
             {
@@ -111,6 +140,15 @@ namespace testapp.test_cases
 
             // ── MAC 地址编程与安全锁定 (u-boot fuse) ──
             tc.funcs.Add(id + "program_mac_and_lock", program_mac_and_lock);
+
+            // ── LED 控制 (板端 /usr/local/bin/led v3; comm=pin13/gpio68 低有效, alarm=pin15/gpio82 低有效, 6V_PWR=pin37/gpio10 高有效) ──
+            tc.funcs.Add(id + "led_set", led_set);
+
+            // ── 继电器吸合/释放 (板端 /usr/local/bin/relay, 线圈 121-126, 吸合后给治具 6V 轨/指示灯供电) ──
+            tc.funcs.Add(id + "relay_set", relay_set);
+
+            // ── RTC 走时校验 (板端 date +%s 与工位机时间比对) ──
+            tc.funcs.Add(id + "rtc_check", rtc_check);
         }
 
         private string ssh_exec(string a, string b, out string c, string d)
@@ -122,7 +160,7 @@ namespace testapp.test_cases
                 string cmd = get_required(p, "cmd");
                 string expect = get_optional(p, "expect", "");
                 int timeout = get_int(p, "timeout", 15000);
-                if (!ssh_connected) { utility_func.callbackdebuginfo("[HERO_FINAL] SSH not connected"); return "fail"; }
+                if (!ensure_ssh(8000)) { utility_func.callbackdebuginfo("[HERO_FINAL] SSH not connected/configured"); return "fail"; }
                 var sw = Stopwatch.StartNew();
                 using var sc = ssh.CreateCommand(cmd);
                 sc.CommandTimeout = TimeSpan.FromMilliseconds(timeout);
@@ -144,7 +182,7 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
-                if (!ssh_connected) { utility_func.callbackdebuginfo("[HERO_FINAL] SSH not connected"); return "fail"; }
+                if (!ensure_ssh(8000)) { utility_func.callbackdebuginfo("[HERO_FINAL] SSH not connected/configured"); return "fail"; }
                 using var sc = ssh.CreateCommand("echo HERO_SSH_OK");
                 sc.CommandTimeout = TimeSpan.FromSeconds(5);
                 var result = sc.Execute();
@@ -486,15 +524,22 @@ namespace testapp.test_cases
         }
 
         /// <summary>
-        /// 产品连接验证 — 上电后等待产品启动并验证可通过 SSH 通讯。
+        /// 产品连接验证 — 按 hero_conn_mode 选择通道。
         ///
-        /// 流程: 尝试SSH重连 → echo验证 → (可选)串口等待启动信息
+        /// 串口模式 (默认): 不是傻等 "login:" 文本, 而是每 poll_ms(默认2000ms) 秒看一眼串口流:
+        ///   1) 流中已有 shell 提示符 -> 产品已登录, 直接判 PASS;
+        ///   2) 流中出现 login: -> 输入用户名/密码登录, 登录成功判 PASS;
+        ///   3) 有主动输出在打印 (产品在说话) -> 继续等 login 出现;
+        ///   4) 没有任何输出 -> 主动发回车探活, 下一轮看响应 (静默的 login 提示符会被重新催出来)。
+        ///   总等待窗口 = retry × interval (ms)。
         ///
-        /// d 参数: retry=重试次数(默认10);interval=重试间隔ms(默认3000);
-        ///         ssh_timeout=SSH连接超时ms(默认15000);
-        ///         serial_wait=是否等待串口启动信息(默认true);
-        ///         serial_text=串口等待文本(默认"login:")
-        /// a/b = 无效, c = "pass@attemptN" 或 "fail;reason"
+        /// SSH 模式 (hero_conn_mode=ssh): 重试 Connect + echo HERO_SSH_OK 验证。
+        ///
+        /// d 参数: retry=<窗口倍数, 默认10>; interval=<ms, 默认3000> (串口模式总窗口=retry×interval);
+        ///         poll_ms=<串口轮询间隔ms, 默认2000>;
+        ///         user=<串口登录名, 默认root>; pass=<串口密码, 默认EcoTest>;
+        ///         ssh_timeout=<SSH连接超时ms, 默认15000>
+        /// a/b = 无效, c = "pass@attemptN(ssh|serial)" 或 "fail;reason"
         /// </summary>
         private string product_connect(string a, string b, out string c, string d)
         {
@@ -505,71 +550,91 @@ namespace testapp.test_cases
                 int retryCount = get_int(p, "retry", 10);
                 int retryInterval = get_int(p, "interval", 3000);
                 int sshTimeout = get_int(p, "ssh_timeout", 15000);
-                bool serialWait = get_optional(p, "serial_wait", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
-                string serialText = get_optional(p, "serial_text", "login:");
+                int pollMs = get_int(p, "poll_ms", 2000);
+                string user = get_optional(p, "user", "root");
+                string pass = get_optional(p, "pass", "EcoTest");
 
-                utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: waiting for product (retry={retryCount}, interval={retryInterval}ms)");
+                utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: mode={conn_mode} (窗口 {retryCount}×{retryInterval}ms)");
 
-                // 可选: 先等待串口出现启动信息
-                if (serialWait && ubootPort != null && ubootPort.IsOpen)
+                // ── SSH 模式 ──
+                if (conn_mode == "ssh")
                 {
-                    clear_uboot_rx();
-                    var serialDeadline = DateTime.UtcNow.AddMilliseconds(retryCount * retryInterval);
-                    bool serialReady = false;
-                    while (DateTime.UtcNow < serialDeadline)
+                    for (int i = 0; i < retryCount; i++)
                     {
-                        Thread.Sleep(200);
-                        lock (ubootLock)
+                        if (ensure_ssh(sshTimeout))
                         {
-                            if (ubootRx.ToString().Contains(serialText))
+                            string loginOut;
+                            if (ssh_login("", "", out loginOut, d) == "pass")
                             {
-                                serialReady = true;
-                                break;
+                                utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: product connected via SSH on attempt {i + 1}");
+                                c = $"pass@attempt{i + 1}(ssh)";
+                                return "pass";
                             }
                         }
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: SSH attempt {i + 1}/{retryCount} failed, retrying...");
+                        Thread.Sleep(retryInterval);
                     }
-                    utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: serial {(serialReady ? "ready" : "timeout")} (text='{serialText}')");
+                    c = "fail;no_response(ssh)";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] product_connect: SSH mode, product did not respond after all retries");
+                    return "fail";
                 }
 
-                // 尝试 SSH 重连 + 验证
-                for (int i = 0; i < retryCount; i++)
+                // ── 串口模式: 2 秒级轮询串口流 ──
+                if (ubootPort == null || !ubootPort.IsOpen)
                 {
-                    // 如果 SSH 未连接，尝试重连
-                    if (!ssh_connected || (ssh != null && !ssh.IsConnected))
-                    {
-                        try
-                        {
-                            if (ssh != null)
-                            {
-                                ssh.ConnectionInfo.Timeout = TimeSpan.FromMilliseconds(sshTimeout);
-                                ssh.Connect();
-                                ssh_connected = true;
-                                utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: SSH reconnected on attempt {i + 1}");
-                            }
-                        }
-                        catch (Exception exSsh)
-                        {
-                            utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: SSH reconnect attempt {i + 1} failed: {exSsh.Message}");
-                            Thread.Sleep(retryInterval);
-                            continue;
-                        }
-                    }
+                    utility_func.callbackdebuginfo("[HERO_FINAL] product_connect: serial port not open");
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
 
-                    // 验证连接 (echo 测试)
-                    string loginOut;
-                    if (ssh_login("", "", out loginOut, d) == "pass")
+                var deadline = DateTime.UtcNow.AddMilliseconds((double)retryCount * retryInterval);
+                long lastLen = 0;
+                lock (ubootLock) { lastLen = ubootRx.Length; }
+                int loginTried = 0;
+
+                while (DateTime.UtcNow < deadline)
+                {
+                    Thread.Sleep(pollMs);
+                    string snap;
+                    long len;
+                    lock (ubootLock) { snap = ubootRx.ToString(); len = ubootRx.Length; }
+                    bool newBytes = len > lastLen;
+                    lastLen = len;
+
+                    // 1) 流中已有 shell 提示符 -> 已登录, 直接通过
+                    if (Regex.IsMatch(snap, UbootPromptPattern, RegexOptions.None, TimeSpan.FromSeconds(1)))
                     {
-                        utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: product connected on attempt {i + 1}");
-                        c = $"pass@attempt{i + 1}";
+                        utility_func.callbackdebuginfo("[HERO_FINAL] product_connect: shell prompt already present (logged in), no login needed");
+                        c = "pass@prompt_present(serial)";
                         return "pass";
                     }
 
-                    utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: attempt {i + 1}/{retryCount} login failed, retrying...");
-                    Thread.Sleep(retryInterval);
+                    // 2) 出现登录提示 -> 输入账号密码登录 (已在 Password: 停留时只输密码)
+                    if (snap.Contains("login:") || snap.Contains("Password:"))
+                    {
+                        loginTried++;
+                        bool atPassword = !snap.Contains("login:") && snap.Contains("Password:");
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: {(atPassword ? "password prompt" : "login prompt")} detected, logging in as {user} (attempt {loginTried})");
+                        if (serial_login(user, pass, atPassword))
+                        {
+                            c = $"pass@logged_in(serial) (attempt {loginTried})";
+                            return "pass";
+                        }
+                        utility_func.callbackdebuginfo("[HERO_FINAL] product_connect: serial login failed, will retry");
+                        continue;
+                    }
+
+                    // 3) 有主动输出在打印 -> 产品在说话, 继续等 login 出现
+                    if (newBytes)
+                        continue;
+
+                    // 4) 静默 -> 发回车探活, 下一轮看响应 (会催出 login: 或 shell 提示符)
+                    ubootPort.Write("\r");
+                    utility_func.callbackdebuginfo("[HERO_FINAL] product_connect: serial silent, sent CR probe");
                 }
 
-                c = "fail;no_response";
-                utility_func.callbackdebuginfo("[HERO_FINAL] product_connect: product did not respond after all retries");
+                c = "fail;no_response(serial)";
+                utility_func.callbackdebuginfo("[HERO_FINAL] product_connect: serial mode, product did not respond after window");
                 return "fail";
             }
             catch (Exception ex) { utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect error: {ex.Message}"); c = "error"; return "fail"; }
@@ -758,6 +823,7 @@ namespace testapp.test_cases
         ///
         /// d 参数: action=on|off (必填); gpio=<引脚号, 默认14>
         ///         login=<是否需要登录, 默认true>; user=<用户名, 默认root>; pass=<密码, 默认EcoTest>
+        ///         prompt=<作业员判定提示, 可选 (带则动作完成后弹 OK/NG 判定窗)>; image=<参考图, 可选>
         /// a/b = 无效, c = "pass" 或 "fail;reason"
         /// </summary>
         private string fan_control(string a, string b, out string c, string d)
@@ -835,6 +901,14 @@ namespace testapp.test_cases
 
                 string valOutput = get_serial_output(string.Format("fan_{0}_done", action));
                 utility_func.callbackdebuginfo(string.Format("[HERO_FINAL] fan_control: fan {0} (gpio{1}={2})", action, gpio, val));
+
+                // 可选作业员判定 (d 带 prompt= 时弹出 OK/NG 判定窗)
+                if (!operator_confirm(get_optional(p, "prompt", ""), get_optional(p, "image", ""), "HERO FINAL 风扇判定"))
+                {
+                    c = $"fail;operator_ng (fan {action})";
+                    return "fail";
+                }
+
                 c = string.Format("pass;fan_{0}", action);
                 return "pass";
             }
@@ -844,6 +918,62 @@ namespace testapp.test_cases
                 c = "error";
                 return "fail";
             }
+        }
+
+        /// <summary>
+        /// SSH 惰性加载+连接: DUT 启动后才允许调用。
+        ///   - 首次调用时才创建 SshClient (构造函数只读配置不创建);
+        ///   - 已连接直接返回 true;
+        ///   - 断线/掉线后先 Disconnect 清理残留会话再重连 (DUT 重启换连接必须清理)。
+        /// conn_mode=serial (未配置 hero_ssh_host) 时恒为 false。
+        /// </summary>
+        private bool ensure_ssh(int connectTimeoutMs)
+        {
+            if (conn_mode != "ssh" || string.IsNullOrEmpty(ssh_host)) return false;
+            try
+            {
+                if (ssh == null)
+                {
+                    ssh = new SshClient(ssh_host, ssh_port, ssh_user, ssh_pass);
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] SSH client created {ssh_host}:{ssh_port} (首次使用, DUT 已启动)");
+                }
+                if (ssh.IsConnected) { ssh_connected = true; return true; }
+                try { ssh.Disconnect(); } catch { }   // 清掉半开/残留会话
+                ssh.ConnectionInfo.Timeout = TimeSpan.FromMilliseconds(connectTimeoutMs);
+                ssh.Connect();
+                ssh_connected = ssh.IsConnected;
+                if (ssh_connected)
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] SSH connected to {ssh_host}:{ssh_port}");
+                return ssh_connected;
+            }
+            catch (Exception ex)
+            {
+                ssh_connected = false;
+                utility_func.callbackdebuginfo($"[HERO_FINAL] SSH connect failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 串口登录: 输入用户名/密码后等待 shell 提示符。
+        /// atPassword=true 表示流中已停在 Password: 提示 (如上次密码输错后重试), 跳过用户名只输密码。
+        /// 成功返回 true。
+        /// </summary>
+        private bool serial_login(string user, string pass, bool atPassword = false)
+        {
+            clear_uboot_rx();
+            if (!atPassword)
+            {
+                ubootPort.WriteLine(user);
+                Thread.Sleep(600);
+            }
+            ubootPort.WriteLine(pass);
+            Thread.Sleep(1200);
+            if (wait_for_prompt(5000)) return true;
+            // 密码错误/再要一次用户名等情况: 催一下提示符, 再失败则清缓冲交回上层重试
+            if (wake_shell_prompt(6000)) return true;
+            clear_uboot_rx();
+            return false;
         }
 
         /// <summary>
@@ -935,11 +1065,339 @@ namespace testapp.test_cases
         }
 
         /// <summary>
+        /// 共用: 可选作业员判定。d 里带 prompt= 时弹出 OK/NG 判定窗 (与 HeroFS_* 系列行为一致);
+        /// 无 prompt= 时直接返回 true (纯自动步骤)。
+        /// </summary>
+        private bool operator_confirm(string prompt, string image, string title)
+        {
+            if (string.IsNullOrEmpty(prompt)) return true;
+            var r = HeroPromptForm.Show(title, prompt, image, true);
+            utility_func.callbackdebuginfo($"[HERO_FINAL] operator_confirm: {prompt} -> {(r == DialogResult.OK ? "OK" : "NG")}");
+            return r == DialogResult.OK;
+        }
+
+        // ── LED 控制 (板端 /usr/local/bin/led v3, 2026-11-13 实测标定) ──
+        //
+        //   治具 comm   灯 = J2 pin13 (板上网络名 Alarm) GPIO3_IO04 = gpio68, 低电平点亮
+        //   治具 alarm  灯 = J2 pin15 (板上网络名 Comm)  GPIO3_IO18 = gpio82, 低电平点亮
+        //   治具 6V_PWR 灯 = J2 pin37                    GPIO1_IO10 = gpio10, 高电平点亮
+        //   治具灯丝印与板上网络名交叉, 以实测为准; pin11/gpio81 不驱动任何灯。
+        //   灯需继电器吸合 (6V 轨供电) 后才可见。
+
+        /// <summary>led id -> 状态行里的 gpio 标识 (用于回读校验)。</summary>
+        private static string LedToken(string lid)
+        {
+            switch ((lid ?? "").Trim().ToLowerInvariant())
+            {
+                case "15": case "alarm": return "gpio82";
+                case "13": case "comm": case "signal": case "sig": return "gpio68";
+                case "6v": case "pwr": case "37": case "11": return "gpio10";
+                default: return null;
+            }
+        }
+
+        /// <summary>
+        /// LED 控制 — 通过串口执行板端 /usr/local/bin/led (v3) 开关治具指示灯并回读校验。
+        ///
+        /// 流程: 催提示符/登录 -> led &lt;id&gt; on|off (命令自带状态块回显) -> 校验状态行 -> 可选人工判定
+        ///
+        /// d 参数: id=alarm|comm|sig|13|15|6v|pwr|37|all (默认all); on=true/false (默认true);
+        ///         prompt=作业员判定提示(可选); image=参考图(可选, 如 images\led_all_on.png);
+        ///         login=<默认true>; user=<默认root>; pass=<默认EcoTest>; timeout=<默认15000>
+        /// a/b = 无效, c = "pass@..." 或 "fail;reason"
+        /// </summary>
+        private string led_set(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                string lid = get_optional(p, "id", "all");
+                bool on = get_optional(p, "on", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+                bool needLogin = get_optional(p, "login", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+                string user = get_optional(p, "user", "root");
+                string pass = get_optional(p, "pass", "EcoTest");
+                int timeout = get_int(p, "timeout", 15000);
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    utility_func.callbackdebuginfo("[HERO_FINAL] led_set: serial port not open");
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
+
+                // 催出 shell 提示符, 不行再登录 (同 wifi_scan 模式)
+                if (!wake_shell_prompt(Math.Min(timeout, 20000)))
+                {
+                    if (!needLogin)
+                    {
+                        c = "fail;no_prompt";
+                        return "fail";
+                    }
+                    utility_func.callbackdebuginfo("[HERO_FINAL] led_set: attempting login...");
+                    ubootPort.WriteLine(user);
+                    Thread.Sleep(500);
+                    ubootPort.WriteLine(pass);
+                    Thread.Sleep(1200);
+                    if (!wake_shell_prompt(8000))
+                    {
+                        c = "fail;login_failed";
+                        return "fail";
+                    }
+                }
+
+                // 执行 led 命令 (板端脚本执行后自带打印 "pinXX-xxx gpioNN: ON/off" 状态块)
+                clear_uboot_rx();
+                string cmd = "led " + lid + " " + (on ? "on" : "off") + "; echo LED_SET_DONE";
+                ubootPort.WriteLine(cmd);
+                utility_func.callbackdebuginfo($"[HERO_FINAL] led_set: {cmd}");
+                if (!wait_for_prompt(timeout))
+                {
+                    c = "fail;cmd_timeout";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] led_set: command timeout");
+                    return "fail";
+                }
+
+                // 校验回读状态行
+                string state = on ? "ON" : "off";
+                string output;
+                lock (ubootLock) { output = ubootRx.ToString(); }
+                bool ok;
+                if (lid == "all")
+                {
+                    ok = output.Contains("gpio68: " + state) && output.Contains("gpio82: " + state) && output.Contains("gpio10: " + state);
+                }
+                else
+                {
+                    string token = LedToken(lid);
+                    if (token == null)
+                    {
+                        c = "fail;bad_id:" + lid;
+                        utility_func.callbackdebuginfo("[HERO_FINAL] led_set: unknown id " + lid);
+                        return "fail";
+                    }
+                    ok = output.Contains(token + ": " + state);
+                }
+                if (!ok)
+                {
+                    c = "fail;verify (期望 gpio 状态行 " + state + ")";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] led_set: verify failed, tail=" + clean_uboot_output(output, cmd));
+                    return "fail";
+                }
+                utility_func.callbackdebuginfo($"[HERO_FINAL] led_set: led {lid} {offDesc(on)} 回读一致");
+
+                // 可选作业员判定
+                if (!operator_confirm(get_optional(p, "prompt", ""), get_optional(p, "image", ""), "HERO FINAL LED 判定"))
+                {
+                    c = $"fail;operator_ng (led {lid} {offDesc(on)})";
+                    return "fail";
+                }
+
+                c = $"pass@led {lid} {(on ? "ON" : "OFF")}";
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] led_set error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        private static string offDesc(bool on) { return on ? "on" : "off"; }
+
+        /// <summary>
+        /// 继电器控制 — 通过串口执行板端 /usr/local/bin/relay 吸合/释放 6 路继电器 (线圈 121-126) 并回读校验。
+        /// 继电器吸合后给治具 6V 轨供电 (三颗指示灯由此供电)。
+        ///
+        /// d 参数: on=true/false (必填); settle_ms=<吸合后稳定等待ms, 默认300>;
+        ///         prompt=作业员判定提示(可选); image=参考图(可选);
+        ///         login=<默认true>; user=<默认root>; pass=<默认EcoTest>; timeout=<默认30000>
+        /// a/b = 无效, c = "pass@..." 或 "fail;reason"
+        /// </summary>
+        private string relay_set(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                bool on = get_optional(p, "on", "").Equals("true", StringComparison.OrdinalIgnoreCase);
+                int settleMs = get_int(p, "settle_ms", 300);
+                bool needLogin = get_optional(p, "login", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+                string user = get_optional(p, "user", "root");
+                string pass = get_optional(p, "pass", "EcoTest");
+                int timeout = get_int(p, "timeout", 30000);
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    utility_func.callbackdebuginfo("[HERO_FINAL] relay_set: serial port not open");
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
+
+                // 催出 shell 提示符, 不行再登录
+                if (!wake_shell_prompt(Math.Min(timeout, 20000)))
+                {
+                    if (!needLogin)
+                    {
+                        c = "fail;no_prompt";
+                        return "fail";
+                    }
+                    utility_func.callbackdebuginfo("[HERO_FINAL] relay_set: attempting login...");
+                    ubootPort.WriteLine(user);
+                    Thread.Sleep(500);
+                    ubootPort.WriteLine(pass);
+                    Thread.Sleep(1200);
+                    if (!wake_shell_prompt(8000))
+                    {
+                        c = "fail;login_failed";
+                        return "fail";
+                    }
+                }
+
+                // 吸合/释放 + 回读状态 (relay status 打印 bits[121:x 122:x ... 126:x])
+                clear_uboot_rx();
+                string action = on ? "on" : "off";
+                ubootPort.WriteLine("relay " + action + "; sleep 0.3; relay status; echo RELAY_SET_DONE");
+                utility_func.callbackdebuginfo($"[HERO_FINAL] relay_set: relay {action} (settle {settleMs}ms)");
+                if (!wait_for_prompt(timeout))
+                {
+                    c = "fail;cmd_timeout";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] relay_set: command timeout");
+                    return "fail";
+                }
+
+                // 校验 6 路线圈状态
+                string output;
+                lock (ubootLock) { output = ubootRx.ToString(); }
+                string want = on ? "1" : "0";
+                for (int coil = 121; coil <= 126; coil++)
+                {
+                    var m = Regex.Match(output, coil + @":(\d)");
+                    if (!m.Success || m.Groups[1].Value != want)
+                    {
+                        c = $"fail;coil_{coil}_readback (期望 {want})";
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] relay_set: coil {coil} verify failed, tail=" + clean_uboot_output(output, action));
+                        return "fail";
+                    }
+                }
+                utility_func.callbackdebuginfo($"[HERO_FINAL] relay_set: 6/6 coils {action} 回读一致");
+                Thread.Sleep(settleMs);
+
+                // 可选作业员判定
+                if (!operator_confirm(get_optional(p, "prompt", ""), get_optional(p, "image", ""), "HERO FINAL 继电器判定"))
+                {
+                    c = $"fail;operator_ng (relay {action})";
+                    return "fail";
+                }
+
+                c = $"pass@relay {(on ? "ON(6路吸合)" : "OFF(6路释放)")}";
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] relay_set error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
+        /// RTC 走时校验 — 通过串口读板端 Unix 时间 (date +%s) 与工位机时间比对。
+        /// 板端系统时钟在启动时从 RTC 同步, 时间一致即说明 RTC 电池/走时正常。
+        ///
+        /// d 参数: tolerance_s=<允许偏差秒, 默认300>; timeout=<默认15000>;
+        ///         login=<默认true>; user=<默认root>; pass=<默认EcoTest>
+        /// a/b = 无效, c = "pass@delta=Ns" 或 "fail;reason"
+        /// </summary>
+        private string rtc_check(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                int toleranceS = get_int(p, "tolerance_s", 300);
+                int timeout = get_int(p, "timeout", 15000);
+                bool needLogin = get_optional(p, "login", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+                string user = get_optional(p, "user", "root");
+                string pass = get_optional(p, "pass", "EcoTest");
+
+                if (ubootPort == null || !ubootPort.IsOpen)
+                {
+                    utility_func.callbackdebuginfo("[HERO_FINAL] rtc_check: serial port not open");
+                    c = "fail;serial_not_open";
+                    return "fail";
+                }
+
+                if (!wake_shell_prompt(Math.Min(timeout, 20000)))
+                {
+                    if (!needLogin)
+                    {
+                        c = "fail;no_prompt";
+                        return "fail";
+                    }
+                    utility_func.callbackdebuginfo("[HERO_FINAL] rtc_check: attempting login...");
+                    ubootPort.WriteLine(user);
+                    Thread.Sleep(500);
+                    ubootPort.WriteLine(pass);
+                    Thread.Sleep(1200);
+                    if (!wake_shell_prompt(8000))
+                    {
+                        c = "fail;login_failed";
+                        return "fail";
+                    }
+                }
+
+                clear_uboot_rx();
+                ubootPort.WriteLine("echo RTC_BEGIN; date +%s; echo RTC_END");
+                utility_func.callbackdebuginfo("[HERO_FINAL] rtc_check: reading board time (date +%s)");
+                if (!wait_for_prompt(timeout))
+                {
+                    c = "fail;cmd_timeout";
+                    return "fail";
+                }
+
+                string output;
+                lock (ubootLock) { output = ubootRx.ToString(); }
+                int bIdx = output.LastIndexOf("RTC_BEGIN", StringComparison.Ordinal);
+                int eIdx = output.IndexOf("RTC_END", bIdx >= 0 ? bIdx : 0, StringComparison.Ordinal);
+                string block = (bIdx >= 0 && eIdx > bIdx)
+                    ? output.Substring(bIdx + "RTC_BEGIN".Length, eIdx - bIdx - "RTC_BEGIN".Length)
+                    : output;
+                var m = Regex.Match(block, @"(?<!\d)(1[5-9]\d{8}|2\d{9})(?!\d)");
+                if (!m.Success || !long.TryParse(m.Value, out long boardUnix))
+                {
+                    c = "fail;parse (板端时间解析失败)";
+                    utility_func.callbackdebuginfo("[HERO_FINAL] rtc_check: parse failed, block=" + block.Trim());
+                    return "fail";
+                }
+
+                long hostUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                long delta = Math.Abs(hostUnix - boardUnix);
+                utility_func.callbackdebuginfo($"[HERO_FINAL] rtc_check: board={boardUnix} host={hostUnix} delta={delta}s (tolerance {toleranceS}s)");
+                if (delta > toleranceS)
+                {
+                    c = $"fail;delta={delta}s (容差 {toleranceS}s)";
+                    return "fail";
+                }
+                c = $"pass@delta={delta}s";
+                return "pass";
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_FINAL] rtc_check error: {ex.Message}");
+                c = "error";
+                return "fail";
+            }
+        }
+
+        /// <summary>
         /// USB 存储检测 — 清空串口缓冲后等待 "USB Storage" 文本出现。
         /// 插入 USB flash drive 后 Linux 内核会输出 USB 枚举消息。
         ///
         /// d 参数: text=<等待文本, 默认"USB Storage">;timeout=<超时ms, 默认15000>
         ///         use_dmesg=<是否同时通过SSH检查dmesg, 默认true>
+        ///         prompt=<作业提示, 可选 (带则先弹窗提示作业员插 U 盘, 按OK后开始检测)>; image=<参考图, 可选>
         /// a/b = 无效, c = "pass" 或 "fail;timeout"
         /// </summary>
         private string usb_storage_check(string a, string b, out string c, string d)
@@ -951,6 +1409,15 @@ namespace testapp.test_cases
                 string text = get_optional(p, "text", "USB Storage");
                 int timeout = get_int(p, "timeout", 15000);
                 bool useDmesg = get_optional(p, "use_dmesg", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+
+                // 可选作业提示窗 (d 带 prompt= 时): 提示作业员插入 U 盘, 按 OK 后开始自动检测
+                string prompt = get_optional(p, "prompt", "");
+                if (prompt.Length > 0)
+                {
+                    string img = get_optional(p, "image", "");
+                    HeroPromptForm.Show("HERO FINAL USB 测试", prompt, img, false);
+                    utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: operator prompted '{prompt}' -> OK, start detection");
+                }
 
                 utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: waiting for '{text}' (timeout={timeout}ms)");
 

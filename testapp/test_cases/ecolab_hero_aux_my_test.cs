@@ -159,6 +159,15 @@ namespace testapp.test_cases
             // a/b = "pass", c = "port=COM7; sent=1; replies=1; rx=12B; first_reply=93ms: HERO_AUX_PING\r\n"
             tc.funcs.Add(id + "serial_loopback_send", serial_loopback_send);
 
+            // ── FT4232H 串口指示灯控制 (调用 Ft4232hLedTool.exe, DBUS0/DBUS1 Bit-Bang) ──
+            // 4 通道 × 2 灯 = 8 个串口 TX/RX 指示灯, 原理图位号: DS4/DS5(A), DS6/DS7(B), D8/D6(C), D3/D4(D)
+            // d = "cmd=enter"                                    → 四通道进异步 Bit-Bang (输出全低, 灯全灭)
+            // d = "cmd=exit"                                     → 退出 Bit-Bang, 恢复 UART 模式
+            // d = "cmd=dbus0;value=1;ch=A"                       → 通道 A(或 B/C/D/ALL) DBUS0 置高/低
+            // exe 相对程序目录查找: Ft4232hLedTool\Ft4232hLedTool.exe 或 Ft4232hLedTool.exe (不在 INI 配置)
+            // a/b = "pass", 退出码 0=pass, 其它=fail, c = 工具 stdout 摘要
+            tc.funcs.Add(id + "ledtool", hero_aux_ledtool);
+
             tc.golb_var_default["hero_aux_slave_id"] = "1";
         }
 
@@ -1213,6 +1222,111 @@ namespace testapp.test_cases
             catch (Exception ex)
             {
                 utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_loopback_send error: " + ex.Message);
+                c = "error";
+                return "fail";
+            }
+        }
+
+        // ── FT4232H 串口指示灯控制 ──────────────────────────────────
+        // 通过 Ft4232hLedTool.exe (独立进程, Bit-Bang 模式跨进程保持) 控制 8 个串口 TX/RX 指示灯
+        // d = "cmd=enter" | "cmd=exit" | "cmd=dbus0;value=1;ch=A" (ch: A/B/C/D/ALL, 默认 ALL)
+        // 原理图对应: A→DS4/DS5, B→DS6/DS7, C→D8/D6, D→D3/D4 (74LVC2G04 反相, 线低=灯亮)
+        // 注意: dbus1 会驱动 RXD 脚, 与板上 485 收发器 RO 输出存在短暂驱动冲突, 仅限测试窗口使用
+        // a/b = "pass", c = 工具输出摘要
+        private string hero_aux_ledtool(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                var p = parse_d(d);
+                string cmd = get_optional(p, "cmd", "").Trim().ToLower();
+                if (cmd != "enter" && cmd != "exit" && cmd != "dbus0" && cmd != "dbus1")
+                {
+                    c = "invalid_cmd";
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] ledtool invalid cmd: {d}");
+                    return "fail";
+                }
+
+                // 相对程序目录查找 exe: Ft4232hLedTool\Ft4232hLedTool.exe → Ft4232hLedTool.exe
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string[] exeCandidates =
+                {
+                    System.IO.Path.Combine(baseDir, "Ft4232hLedTool", "Ft4232hLedTool.exe"),
+                    System.IO.Path.Combine(baseDir, "Ft4232hLedTool.exe"),
+                };
+                string exePath = null;
+                foreach (var cand in exeCandidates)
+                {
+                    if (System.IO.File.Exists(cand)) { exePath = cand; break; }
+                }
+                if (exePath == null)
+                {
+                    c = "exe_not_found";
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] ledtool exe not found (expect Ft4232hLedTool\\Ft4232hLedTool.exe under program dir)");
+                    return "fail";
+                }
+
+                string args;
+                if (cmd == "enter" || cmd == "exit")
+                {
+                    args = cmd;
+                }
+                else
+                {
+                    string value = get_optional(p, "value", "");
+                    if (value != "0" && value != "1")
+                    {
+                        c = "invalid_value";
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] ledtool invalid value: {d}");
+                        return "fail";
+                    }
+                    string ch = get_optional(p, "ch", "ALL").Trim().ToUpper();
+                    if (ch != "A" && ch != "B" && ch != "C" && ch != "D" && ch != "ALL")
+                    {
+                        c = "invalid_channel";
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] ledtool invalid channel: {d}");
+                        return "fail";
+                    }
+                    args = $"{cmd} {value} {ch}";
+                }
+
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = exePath,
+                    Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                };
+                string stdout = "";
+                using (var proc = System.Diagnostics.Process.Start(psi))
+                {
+                    stdout = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
+                    if (!proc.WaitForExit(20000))
+                    {
+                        proc.Kill();
+                        c = "timeout: " + args;
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] ledtool timeout: {args}");
+                        return "fail";
+                    }
+                    int code = proc.ExitCode;
+                    string tail = stdout.Trim();
+                    if (tail.Length > 200) tail = tail.Substring(tail.Length - 200);
+                    c = $"exit={code}; {args}; {tail}";
+
+                    if (code == 0)
+                    {
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] ledtool pass: {c}");
+                        return "pass";
+                    }
+                    utility_func.callbackdebuginfo($"[HERO_AUX_TEST] ledtool FAIL (exit={code}): {c}");
+                    return "fail";
+                }
+            }
+            catch (Exception ex)
+            {
+                utility_func.callbackdebuginfo($"[HERO_AUX_TEST] ledtool error: {ex.Message}");
                 c = "error";
                 return "fail";
             }
