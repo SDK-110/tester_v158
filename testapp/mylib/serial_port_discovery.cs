@@ -116,7 +116,9 @@ namespace testapp.mylib
             info.FriendlyName = name;
             info.PnpDeviceId = pnpId;
 
-            var vpMatch = Regex.Match(pnpId, @"VID_([0-9A-Fa-f]{4})&PID_([0-9A-Fa-f]{4})", RegexOptions.IgnoreCase);
+            // USB 原生驱动: USB\VID_067B&PID_2303\...
+            // FTDI 驱动:   FTDIBUS\VID_0403+PID_6011+序列号\...  (用 '+' 分隔, 故两者都要支持)
+            var vpMatch = Regex.Match(pnpId, @"VID_([0-9A-Fa-f]{4})[&+]PID_([0-9A-Fa-f]{4})", RegexOptions.IgnoreCase);
             if (vpMatch.Success)
             {
                 info.Vid = vpMatch.Groups[1].Value;

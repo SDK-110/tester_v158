@@ -1,3 +1,4 @@
+using ReaLTaiizor.Controls;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -183,6 +184,7 @@ namespace testapp.test_cases
             if (e.EventType != SerialData.Chars) return;
             try
             {
+                Thread.Sleep(30);  // 等待缓冲区数据稳定
                 var data = port.ReadExisting();
                 lock (rxLock) rxBuf.Append(data);
             }
@@ -190,10 +192,17 @@ namespace testapp.test_cases
         }
 
         /// <summary>
-        /// 清空接收缓冲区
+        /// 清空接收缓冲区 (发送命令前调用, 保证响应不被残留数据污染)
+        /// 必须同时清两层:
+        ///   1. 驱动层 DiscardInBuffer — 丢弃已收到但尚未由 DataReceived 事件投递的字节,
+        ///      否则 clear 之后这些旧数据会被补投进来, 等于没清;
+        ///   2. 应用层 rxBuf — 清掉已拼接的历史内容。
+        /// 先清驱动层再清 rxBuf: 中间窗口新到的数据会被随后的 Clear 一并清掉。
+        /// 注: rxLock 只保证互斥, 解决不了"清完之后旧数据又进来"的时序问题。
         /// </summary>
         private void clear_rx()
         {
+            try { port.DiscardInBuffer(); } catch { }
             lock (rxLock) rxBuf.Clear();
         }
 
@@ -212,9 +221,11 @@ namespace testapp.test_cases
 
         /// <summary>
         /// 等待串口响应中出现指定的提示符 (如 "> ") 或超时
+        /// promptSeen: true=等到了提示符(完整响应), false=超时(只有部分响应, MCU 可能复位中)
         /// </summary>
-        private string wait_for_prompt(string prompt, int timeoutMs)
+        private string wait_for_prompt(string prompt, int timeoutMs, out bool promptSeen)
         {
+            promptSeen = false;
             var sw = System.Diagnostics.Stopwatch.StartNew();
             while (sw.ElapsedMilliseconds < timeoutMs)
             {
@@ -223,6 +234,7 @@ namespace testapp.test_cases
                 {
                     if (rxBuf.ToString().Contains(prompt))
                     {
+                        promptSeen = true;
                         var s = rxBuf.ToString();
                         rxBuf.Clear();
                         return s;
@@ -239,6 +251,7 @@ namespace testapp.test_cases
         /// </summary>
         private string send_only(string cmd)
         {
+            rxBuf.Clear();
             clear_rx();
             port.WriteLine(cmd);
             utility_func.callbackdebuginfo($"[HERO_AUX_TEST] TX: {cmd}");
@@ -248,26 +261,60 @@ namespace testapp.test_cases
         /// <summary>
         /// 只等待响应直到 "> " 提示符, 响应中的 \r\n 替换为空格
         /// </summary>
-        private string recv_response(int timeoutMs, out string response)
+        private string recv_response(int timeoutMs, out string response, out bool promptSeen)
         {
-            var raw = wait_for_prompt("> ", timeoutMs);
+            var raw = wait_for_prompt("> ", timeoutMs, out promptSeen);
             response = raw.Replace("\r", " ").Replace("\n", " ");
             response = Regex.Replace(response, @">\s*$", "").Trim();
             utility_func.callbackdebuginfo($"[HERO_AUX_TEST] RX: {response.Substring(0, Math.Min(response.Length, 300))}");
             return "pass";
         }
 
+        private string recv_response(int timeoutMs, out string response)
+        {
+            bool seen;
+            return recv_response(timeoutMs, out response, out seen);
+        }
+
         /// <summary>
         /// 发送命令到单片机, 等待 "> " 提示符后返回完整响应
         /// 响应中的 \r\n 替换为空格, 结果赋值给调用方用于 c
+        ///
+        /// 复位/上电容错: MCU 上电或看门狗复位时会打印开机横幅
+        /// (STM32 Combined Test ... / Unknown command ... Available: ...),
+        /// 若横幅恰好落在命令发送之后, 会被当成"响应"提前消费掉, 真正的响应变成孤儿。
+        /// 检测到横幅特征或等不到提示符时, 清掉两层缓冲后重发命令 (最多3次)。
         /// </summary>
         private string send_and_recv(string cmd, int timeoutMs, out string response)
         {
             response = "";
             try
             {
-                send_only(cmd);
-                return recv_response(timeoutMs, out response);
+                for (int attempt = 1; attempt <= 3; attempt++)
+                {
+                    send_only(cmd);
+                    bool promptSeen;
+                    string resp;
+                    recv_response(timeoutMs, out resp, out promptSeen);
+                    response = resp;
+
+                    // 开机横幅特征 (上电/复位打印) 或杂散命令被拒 → 本次响应无效
+                    bool garbled =
+                        resp.Contains("Unknown command") ||
+                        resp.Contains("Available:") ||
+                        resp.Contains("STM32 Combined Test") ||   // 横幅首行
+                        resp.Contains("Commands:");               // 横幅命令表行
+                    if (promptSeen && !garbled)
+                        return "pass";
+
+                    if (attempt < 3)
+                    {
+                        utility_func.callbackdebuginfo($"[HERO_AUX_TEST] MCU boot/reset garbage? (prompt={promptSeen}, garbled={garbled}) retry {attempt + 1}/3: {cmd}");
+                        Thread.Sleep(1000);   // 给 MCU 完成横幅打印留时间
+                        clear_rx();           // 两层清空 (驱动 + rxBuf), 丢弃横幅/残留
+                    }
+                }
+                return "pass";   // 保持原约定: 由调用方校验响应内容
             }
             catch (Exception ex)
             {
@@ -748,12 +795,13 @@ namespace testapp.test_cases
                 if (send_and_recv(cmd, 5000, out c) != "pass")
                     return "fail";
 
-                if (action == "0" && c.Contains("DISABLED"))
+                // 固件实际回复: "Touch auto-report is OFF. Use '7 1' to enable." / "... is ON. ..."
+                if (action == "0" && (c.Contains("DISABLED") || c.Contains("is OFF")))
                 {
                     utility_func.callbackdebuginfo("[HERO_AUX_TEST] Touch auto-report DISABLED");
                     return "pass";
                 }
-                if (action == "1" && c.Contains("ENABLED"))
+                if (action == "1" && (c.Contains("ENABLED") || c.Contains("is ON")))
                 {
                     utility_func.callbackdebuginfo("[HERO_AUX_TEST] Touch auto-report ENABLED");
                     return "pass";
@@ -1076,16 +1124,21 @@ namespace testapp.test_cases
         }
 
         /// <summary>
-        /// 对发现的串口两两进行双向回环测试, 任意一对双向通过即 pass。
+        /// 对 FTDI 串口按治具接线做固定配对双向回环测试, 全部配对双向通过才 pass。
         ///
-        /// d 参数: name=名称;vid=VID;pid=PID;expected=期望数量;baud=波特率;timeout=单方向超时ms;test_data=测试字符串
-        /// a/b = "pass", c = "found=N:COM3,COM5; tested=M; pass=COM3<->COM5; fail=..."
+        /// d 参数: name=名称;vid=VID;pid=PID;expected=期望数量;baud=波特率;timeout=单方向超时ms;
+        ///         test_data=测试字符串;pairing=配对方式
+        /// pairing:
+        ///   sort  (默认) — COM 号从大到小排序后相邻配对: [0]<->[1], [2]<->[3]
+        ///   letter       — 按 FTDI 序列号末尾通道字母配对: A<->B, C<->D
+        ///                  (实测接线为 A↔B/C↔D; COM 号分配顺序随芯片/换机可能变化, letter 模式更稳)
+        /// a/b = "pass", c = "found=N:...; pairing=sort; pass=COM7<->COM6,COM5<->COM3; fail=..."
         ///
         /// 流程:
-        /// 1. 通过 VID/PID/name 发现串口
-        /// 2. 发现数量 >= expected 才继续
-        /// 3. 两两组合做双向回环测试
-        /// 4. 任意一对 IsPass → pass
+        /// 1. 通过 VID/PID/name 发现串口, 数量必须等于 expected
+        /// 2. 按 pairing 方式组对
+        /// 3. 每对双向测试: 第一个发→第二个收, 第二个发→第一个收
+        /// 4. 所有配对全部双向通过 → pass
         /// </summary>
         private string serial_pair_test(string a, string b, out string c, string d)
         {
@@ -1100,27 +1153,75 @@ namespace testapp.test_cases
                 int baud = get_int(p, "baud", 9600);
                 int timeout = get_int(p, "timeout", 1000);
                 string testData = get_optional(p, "test_data", "HERO_LOOPBACK");
-
-                // Step 1: 发现串口
-                var ports = SerialPortDiscovery.FindPorts(namePattern, vid, pid);
-
-                var portNames = new List<string>();
-                foreach (var portInfo in ports)
-                    portNames.Add(portInfo.ComName);
-
-                if (portNames.Count < expected)
+                string pairing = get_optional(p, "pairing", "sort").Trim().ToLower();
+                if (pairing != "sort" && pairing != "letter")
                 {
-                    c = "found=" + portNames.Count + ":" + string.Join(";", portNames) + "; need=" + expected;
-                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: not enough ports: " + c);
+                    c = "invalid_pairing:" + pairing;
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: " + c);
                     return "fail";
                 }
 
-                utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: found " + portNames.Count + " ports: " + string.Join(",", portNames));
+                // Step 1: 发现串口, 数量必须正好等于 expected
+                var portInfos = SerialPortDiscovery.FindPorts(namePattern, vid, pid);
 
-                // Step 2: 两两回环测试
-                var results = SerialLoopbackTester.TestAllPairs(portNames, baud, timeout, testData);
+                var portNames = new List<string>();
+                foreach (var portInfo in portInfos)
+                    portNames.Add(portInfo.ComName);
 
-                // Step 3: 汇总结果
+                if (portNames.Count != expected)
+                {
+                    c = "found=" + portNames.Count + ":" + string.Join(";", portNames) + "; need=" + expected;
+                    utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: port count mismatch: " + c);
+                    return "fail";
+                }
+
+                utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: found " + portNames.Count + " ports: " + string.Join(";", portNames) + ", pairing=" + pairing);
+
+                // Step 2: 按配对方式组对 (每对: 第一个发第二个收, 第二个发第一个收)
+                var results = new List<PairResult>();
+
+                if (pairing == "letter")
+                {
+                    // 从 PNPDeviceID 提取 FTDI 序列号末尾通道字母: FTDIBUS\VID_xxxx+PID_xxxx+FTA7FW0UA\0000
+                    var byLetter = new Dictionary<char, string>();
+                    foreach (var info in portInfos)
+                    {
+                        var lm = Regex.Match(info.PnpDeviceId ?? "", @"([A-Da-d])\\\d+$");
+                        if (!lm.Success)
+                        {
+                            c = "no_channel_letter:" + info.ComName + "(" + info.PnpDeviceId + ")";
+                            utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: " + c);
+                            return "fail";
+                        }
+                        char letter = char.ToUpper(lm.Groups[1].Value[0]);
+                        if (byLetter.ContainsKey(letter))
+                        {
+                            c = "duplicate_channel:" + letter;
+                            utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: " + c);
+                            return "fail";
+                        }
+                        byLetter[letter] = info.ComName;
+                    }
+                    if (byLetter.Count != expected || !byLetter.ContainsKey('A') || !byLetter.ContainsKey('B')
+                        || (expected >= 3 && !byLetter.ContainsKey('C')) || (expected >= 4 && !byLetter.ContainsKey('D')))
+                    {
+                        c = "letters_missing:" + string.Join(";", byLetter.Keys);
+                        utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: " + c);
+                        return "fail";
+                    }
+                    results.Add(SerialLoopbackTester.TestPair(byLetter['A'], byLetter['B'], baud, timeout, testData));
+                    if (expected >= 4)
+                        results.Add(SerialLoopbackTester.TestPair(byLetter['C'], byLetter['D'], baud, timeout, testData));
+                }
+                else
+                {
+                    // sort: COM 号从大到小排序, 相邻配对 [0]<->[1], [2]<->[3]
+                    portNames.Sort((x, y) => com_index(y).CompareTo(com_index(x)));
+                    for (int i = 0; i + 1 < portNames.Count; i += 2)
+                        results.Add(SerialLoopbackTester.TestPair(portNames[i], portNames[i + 1], baud, timeout, testData));
+                }
+
+                // Step 3: 汇总结果 — 全部配对双向通过才 pass
                 var passList = new List<string>();
                 var failList = new List<string>();
                 foreach (var r in results)
@@ -1128,18 +1229,17 @@ namespace testapp.test_cases
                     if (r.IsPass)
                         passList.Add(r.PortA + "<->" + r.PortB);
                     else
-                        failList.Add(r.PortA + "<->" + r.PortB);
+                        failList.Add(r.PortA + "<->" + r.PortB + "(" + r.Detail + ")");
                 }
 
-                c = "found=" + portNames.Count + ":" + string.Join(",", portNames) +
-                    "; tested=" + results.Count +
-                    "; pass=" + string.Join(",", passList) +
-                    "; fail=" + string.Join(",", failList);
+                c = "found=" + portNames.Count + ":" + string.Join(";", portNames) +
+                    "; pairing=" + pairing +
+                    "; pass=" + string.Join(";", passList) +
+                    "; fail=" + (failList.Count==0?"NA":string.Join(";", failList));
 
                 utility_func.callbackdebuginfo("[HERO_AUX_TEST] serial_pair_test: " + c);
 
-                // 任意一对通过即 pass
-                if (passList.Count > 0)
+                if (failList.Count == 0 && passList.Count > 0)
                     return "pass";
                 return "fail";
             }

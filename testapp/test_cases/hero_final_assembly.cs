@@ -2378,7 +2378,7 @@ namespace testapp.test_cases
         private void UbootPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             if (e.EventType != SerialData.Chars) return;
-            try { var data = ubootPort.ReadExisting(); lock (ubootLock) ubootRx.Append(data); }
+            try { var data = ubootPort.ReadExisting(); lock (ubootLock) ubootRx.Append(data); utility_func.callbackdebuginfo(data); }
             catch { }
         }
 

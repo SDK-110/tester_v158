@@ -40,6 +40,8 @@ namespace testapp.mylib
         /// <param name="baud">波特率, 默认 9600</param>
         /// <param name="timeoutMs">单方向读取超时毫秒, 默认 1000</param>
         /// <param name="testData">测试字符串, 默认 "HERO_LOOPBACK"</param>
+        /// 注意: 打开串口后有 300ms 稳定延时; 单方向失败自动重试最多 3 次。
+        /// 原因: 刚打开立即发送会丢失开头几个字符 (FTDI 驱动未就绪 / RS485 方向切换)。
         public static PairResult TestPair(string portA, string portB, int baud, int timeoutMs, string testData)
         {
             var result = new PairResult();
@@ -74,60 +76,67 @@ namespace testapp.mylib
                 spA.DiscardInBuffer();
                 spB.DiscardInBuffer();
 
-                // ── 方向1: A→B ──
+                // 刚打开串口立即发送会丢失开头几个字符 (FTDI 驱动未就绪 / RS485 方向切换),
+                // 先给一段稳定时间, 再开始收发
+                Thread.Sleep(300);
+
+                // ── 方向1: A→B (失败自动重试, 最多3次) ──
                 string dataAB = testData + "_A";
-                spA.WriteLine(dataAB);
-
                 string recvAB = "";
-                var swAB = System.Diagnostics.Stopwatch.StartNew();
-                while (swAB.ElapsedMilliseconds < timeoutMs)
+                for (int attempt = 1; attempt <= 3 && !result.AB_Pass; attempt++)
                 {
-                    if (spB.BytesToRead > 0)
-                    {
-                        recvAB = spB.ReadExisting();
-                        if (recvAB.Contains(dataAB))
-                            break;
-                    }
-                    Thread.Sleep(10);
-                }
-                if (recvAB.Contains(dataAB))
-                {
-                    result.AB_Pass = true;
-                }
-                else
-                {
-                    result.Detail += "A->B FAIL recv=" + recvAB + "; ";
-                }
+                    if (attempt > 1) Thread.Sleep(100);
+                    try { spA.DiscardInBuffer(); spB.DiscardInBuffer(); } catch { }
+                    Thread.Sleep(50);   // 清缓冲与发送之间留间隔, 避免清缓冲与到达字节竞争丢数据
+                    spA.WriteLine(dataAB);
 
-                // 清空缓冲
-                spA.DiscardInBuffer();
-                spB.DiscardInBuffer();
+                    recvAB = "";
+                    var swAB = System.Diagnostics.Stopwatch.StartNew();
+                    while (swAB.ElapsedMilliseconds < timeoutMs)
+                    {
+                        if (spB.BytesToRead > 0)
+                        {
+                            recvAB += spB.ReadExisting();   // 必须累加: FTDI 分块上交数据, 覆盖赋值会丢前半段
+                            if (recvAB.Contains(dataAB))
+                                break;
+                        }
+                        Thread.Sleep(10);
+                    }
+                    if (recvAB.Contains(dataAB))
+                        result.AB_Pass = true;
+                }
+                if (!result.AB_Pass)
+                    result.Detail += "A->B FAIL recv=" + recvAB.Replace("\r", "").Replace("\n", "") + "; ";
+
                 Thread.Sleep(50);
 
-                // ── 方向2: B→A ──
+                // ── 方向2: B→A (失败自动重试, 最多3次) ──
                 string dataBA = testData + "_B";
-                spB.WriteLine(dataBA);
-
                 string recvBA = "";
-                var swBA = System.Diagnostics.Stopwatch.StartNew();
-                while (swBA.ElapsedMilliseconds < timeoutMs)
+                for (int attempt = 1; attempt <= 3 && !result.BA_Pass; attempt++)
                 {
-                    if (spA.BytesToRead > 0)
+                    if (attempt > 1) Thread.Sleep(100);
+                    try { spA.DiscardInBuffer(); spB.DiscardInBuffer(); } catch { }
+                    Thread.Sleep(50);   // 清缓冲与发送之间留间隔, 避免清缓冲与到达字节竞争丢数据
+                    spB.WriteLine(dataBA);
+
+                    recvBA = "";
+                    var swBA = System.Diagnostics.Stopwatch.StartNew();
+                    while (swBA.ElapsedMilliseconds < timeoutMs)
                     {
-                        recvBA = spA.ReadExisting();
-                        if (recvBA.Contains(dataBA))
-                            break;
+                        if (spA.BytesToRead > 0)
+                        {
+                            recvBA += spA.ReadExisting();   // 必须累加: FTDI 分块上交数据, 覆盖赋值会丢前半段
+                            if (recvBA.Contains(dataBA))
+                                break;
+                        }
+                        Thread.Sleep(10);
                     }
-                    Thread.Sleep(10);
+                    if (recvBA.Contains(dataBA))
+                        result.BA_Pass = true;
                 }
-                if (recvBA.Contains(dataBA))
-                {
-                    result.BA_Pass = true;
-                }
-                else
-                {
-                    result.Detail += "B->A FAIL recv=" + recvBA + "; ";
-                }
+                if (!result.BA_Pass)
+                    result.Detail += "B->A FAIL recv=" + recvBA.Replace("\r", "").Replace("\n", "") + "; ";
 
                 if (result.IsPass)
                     result.Detail = "both directions OK";
