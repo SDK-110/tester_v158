@@ -450,6 +450,7 @@ namespace testapp
             cmw100addr = setup_ini_data["setproduct"]["cmw100address"];
             cmw100addr_for_lte = setup_ini_data["setport"]["cmw100address_for_lte"];
             #region  //注册case 函数
+            m.Add("file_crc32", utility_func.file_crc32);   // a=期望CRC32, d=文件路径
             m.Add("cmd_Exec", cmd_Exec);
             m.Add("run_func_group", run_func_group);
             m.Add("desaysv_test_api", desaysv_test_api);

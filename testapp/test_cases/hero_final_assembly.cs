@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -30,9 +31,25 @@ namespace testapp.test_cases
         SshClient ssh;
         bool ssh_connected = false;
         SerialPort ubootPort;
+        // ── 接收窗口模型 ──
+        //   ubootRx 只保留最近 RxKeepChars 字符的历史; rxTotal 是累计收到的字符数,
+        //   作为单调递增的“窗口序号”。命令发出前取 rx_mark(), 之后只用
+        //   rx_since(mark) 判定/解析, 不再手工 clear, 也不会再匹配到旧数据的残留。
         StringBuilder ubootRx = new StringBuilder();
         object ubootLock = new object();
+        long rxTotal = 0;                 // 累计收到字符数 (单调递增)
+        long rxBase = 0;                  // ubootRx[0] 对应的累计序号
+        const int RxKeepChars = 64 * 1024; // 历史保留上限
+        // ── 串口日志旁路: 接收事件只入队, 独立线程拼行/批量投递调试窗 ──
+        //   接收回调里不能做任何可能阻塞的事 (SendMessage/文件写/Invoke), 否则
+        //   4KB 驱动缓冲溢出会丢数据, 等待逻辑随之超时且无从诊断。
+        //   测试判定只读 rx_since()/rx_tail(), 调试窗只是旁路观察。
+        readonly BlockingCollection<string> rxLogQ = new BlockingCollection<string>(new ConcurrentQueue<string>(), 4096);
+        Thread rxLogPump;
         const string UbootPromptPattern = @"(=>\s*$|~\s*#\s*$|~\s*\$\s*$|\$\s*$|#\s*$|root@[\w\-\.]+:.*#\s*$)";
+        // 提示符按“任意行尾”匹配: 命令输出之后即使设备又打印了日志, 已出现的提示符
+        // 仍能被识别; 窗口已限定为命令发出之后, 不会误匹配历史内容。
+        const RegexOptions PromptOptions = RegexOptions.Multiline;
 
         public hero_final_assembly(testcase_dll _tc)
         {
@@ -76,6 +93,8 @@ namespace testapp.test_cases
                     ubootPort.Encoding = Encoding.UTF8;
                     ubootPort.DataReceived += UbootPort_DataReceived;
                     ubootPort.Open();
+                    rxLogPump = new Thread(PumpRxLog) { IsBackground = true, Name = "HERO_SERIAL_LOG" };
+                    rxLogPump.Start();
                     utility_func.callbackdebuginfo($"[HERO_FINAL] u-boot serial connected: {sport}@{sbaud}");
                 }
                 catch (Exception exSerial)
@@ -206,12 +225,12 @@ namespace testapp.test_cases
                 ssh_connected = false;
                 if (ubootPort != null && ubootPort.IsOpen)
                 {
-                    clear_uboot_rx();
+                    long mark = rx_mark();
                     var deadline = DateTime.UtcNow.AddMilliseconds(rebootTimeout);
                     while (DateTime.UtcNow < deadline)
                     {
                         Thread.Sleep(200);
-                        lock (ubootLock) { if (Regex.IsMatch(ubootRx.ToString(), @"login:|Hit any key", RegexOptions.None, TimeSpan.FromSeconds(1))) { c = "REBOOTED"; return "pass"; } }
+                        if (Regex.IsMatch(rx_since(mark), @"login:|Hit any key", RegexOptions.None, TimeSpan.FromSeconds(1))) { c = "REBOOTED"; return "pass"; }
                     }
                 }
                 else { Thread.Sleep(Math.Min(rebootTimeout, 90000)); }
@@ -228,20 +247,21 @@ namespace testapp.test_cases
                 var p = parse_d(d);
                 string text = get_required(p, "text");
                 int timeout = get_int(p, "timeout", 10000);
-                if (ssh_connected)
+                // 只在本次调用开始之后收到的串口数据里找; 串口和 SSH 共享同一个截止时间。
+                long mark = rx_mark();
+                var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
+                while (DateTime.UtcNow < deadline)
                 {
-                    var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
-                    while (DateTime.UtcNow < deadline)
+                    if (ubootPort != null && ubootPort.IsOpen && rx_since(mark).Contains(text))
+                    {
+                        c = text; return "pass";
+                    }
+                    if (ssh_connected)
                     {
                         try { using var sc = ssh.CreateCommand($"dmesg | grep -i '{text}'"); sc.CommandTimeout = TimeSpan.FromSeconds(3); var result = sc.Execute(); if (!string.IsNullOrEmpty(result) && result.Contains(text)) { c = text; return "pass"; } }
                         catch { }
-                        Thread.Sleep(500);
                     }
-                }
-                if (ubootPort != null && ubootPort.IsOpen)
-                {
-                    var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
-                    while (DateTime.UtcNow < deadline) { Thread.Sleep(100); lock (ubootLock) { if (ubootRx.ToString().Contains(text)) { c = text; return "pass"; } } }
+                    Thread.Sleep(200);
                 }
                 c = ""; return "fail";
             }
@@ -256,13 +276,13 @@ namespace testapp.test_cases
                 var p = parse_d(d);
                 int timeout = get_int(p, "timeout", 30000);
                 if (ubootPort == null || !ubootPort.IsOpen) { utility_func.callbackdebuginfo("[HERO_FINAL] u-boot serial not open"); return "fail"; }
-                clear_uboot_rx();
+                long mark = rx_mark();
                 var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
                 while (DateTime.UtcNow < deadline)
                 {
                     ubootPort.Write(new[] { ' ' }, 0, 1);
                     Thread.Sleep(100);
-                    lock (ubootLock) { if (Regex.IsMatch(ubootRx.ToString(), UbootPromptPattern, RegexOptions.None, TimeSpan.FromSeconds(1))) { c = "UBOOT_PROMPT"; utility_func.callbackdebuginfo("[HERO_FINAL] u-boot interrupted successfully"); return "pass"; } }
+                    if (Regex.IsMatch(rx_since(mark), UbootPromptPattern, PromptOptions, TimeSpan.FromSeconds(1))) { c = "UBOOT_PROMPT"; utility_func.callbackdebuginfo("[HERO_FINAL] u-boot interrupted successfully"); return "pass"; }
                 }
                 c = ""; return "fail";
             }
@@ -292,23 +312,20 @@ namespace testapp.test_cases
             try
             {
                 if (ubootPort == null || !ubootPort.IsOpen) { utility_func.callbackdebuginfo("[HERO_FINAL] u-boot serial not open"); return "fail"; }
-                clear_uboot_rx();
-                lock (ubootLock) { ubootPort.WriteLine(cmd); }
+                long mark = rx_mark();
+                ubootPort.WriteLine(cmd);
                 var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
                 while (DateTime.UtcNow < deadline)
                 {
-                    Thread.Sleep(50);
-                    lock (ubootLock)
+                    var data = rx_since(mark);
+                    if (Regex.IsMatch(data, UbootPromptPattern, PromptOptions, TimeSpan.FromSeconds(1)))
                     {
-                        var data = ubootRx.ToString();
-                        if (Regex.IsMatch(data, UbootPromptPattern, RegexOptions.None, TimeSpan.FromSeconds(1)))
-                        {
-                            c = clean_uboot_output(data, cmd);
-                            utility_func.callbackdebuginfo($"[HERO_FINAL] uboot_exec: {cmd} => {c.Substring(0, Math.Min(c.Length, 200))}");
-                            if (!string.IsNullOrEmpty(expect)) { if (!Regex.IsMatch(c, expect, RegexOptions.None, TimeSpan.FromSeconds(1))) return "fail"; }
-                            return "pass";
-                        }
+                        c = clean_uboot_output(data, cmd);
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] uboot_exec: {cmd} => {c.Substring(0, Math.Min(c.Length, 200))}");
+                        if (!string.IsNullOrEmpty(expect)) { if (!Regex.IsMatch(c, expect, RegexOptions.None, TimeSpan.FromSeconds(1))) return "fail"; }
+                        return "pass";
                     }
+                    Thread.Sleep(50);
                 }
                 c = ""; return "fail";
             }
@@ -588,32 +605,35 @@ namespace testapp.test_cases
                 }
 
                 var deadline = DateTime.UtcNow.AddMilliseconds((double)retryCount * retryInterval);
-                long lastLen = 0;
-                lock (ubootLock) { lastLen = ubootRx.Length; }
+                long lastTotal = rx_mark();
                 int loginTried = 0;
 
                 while (DateTime.UtcNow < deadline)
                 {
                     Thread.Sleep(pollMs);
-                    string snap;
-                    long len;
-                    lock (ubootLock) { snap = ubootRx.ToString(); len = ubootRx.Length; }
-                    bool newBytes = len > lastLen;
-                    lastLen = len;
+                    // 只看最近 8KB: 既能识别启动期间刚打印过的 login:/提示符,
+                    // 又不会被上电之前的残留内容误导 (power_off 已清历史)。
+                    string snap = rx_tail(8192);
+                    long total = rx_mark();
+                    bool newBytes = total > lastTotal;
+                    lastTotal = total;
 
                     // 1) 流中已有 shell 提示符 -> 已登录, 直接通过
-                    if (Regex.IsMatch(snap, UbootPromptPattern, RegexOptions.None, TimeSpan.FromSeconds(1)))
+                    if (Regex.IsMatch(snap, UbootPromptPattern, PromptOptions, TimeSpan.FromSeconds(1)))
                     {
                         utility_func.callbackdebuginfo("[HERO_FINAL] product_connect: shell prompt already present (logged in), no login needed");
                         c = "pass@prompt_present(serial)";
                         return "pass";
                     }
 
-                    // 2) 出现登录提示 -> 输入账号密码登录 (已在 Password: 停留时只输密码)
-                    if (snap.Contains("login:") || snap.Contains("Password:"))
+                    // 2) 出现登录提示 -> 输入账号密码登录。两者都在时以“最后出现”的为准,
+                    //    避免旧 login: 残留在流里导致在 Password: 上又发一次用户名。
+                    int liIdx = snap.LastIndexOf("login:", StringComparison.Ordinal);
+                    int pwIdx = snap.LastIndexOf("Password:", StringComparison.Ordinal);
+                    if (liIdx >= 0 || pwIdx >= 0)
                     {
                         loginTried++;
-                        bool atPassword = !snap.Contains("login:") && snap.Contains("Password:");
+                        bool atPassword = pwIdx > liIdx;
                         utility_func.callbackdebuginfo($"[HERO_FINAL] product_connect: {(atPassword ? "password prompt" : "login prompt")} detected, logging in as {user} (attempt {loginTried})");
                         if (serial_login(user, pass, atPassword))
                         {
@@ -846,11 +866,10 @@ namespace testapp.test_cases
                     return "fail";
                 }
 
-                clear_uboot_rx();
-
                 // 发送换行符, 等待提示符出现
+                long mark = rx_mark();
                 ubootPort.WriteLine("");
-                if (!wait_for_prompt(timeout))
+                if (!wait_for_prompt(mark, timeout))
                 {
                     // 可能需要登录
                     if (needLogin)
@@ -860,9 +879,9 @@ namespace testapp.test_cases
                         Thread.Sleep(500);
                         ubootPort.WriteLine(pass);
                         Thread.Sleep(1000);
-                        clear_uboot_rx();
+                        mark = rx_mark();
                         ubootPort.WriteLine("");
-                        if (!wait_for_prompt(5000))
+                        if (!wait_for_prompt(mark, 5000))
                         {
                             utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: login failed, no prompt");
                             c = "fail;login_failed";
@@ -877,29 +896,27 @@ namespace testapp.test_cases
                 }
 
                 // 导出 GPIO 引脚 (如果尚未导出)
-                clear_uboot_rx();
+                mark = rx_mark();
                 ubootPort.WriteLine(string.Format("cd /sys/class/gpio && echo {0} > export 2>/dev/null; echo {1} > gpio{0}/direction 2>/dev/null; echo done_gpio_setup", gpio, "out"));
-                if (!wait_for_prompt(5000))
+                if (!wait_for_prompt(mark, 5000))
                 {
                     utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: GPIO setup timeout");
                     c = "fail;gpio_setup_timeout";
                     return "fail";
                 }
-                string setupOutput = get_serial_output("done_gpio_setup");
                 utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: GPIO setup done");
 
                 // 设置 GPIO 值 (1=ON, 0=OFF)
                 string val = action.Equals("on", StringComparison.OrdinalIgnoreCase) ? "1" : "0";
-                clear_uboot_rx();
+                mark = rx_mark();
                 ubootPort.WriteLine(string.Format("echo {0} > gpio{1}/value; echo fan_{2}_done", val, gpio, action));
-                if (!wait_for_prompt(5000))
+                if (!wait_for_prompt(mark, 5000))
                 {
                     utility_func.callbackdebuginfo("[HERO_FINAL] fan_control: GPIO value set timeout");
                     c = "fail;gpio_value_timeout";
                     return "fail";
                 }
 
-                string valOutput = get_serial_output(string.Format("fan_{0}_done", action));
                 utility_func.callbackdebuginfo(string.Format("[HERO_FINAL] fan_control: fan {0} (gpio{1}={2})", action, gpio, val));
 
                 // 可选作业员判定 (d 带 prompt= 时弹出 OK/NG 判定窗)
@@ -961,7 +978,7 @@ namespace testapp.test_cases
         /// </summary>
         private bool serial_login(string user, string pass, bool atPassword = false)
         {
-            clear_uboot_rx();
+            long mark = rx_mark();
             if (!atPassword)
             {
                 ubootPort.WriteLine(user);
@@ -969,27 +986,23 @@ namespace testapp.test_cases
             }
             ubootPort.WriteLine(pass);
             Thread.Sleep(1200);
-            if (wait_for_prompt(5000)) return true;
-            // 密码错误/再要一次用户名等情况: 催一下提示符, 再失败则清缓冲交回上层重试
+            if (wait_for_prompt(mark, 5000)) return true;
+            // 密码错误/再要一次用户名等情况: 催一下提示符, 再失败则交回上层重试
             if (wake_shell_prompt(6000)) return true;
-            clear_uboot_rx();
             return false;
         }
 
         /// <summary>
-        /// 等待串口出现 Linux/u-boot 提示符
+        /// 等待 mark 之后出现 Linux/u-boot 提示符
         /// </summary>
-        private bool wait_for_prompt(int timeoutMs)
+        private bool wait_for_prompt(long mark, int timeoutMs)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             while (DateTime.UtcNow < deadline)
             {
+                if (Regex.IsMatch(rx_since(mark), UbootPromptPattern, PromptOptions, TimeSpan.FromSeconds(1)))
+                    return true;
                 Thread.Sleep(100);
-                lock (ubootLock)
-                {
-                    if (Regex.IsMatch(ubootRx.ToString(), UbootPromptPattern, RegexOptions.None, TimeSpan.FromSeconds(1)))
-                        return true;
-                }
             }
             return false;
         }
@@ -1010,7 +1023,7 @@ namespace testapp.test_cases
         {
             const int sliceMs = 300;   // 每轮"发 -> 检测"的间隔
             const int maxCtrlC = 4;    // Ctrl-C 最多补发次数, 避免长时间刷屏/反复打断设备
-            clear_uboot_rx();
+            long mark = rx_mark();
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             int attempt = 0;
             int ctrlCSent = 0;
@@ -1024,11 +1037,8 @@ namespace testapp.test_cases
                 while (DateTime.UtcNow < sliceEnd && DateTime.UtcNow < deadline)
                 {
                     Thread.Sleep(50);
-                    lock (ubootLock)
-                    {
-                        if (Regex.IsMatch(ubootRx.ToString(), UbootPromptPattern, RegexOptions.None, TimeSpan.FromSeconds(1)))
-                            return true;
-                    }
+                    if (Regex.IsMatch(rx_since(mark), UbootPromptPattern, PromptOptions, TimeSpan.FromSeconds(1)))
+                        return true;
                 }
 
                 attempt++;
@@ -1041,27 +1051,9 @@ namespace testapp.test_cases
                 }
             }
 
-            lock (ubootLock)
-            {
-                utility_func.callbackdebuginfo("[HERO_FINAL] wake_shell_prompt: timeout, tail=" +
-                    clean_uboot_output(ubootRx.ToString(), ""));
-            }
+            utility_func.callbackdebuginfo("[HERO_FINAL] wake_shell_prompt: timeout, tail=" +
+                clean_uboot_output(rx_since(mark), ""));
             return false;
-        }
-
-        /// <summary>
-        /// 从串口缓冲中提取指定标记之后的输出
-        /// </summary>
-        private string get_serial_output(string marker)
-        {
-            lock (ubootLock)
-            {
-                string raw = ubootRx.ToString();
-                int idx = raw.IndexOf(marker);
-                if (idx >= 0)
-                    return raw.Substring(0, idx).TrimEnd();
-                return raw.TrimEnd();
-            }
         }
 
         /// <summary>
@@ -1147,11 +1139,11 @@ namespace testapp.test_cases
                 }
 
                 // 执行 led 命令 (板端脚本执行后自带打印 "pinXX-xxx gpioNN: ON/off" 状态块)
-                clear_uboot_rx();
+                long mark = rx_mark();
                 string cmd = "led " + lid + " " + (on ? "on" : "off") + "; echo LED_SET_DONE";
                 ubootPort.WriteLine(cmd);
                 utility_func.callbackdebuginfo($"[HERO_FINAL] led_set: {cmd}");
-                if (!wait_for_prompt(timeout))
+                if (!wait_for_prompt(mark, timeout))
                 {
                     c = "fail;cmd_timeout";
                     utility_func.callbackdebuginfo("[HERO_FINAL] led_set: command timeout");
@@ -1160,8 +1152,7 @@ namespace testapp.test_cases
 
                 // 校验回读状态行
                 string state = on ? "ON" : "off";
-                string output;
-                lock (ubootLock) { output = ubootRx.ToString(); }
+                string output = rx_since(mark);
                 bool ok;
                 if (lid == "all")
                 {
@@ -1256,11 +1247,11 @@ namespace testapp.test_cases
                 }
 
                 // 吸合/释放 + 回读状态 (relay status 打印 bits[121:x 122:x ... 126:x])
-                clear_uboot_rx();
+                long mark = rx_mark();
                 string action = on ? "on" : "off";
                 ubootPort.WriteLine("relay " + action + "; sleep 0.3; relay status; echo RELAY_SET_DONE");
                 utility_func.callbackdebuginfo($"[HERO_FINAL] relay_set: relay {action} (settle {settleMs}ms)");
-                if (!wait_for_prompt(timeout))
+                if (!wait_for_prompt(mark, timeout))
                 {
                     c = "fail;cmd_timeout";
                     utility_func.callbackdebuginfo("[HERO_FINAL] relay_set: command timeout");
@@ -1268,8 +1259,7 @@ namespace testapp.test_cases
                 }
 
                 // 校验 6 路线圈状态
-                string output;
-                lock (ubootLock) { output = ubootRx.ToString(); }
+                string output = rx_since(mark);
                 string want = on ? "1" : "0";
                 for (int coil = 121; coil <= 126; coil++)
                 {
@@ -1348,17 +1338,16 @@ namespace testapp.test_cases
                     }
                 }
 
-                clear_uboot_rx();
+                long mark = rx_mark();
                 ubootPort.WriteLine("echo RTC_BEGIN; date +%s; echo RTC_END");
                 utility_func.callbackdebuginfo("[HERO_FINAL] rtc_check: reading board time (date +%s)");
-                if (!wait_for_prompt(timeout))
+                if (!wait_for_prompt(mark, timeout))
                 {
                     c = "fail;cmd_timeout";
                     return "fail";
                 }
 
-                string output;
-                lock (ubootLock) { output = ubootRx.ToString(); }
+                string output = rx_since(mark);
                 int bIdx = output.LastIndexOf("RTC_BEGIN", StringComparison.Ordinal);
                 int eIdx = output.IndexOf("RTC_END", bIdx >= 0 ? bIdx : 0, StringComparison.Ordinal);
                 string block = (bIdx >= 0 && eIdx > bIdx)
@@ -1421,25 +1410,19 @@ namespace testapp.test_cases
 
                 utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: waiting for '{text}' (timeout={timeout}ms)");
 
-                // 清空串口缓冲, 只捕获新插入的 USB 事件
-                clear_uboot_rx();
+                // 只捕获本次调用开始之后新插入的 USB 事件
+                long mark = rx_mark();
 
                 // 同时通过串口和 SSH dmesg 检测
                 var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
                 while (DateTime.UtcNow < deadline)
                 {
                     // 串口检测
-                    if (ubootPort != null && ubootPort.IsOpen)
+                    if (ubootPort != null && ubootPort.IsOpen && rx_since(mark).Contains(text))
                     {
-                        lock (ubootLock)
-                        {
-                            if (ubootRx.ToString().Contains(text))
-                            {
-                                c = "pass";
-                                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: detected '{text}' via serial");
-                                return "pass";
-                            }
-                        }
+                        c = "pass";
+                        utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: detected '{text}' via serial");
+                        return "pass";
                     }
 
                     // SSH dmesg 检测
@@ -1522,9 +1505,9 @@ namespace testapp.test_cases
                 }
 
                 // 登录
-                clear_uboot_rx();
+                long mark = rx_mark();
                 ubootPort.WriteLine("");
-                if (!wait_for_prompt(timeout))
+                if (!wait_for_prompt(mark, timeout))
                 {
                     if (needLogin)
                     {
@@ -1533,9 +1516,9 @@ namespace testapp.test_cases
                         Thread.Sleep(500);
                         ubootPort.WriteLine(pass);
                         Thread.Sleep(1000);
-                        clear_uboot_rx();
+                        mark = rx_mark();
                         ubootPort.WriteLine("");
-                        if (!wait_for_prompt(5000))
+                        if (!wait_for_prompt(mark, 5000))
                         {
                             c = "fail;login_failed";
                             return "fail";
@@ -1549,9 +1532,9 @@ namespace testapp.test_cases
                 }
 
                 // Step 1: 写随机种子到 EEPROM 0x00 (255字节)
-                clear_uboot_rx();
+                mark = rx_mark();
                 ubootPort.WriteLine($"cat /dev/urandom | base64 | dd bs=1 count=255 | eeprog -f /dev/i2c-{i2cBus} {eepromAddr} -8 -w 0x00; echo seed_done");
-                if (!wait_for_prompt(10000))
+                if (!wait_for_prompt(mark, 10000))
                 {
                     c = "fail;seed_write_timeout";
                     return "fail";
@@ -1559,9 +1542,9 @@ namespace testapp.test_cases
                 utility_func.callbackdebuginfo("[HERO_FINAL] program_serial_number: random seed written");
 
                 // Step 2: 写序列号到 EEPROM 0x20
-                clear_uboot_rx();
+                mark = rx_mark();
                 ubootPort.WriteLine($"echo \"{sn}\" | eeprog -f /dev/i2c-{i2cBus} {eepromAddr} -8 -w 0x20; echo sn_written");
-                if (!wait_for_prompt(5000))
+                if (!wait_for_prompt(mark, 5000))
                 {
                     c = "fail;sn_write_timeout";
                     return "fail";
@@ -1569,25 +1552,18 @@ namespace testapp.test_cases
                 utility_func.callbackdebuginfo($"[HERO_FINAL] program_serial_number: SN '{sn}' written to 0x20");
 
                 // Step 3: 回读验证
-                clear_uboot_rx();
+                mark = rx_mark();
                 ubootPort.WriteLine($"eeprog -qf /dev/i2c-{i2cBus} -f {eepromAddr} -8 -r 0x20:12; echo readback_done");
-                if (!wait_for_prompt(5000))
+                if (!wait_for_prompt(mark, 5000))
                 {
                     c = "fail;readback_timeout";
                     return "fail";
                 }
 
-                // 提取回读输出
-                string readback = "";
-                lock (ubootLock)
-                {
-                    string raw = ubootRx.ToString();
-                    int idx = raw.IndexOf("readback_done");
-                    if (idx >= 0)
-                        readback = raw.Substring(0, idx);
-                    else
-                        readback = raw;
-                }
+                // 提取回读输出 (只取本命令窗口, 截到 readback_done 标记之前)
+                string readback = rx_since(mark);
+                int doneIdx = readback.IndexOf("readback_done", StringComparison.Ordinal);
+                if (doneIdx >= 0) readback = readback.Substring(0, doneIdx);
 
                 // 清理回读文本
                 readback = readback.Replace("\r", "\n");
@@ -1664,23 +1640,22 @@ namespace testapp.test_cases
                 }
 
                 // Step 2: 执行取数命令, 用 BEGIN/END 标记包住最终结果
-                clear_uboot_rx();
+                long mark = rx_mark();
                 ubootPort.WriteLine(
                     "( eeprog -qf /dev/i2c-" + i2cBus + " -f " + eepromAddr + " -8 -r 0x20:12 ) > /tmp/SERIALMACVERSION1.txt; " +
                     "ifconfig eth0 | grep -oE '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}' >> /tmp/SERIALMACVERSION1.txt; " +
                     "rpm -qi packagegroup-ecolab-nalco-app | grep \"Version\" | grep -oE '([0-9].[0-9].[0-9])' >> /tmp/SERIALMACVERSION1.txt; " +
                     "tr -d ':' < /tmp/SERIALMACVERSION1.txt | paste -sd, > /tmp/SERIALMACVERSION.txt; " +
                     "echo " + smvBegin + "; cat /tmp/SERIALMACVERSION.txt; echo " + smvEnd);
-                if (!wait_for_prompt(timeout))
+                if (!wait_for_prompt(mark, timeout))
                 {
                     c = "fail;cmd_timeout";
                     utility_func.callbackdebuginfo("[HERO_FINAL] read_sn_mac_version: command timeout");
                     return "fail";
                 }
 
-                // Step 3: 从串口缓冲中取出标记之间的结果 (取最后一次出现, 避开回显的命令行)
-                string raw;
-                lock (ubootLock) { raw = ubootRx.ToString(); }
+                // Step 3: 从本命令窗口取出标记之间的结果 (取最后一次出现, 避开回显的命令行)
+                string raw = rx_since(mark);
                 raw = raw.Replace("\r", "\n");
 
                 string line = "";
@@ -1821,21 +1796,19 @@ namespace testapp.test_cases
                 }
 
                 // Step 2: 执行扫描, 用 BEGIN/END 标记把全部输出包住
-                clear_uboot_rx();
+                long mark = rx_mark();
                 ubootPort.WriteLine("echo " + wsBegin + "; " + scanCmd + "; echo " + wsEnd);
                 utility_func.callbackdebuginfo($"[HERO_FINAL] wifi_scan: {scanCmd} (timeout={timeout}ms)");
-                if (!wait_for_prompt(timeout))
+                if (!wait_for_prompt(mark, timeout))
                 {
-                    string tail = "";
-                    lock (ubootLock) { tail = clean_uboot_output(ubootRx.ToString(), scanCmd); }
+                    string tail = clean_uboot_output(rx_since(mark), scanCmd);
                     c = "fail;cmd_timeout";
                     utility_func.callbackdebuginfo("[HERO_FINAL] wifi_scan: command timeout, tail=" + tail);
                     return "fail";
                 }
 
-                // Step 3: 取标记之间的输出 (取最后一次出现, 避开被回显的那行命令)
-                string raw;
-                lock (ubootLock) { raw = ubootRx.ToString(); }
+                // Step 3: 取本命令窗口内标记之间的输出 (取最后一次出现, 避开被回显的那行命令)
+                string raw = rx_since(mark);
                 raw = raw.Replace("\r", "\n");
                 string block = raw;
                 int bIdx = raw.LastIndexOf(wsBegin, StringComparison.Ordinal);
@@ -2108,9 +2081,9 @@ namespace testapp.test_cases
                 }
 
                 // 登录
-                clear_uboot_rx();
+                long mark = rx_mark();
                 ubootPort.WriteLine("");
-                if (!wait_for_prompt(loginTimeout))
+                if (!wait_for_prompt(mark, loginTimeout))
                 {
                     if (needLogin)
                     {
@@ -2119,9 +2092,9 @@ namespace testapp.test_cases
                         Thread.Sleep(500);
                         ubootPort.WriteLine(pass);
                         Thread.Sleep(1000);
-                        clear_uboot_rx();
+                        mark = rx_mark();
                         ubootPort.WriteLine("");
-                        if (!wait_for_prompt(5000))
+                        if (!wait_for_prompt(mark, 5000))
                         {
                             c = "fail;login_failed";
                             return "fail";
@@ -2135,9 +2108,9 @@ namespace testapp.test_cases
                 }
 
                 // sync: 刷新文件系统缓冲
-                clear_uboot_rx();
+                mark = rx_mark();
                 ubootPort.WriteLine("sync; echo sync_done");
-                if (!wait_for_prompt(5000))
+                if (!wait_for_prompt(mark, 5000))
                 {
                     c = "fail;sync_timeout";
                     return "fail";
@@ -2145,15 +2118,14 @@ namespace testapp.test_cases
                 utility_func.callbackdebuginfo("[HERO_FINAL] graceful_shutdown: sync done");
 
                 // halt: 停止系统
-                clear_uboot_rx();
+                mark = rx_mark();
                 ubootPort.WriteLine("halt");
                 // halt 后系统会停止, 串口可能输出 "System halted." 或不再有提示符
                 // 等待一段时间让系统完全停止
                 Thread.Sleep(haltTimeout);
 
-                // 检查是否出现 halt 相关消息
-                string rxData = "";
-                lock (ubootLock) { rxData = ubootRx.ToString(); }
+                // 检查是否出现 halt 相关消息 (只看 halt 命令之后的窗口)
+                string rxData = rx_since(mark);
 
                 if (rxData.Contains("halt") || rxData.Contains("Halt") || rxData.Contains("stopped") || rxData.Contains("Power down"))
                 {
@@ -2378,11 +2350,83 @@ namespace testapp.test_cases
         private void UbootPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             if (e.EventType != SerialData.Chars) return;
-            try { var data = ubootPort.ReadExisting(); lock (ubootLock) ubootRx.Append(data); utility_func.callbackdebuginfo(data); }
+            try
+            {
+                var data = ubootPort.ReadExisting();
+                lock (ubootLock)
+                {
+                    ubootRx.Append(data);
+                    rxTotal += data.Length;
+                    if (ubootRx.Length > RxKeepChars * 5 / 4)        // 超过 1.25 倍上限时裁到上限, 摊薄搬移成本
+                    {
+                        int drop = ubootRx.Length - RxKeepChars;
+                        ubootRx.Remove(0, drop);
+                        rxBase += drop;
+                    }
+                }
+                if (!rxLogQ.IsAddingCompleted) rxLogQ.TryAdd(data);   // 队列满即丢日志, 不阻塞接收线程
+            }
             catch { }
         }
 
-        private void clear_uboot_rx() { lock (ubootLock) ubootRx.Clear(); }
+        /// <summary>
+        /// 串口日志泵: 半行留在 partial, 整行按批投递调试窗。
+        /// 队列 50ms 无新数据时 flush 半行 (提示符等无换行输出) 和当前批次;
+        /// 持续有数据时攒到 8KB 再投递, 限制 UI 调用频率。
+        /// </summary>
+        private void PumpRxLog()
+        {
+            var partial = new StringBuilder();
+            var batch = new StringBuilder();
+            while (!rxLogQ.IsCompleted)
+            {
+                if (rxLogQ.TryTake(out var chunk, 50))
+                {
+                    foreach (char ch in chunk)
+                    {
+                        if (ch == '\n') { batch.AppendLine(partial.ToString()); partial.Clear(); }
+                        else if (ch != '\r') partial.Append(ch);
+                    }
+                    if (batch.Length < 8192) continue;
+                }
+                if (partial.Length > 0) { batch.AppendLine(partial.ToString()); partial.Clear(); }
+                if (batch.Length > 0)
+                {
+                    try { utility_func.callbackdebuginfo(batch.ToString().TrimEnd()); } catch { }
+                    batch.Clear();
+                }
+            }
+        }
+
+        /// <summary>取当前接收窗口起点 (累计序号)。命令发出前调用, 之后只检查这之后的数据。</summary>
+        private long rx_mark() { lock (ubootLock) return rxTotal; }
+
+        /// <summary>取 mark 之后收到的文本; mark 早于保留区时从保留区起点开始。</summary>
+        private string rx_since(long mark)
+        {
+            lock (ubootLock)
+            {
+                int start = (int)Math.Max(0, mark - rxBase);
+                if (start >= ubootRx.Length) return "";
+                return ubootRx.ToString(start, ubootRx.Length - start);
+            }
+        }
+
+        /// <summary>保留区尾部快照, 用于“最近是否已出现过 prompt/login”这类判定。</summary>
+        private string rx_tail(int maxChars)
+        {
+            lock (ubootLock)
+            {
+                int n = Math.Min(Math.Max(maxChars, 0), ubootRx.Length);
+                return ubootRx.ToString(ubootRx.Length - n, n);
+            }
+        }
+
+        /// <summary>
+        /// 生命周期事件 (上/断电、重启) 丢弃历史。命令窗口用 rx_mark() 即可,
+        /// 不应再为了“开始一条命令”而调用本方法。
+        /// </summary>
+        private void clear_uboot_rx() { lock (ubootLock) { ubootRx.Clear(); rxBase = rxTotal; } }
 
         private static string clean_uboot_output(string raw, string command)
         {
@@ -2464,7 +2508,15 @@ namespace testapp.test_cases
             try
             {
                 if (ssh != null) { if (ssh.IsConnected) ssh.Disconnect(); ssh.Dispose(); }
-                if (ubootPort != null) { if (ubootPort.IsOpen) ubootPort.Close(); ubootPort.Dispose(); }
+                if (ubootPort != null)
+                {
+                    try { ubootPort.DataReceived -= UbootPort_DataReceived; } catch { }
+                    if (ubootPort.IsOpen) ubootPort.Close();
+                    ubootPort.Dispose();
+                }
+                // 先停接收再停日志泵, 泵线程是后台线程, 超时未退出也不影响进程
+                try { rxLogQ.CompleteAdding(); } catch { }
+                try { rxLogPump?.Join(1000); } catch { }
                 tc.dev_moren.Remove(id);
             }
             catch { }

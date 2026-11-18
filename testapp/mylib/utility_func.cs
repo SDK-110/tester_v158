@@ -171,6 +171,98 @@ namespace testapp.mylib
             return crc.ToString("X4");
         }
 
+        /// <summary>
+        /// 计算指定文件的 CRC32 (多项式 0xEDB88320, 初值/终值取反, 与 zlib/常见 CRC32 工具一致)。
+        /// 已注册为点函数 "file_crc32", 测试计划可直接调用。
+        ///
+        /// a = 期望 CRC32 (核实值): 1~8 位十六进制, 可带 0x 前缀, 大小写/空格/连字符不限;
+        ///     超过 8 位或非十六进制时按十进制解析
+        /// b = 未使用
+        /// d = 文件路径 (两端引号会去掉)
+        /// c = 实际 CRC32 (8 位大写十六进制); 出错时为 fail;原因
+        /// 返回 "pass" / "fail"
+        /// </summary>
+        public static string file_crc32(string a, string b, out string c, string d)
+        {
+            c = "fail";
+            try
+            {
+                string path = (d ?? "").Trim().Trim('"');
+                if (path.Length == 0)
+                {
+                    c = "fail;no_path";
+                    callbackdebuginfo("[CRC32] 未指定文件路径 (d 参数为空)");
+                    return "fail";
+                }
+                if (!File.Exists(path))
+                {
+                    c = "fail;file_not_found";
+                    callbackdebuginfo($"[CRC32] 文件不存在: {path}");
+                    return "fail";
+                }
+
+                uint crc = 0xFFFFFFFFu;
+                byte[] buf = new byte[64 * 1024];
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    int n;
+                    while ((n = fs.Read(buf, 0, buf.Length)) > 0)
+                    {
+                        for (int i = 0; i < n; i++)
+                        {
+                            crc ^= buf[i];
+                            for (int k = 0; k < 8; k++)
+                                crc = (crc & 1u) != 0 ? (crc >> 1) ^ 0xEDB88320u : crc >> 1;
+                        }
+                    }
+                }
+                crc ^= 0xFFFFFFFFu;
+                string actual = crc.ToString("X8", CultureInfo.InvariantCulture);
+
+                long size = -1;
+                try { size = new FileInfo(path).Length; } catch { }
+                callbackdebuginfo($"[CRC32] {path} ({size} bytes) = {actual}");
+
+                if (string.IsNullOrWhiteSpace(a))
+                {
+                    c = actual;
+                    callbackdebuginfo("[CRC32] a 参数为空, 无期望值可对比");
+                    return "fail";
+                }
+                if (!try_parse_crc32(a, out uint expected))
+                {
+                    c = actual + ";bad_expect=" + a;
+                    callbackdebuginfo($"[CRC32] 期望值无法解析: '{a}'");
+                    return "fail";
+                }
+                c = actual;
+                if (crc == expected) return "pass";
+
+                callbackdebuginfo($"[CRC32] 不一致: 实际 {actual}, 期望 {expected:X8} ({path})");
+                return "fail";
+            }
+            catch (Exception ex)
+            {
+                c = "fail;" + ex.Message;
+                callbackdebuginfo("[CRC32] error: " + ex.Message);
+                return "fail";
+            }
+        }
+
+        /// <summary>解析期望 CRC32: 1~8 位十六进制 (可带 0x) 按十六进制, 否则按十进制。</summary>
+        private static bool try_parse_crc32(string s, out uint value)
+        {
+            value = 0;
+            string t = (s ?? "").Trim();
+            if (t.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) t = t.Substring(2);
+            t = t.Replace(" ", "").Replace("-", "").Replace("_", "");
+            if (t.Length == 0) return false;
+            bool hex = t.Length <= 8 && t.All(ch => Uri.IsHexDigit(ch));
+            return hex
+                ? uint.TryParse(t, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out value)
+                : uint.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+        }
+
         public static void sendsn_2inputbox(string sn)
         {
             if (ptrWnd != IntPtr.Zero)
