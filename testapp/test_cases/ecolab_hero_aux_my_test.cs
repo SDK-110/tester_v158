@@ -1,5 +1,6 @@
 using ReaLTaiizor.Controls;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Text;
@@ -42,6 +43,11 @@ namespace testapp.test_cases
         SerialPort port;
         StringBuilder rxBuf = new StringBuilder();
         object rxLock = new object();
+        // ── 串口日志旁路: 接收事件只入队, 独立线程拼行/批量投递调试窗 ──
+        //   接收回调里禁止同步调 callbackdebuginfo (内部 SendMessage 会等 UI 线程),
+        //   否则接收线程被 UI 拖住, 驱动缓冲可能溢出丢数据。
+        readonly BlockingCollection<string> rxLogQ = new BlockingCollection<string>(new ConcurrentQueue<string>(), 4096);
+        Thread rxLogPump;
 
         // ══════════════════════════════════════════════════════════════
         //  构造与初始化
@@ -63,6 +69,8 @@ namespace testapp.test_cases
                 port.Encoding = Encoding.UTF8;
                 port.DataReceived += Port_DataReceived;
                 port.Open();
+                rxLogPump = new Thread(PumpRxLog) { IsBackground = true, Name = "HERO_AUX_SERIAL_LOG" };
+                rxLogPump.Start();
                 utility_func.callbackdebuginfo($"[HERO_AUX_TEST] Serial port opened: {portName}@{baud}");
             }
             catch (Exception ex)
@@ -184,11 +192,52 @@ namespace testapp.test_cases
             if (e.EventType != SerialData.Chars) return;
             try
             {
-                Thread.Sleep(30);  // 等待缓冲区数据稳定
                 var data = port.ReadExisting();
                 lock (rxLock) rxBuf.Append(data);
+                if (!rxLogQ.IsAddingCompleted) rxLogQ.TryAdd(data);   // 队列满即丢日志, 不阻塞接收线程
             }
             catch { }
+        }
+
+        /// <summary>
+        /// 串口日志泵: 把原始接收流按行投递到调试窗, 与测试判定用的 rxBuf 完全独立。
+        /// 半行留在 partial; 队列 100ms 无新数据时 flush 半行, 用于显示 "&gt; " 这类
+        /// 不带换行的提示符。整行按批投递: 攒到 8KB 或距上次投递 200ms 就发,
+        /// 后者保证 9600 baud 连续输出时调试窗仍是实时的。
+        /// </summary>
+        private void PumpRxLog()
+        {
+            var partial = new StringBuilder();
+            var batch = new StringBuilder();
+            var lastFlush = DateTime.UtcNow;
+            while (!rxLogQ.IsCompleted)
+            {
+                bool got = rxLogQ.TryTake(out var chunk, 100);
+                if (got)
+                {
+                    foreach (char ch in chunk)
+                    {
+                        if (ch == '\n') { AppendRxLine(batch, partial); }
+                        else if (ch != '\r') partial.Append(ch);
+                    }
+                    bool due = (DateTime.UtcNow - lastFlush).TotalMilliseconds >= 200;
+                    if (batch.Length < 8192 && !due) continue;
+                }
+                // 无新数据时把半行(提示符等无换行输出)也冲出去; 持续有数据时不动 partial, 避免把一行劈开
+                if (!got && partial.Length > 0) { AppendRxLine(batch, partial); }
+                if (batch.Length > 0)
+                {
+                    try { utility_func.callbackdebuginfo(batch.ToString().TrimEnd()); } catch { }
+                    batch.Clear();
+                    lastFlush = DateTime.UtcNow;
+                }
+            }
+        }
+
+        private static void AppendRxLine(StringBuilder batch, StringBuilder partial)
+        {
+            batch.Append("[AUX RX] ").AppendLine(partial.ToString());
+            partial.Clear();
         }
 
         /// <summary>
@@ -1618,9 +1667,13 @@ namespace testapp.test_cases
 
                 if (port != null)
                 {
+                    try { port.DataReceived -= Port_DataReceived; } catch { }
                     if (port.IsOpen) port.Close();
                     port.Dispose();
                 }
+                // 先停接收再停日志泵, 泵线程是后台线程, 超时未退出也不影响进程
+                try { rxLogQ.CompleteAdding(); } catch { }
+                try { rxLogPump?.Join(1000); } catch { }
                 tc.dev_moren.Remove(id);
             }
             catch { }
