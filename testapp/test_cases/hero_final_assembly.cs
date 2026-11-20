@@ -1339,7 +1339,7 @@ namespace testapp.test_cases
                 }
 
                 long mark = rx_mark();
-                ubootPort.WriteLine("echo RTC_BEGIN; date +%s; echo RTC_END");
+                ubootPort.WriteLine("echo RTC'_BEGIN'; date +%s; echo RTC'_END'");
                 utility_func.callbackdebuginfo("[HERO_FINAL] rtc_check: reading board time (date +%s)");
                 if (!wait_for_prompt(mark, timeout))
                 {
@@ -1395,9 +1395,19 @@ namespace testapp.test_cases
             try
             {
                 var p = parse_d(d);
-                string text = get_optional(p, "text", "USB Storage");
+                // 内核消息格式: "usb-storage x-x:1.0: USB Mass Storage device detected" / "[sda] Attached SCSI removable disk"
+                // 注意 "usb-storage" 带连字符, 用 "USB Storage" 作关键字永远匹配不上 (grep -i 也一样)。
+                // 兼容旧步骤参数 text=USB Storage: 自动映射为真实内核特征组。
+                string text = get_optional(p, "text", "Mass Storage device detected");
+                string[] patterns = text == "USB Storage"
+                    ? new[] { "Mass Storage device detected", "Attached SCSI removable disk" }
+                    : new[] { text };
                 int timeout = get_int(p, "timeout", 15000);
                 bool useDmesg = get_optional(p, "use_dmesg", "true").Equals("true", StringComparison.OrdinalIgnoreCase);
+
+                // mark 必须先于提示窗: 作业员常在按 OK 之前就插入 U 盘,
+                // 内核枚举消息在弹窗期间到达; 若 mark 取在弹窗之后, rx_since(mark) 会把插入事件漏掉
+                long mark = rx_mark();
 
                 // 可选作业提示窗 (d 带 prompt= 时): 提示作业员插入 U 盘, 按 OK 后开始自动检测
                 string prompt = get_optional(p, "prompt", "");
@@ -1408,21 +1418,25 @@ namespace testapp.test_cases
                     utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: operator prompted '{prompt}' -> OK, start detection");
                 }
 
-                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: waiting for '{text}' (timeout={timeout}ms)");
-
-                // 只捕获本次调用开始之后新插入的 USB 事件
-                long mark = rx_mark();
+                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: waiting for '{string.Join("' / '", patterns)}' (timeout={timeout}ms)");
 
                 // 同时通过串口和 SSH dmesg 检测
                 var deadline = DateTime.UtcNow.AddMilliseconds(timeout);
                 while (DateTime.UtcNow < deadline)
                 {
                     // 串口检测
-                    if (ubootPort != null && ubootPort.IsOpen && rx_since(mark).Contains(text))
+                    if (ubootPort != null && ubootPort.IsOpen)
                     {
-                        c = "pass";
-                        utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: detected '{text}' via serial");
-                        return "pass";
+                        string rx = rx_since(mark);
+                        foreach (var pat in patterns)
+                        {
+                            if (rx.Contains(pat))
+                            {
+                                c = "pass";
+                                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: detected '{pat}' via serial");
+                                return "pass";
+                            }
+                        }
                     }
 
                     // SSH dmesg 检测
@@ -1430,13 +1444,13 @@ namespace testapp.test_cases
                     {
                         try
                         {
-                            using var sc = ssh.CreateCommand($"dmesg | grep -i '{text}'");
+                            using var sc = ssh.CreateCommand($"dmesg | grep -iE '{string.Join("|", patterns)}'");
                             sc.CommandTimeout = TimeSpan.FromSeconds(3);
                             var result = sc.Execute();
-                            if (!string.IsNullOrEmpty(result) && result.Contains(text))
+                            if (!string.IsNullOrEmpty(result))
                             {
                                 c = "pass";
-                                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: detected '{text}' via dmesg");
+                                utility_func.callbackdebuginfo($"[HERO_FINAL] usb_storage_check: detected via dmesg: {result.Trim()}");
                                 return "pass";
                             }
                         }
@@ -1471,7 +1485,7 @@ namespace testapp.test_cases
             c = "fail";
             try
             {
-                tc.golb_var_default["input_sn"] = "EH2640C0005";
+               // tc.golb_var_default["input_sn"] = "EH2640C0005";
 
                 // 从全局变量获取条码
                 if (tc.golb_var_default.TryGetValue("input_sn", out object val) == false || val == null)
@@ -1533,7 +1547,7 @@ namespace testapp.test_cases
 
                 // Step 1: 写随机种子到 EEPROM 0x00 (255字节)
                 mark = rx_mark();
-                ubootPort.WriteLine($"cat /dev/urandom | base64 | dd bs=1 count=255 | eeprog -f /dev/i2c-{i2cBus} {eepromAddr} -8 -w 0x00; echo seed_done");
+                ubootPort.WriteLine($"cat /dev/urandom | base64 | dd bs=1 count=255 | eeprog -f /dev/i2c-{i2cBus} {eepromAddr} -8 -w 0x00; echo seed'_done'");
                 if (!wait_for_prompt(mark, 10000))
                 {
                     c = "fail;seed_write_timeout";
@@ -1543,7 +1557,7 @@ namespace testapp.test_cases
 
                 // Step 2: 写序列号到 EEPROM 0x20
                 mark = rx_mark();
-                ubootPort.WriteLine($"echo \"{sn}\" | eeprog -f /dev/i2c-{i2cBus} {eepromAddr} -8 -w 0x20; echo sn_written");
+                ubootPort.WriteLine($"echo \"{sn}\" | eeprog -f /dev/i2c-{i2cBus} {eepromAddr} -8 -w 0x20; echo sn'_written'");
                 if (!wait_for_prompt(mark, 5000))
                 {
                     c = "fail;sn_write_timeout";
@@ -1553,7 +1567,7 @@ namespace testapp.test_cases
 
                 // Step 3: 回读验证
                 mark = rx_mark();
-                ubootPort.WriteLine($"eeprog -qf /dev/i2c-{i2cBus} -f {eepromAddr} -8 -r 0x20:12; echo readback_done");
+                ubootPort.WriteLine($"eeprog -qf /dev/i2c-{i2cBus} {eepromAddr} -8 -r 0x20:12; echo readback'_done'");
                 if (!wait_for_prompt(mark, 5000))
                 {
                     c = "fail;readback_timeout";
@@ -1797,7 +1811,9 @@ namespace testapp.test_cases
 
                 // Step 2: 执行扫描, 用 BEGIN/END 标记把全部输出包住
                 long mark = rx_mark();
-                ubootPort.WriteLine("echo " + wsBegin + "; " + scanCmd + "; echo " + wsEnd);
+                // 引号拼接技巧: 回显里是 WS'_BEGIN', 不含标记字面量, 实际输出才是 WS_BEGIN,
+                // 避免 IndexOf/LastIndexOf 命中回显导致输出窗口被截断
+                ubootPort.WriteLine("echo WS'_BEGIN'; " + scanCmd + "; echo WS'_END'");
                 utility_func.callbackdebuginfo($"[HERO_FINAL] wifi_scan: {scanCmd} (timeout={timeout}ms)");
                 if (!wait_for_prompt(mark, timeout))
                 {
@@ -2235,6 +2251,9 @@ namespace testapp.test_cases
                     c = "fail;serial_not_open";
                     return "fail";
                 }
+                // 跳过继电器上电, 改为人工断电再上电: 提示作业员操作, 按 OK 后继续
+                HeroPromptForm.Show("HERO MAC 烧写", "请更换另外一张SD卡，点击OK后将DUT 断电后再上电（确保从冷启动进入 u-boot）", "", false);
+                utility_func.callbackdebuginfo("[HERO_FINAL] program_mac: operator prompted power-cycle DUT -> OK, continue to u-boot interrupt");
                 goto abc;
                 // === Step 2: 继电器上电 ===
                 string relayFunc = relayModule;
