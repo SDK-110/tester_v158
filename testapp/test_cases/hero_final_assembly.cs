@@ -2252,7 +2252,7 @@ namespace testapp.test_cases
                     return "fail";
                 }
                 // 跳过继电器上电, 改为人工断电再上电: 提示作业员操作, 按 OK 后继续
-                HeroPromptForm.Show("HERO MAC 烧写", "请更换另外一张SD卡，点击OK后将DUT 断电后再上电（确保从冷启动进入 u-boot）", "", false);
+                HeroPromptForm.Show("HERO MAC 烧写", "点击OK后将DUT 断电后再上电（确保从冷启动进入 u-boot）", "", false);
                 utility_func.callbackdebuginfo("[HERO_FINAL] program_mac: operator prompted power-cycle DUT -> OK, continue to u-boot interrupt");
                 goto abc;
                 // === Step 2: 继电器上电 ===
